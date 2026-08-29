@@ -2,7 +2,7 @@
 
 A two-player word game you play by sending a link. No app, no account.
 
-**Live game:** https://YOURNAME.github.io/beartracks/
+**Live game:** https://rljhaines.github.io/beartracks/
 
 ### How to play
 1. Open the live link, enter two names, deal.
