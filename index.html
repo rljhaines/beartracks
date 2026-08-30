@@ -14,7 +14,7 @@
 .cell{border:0;min-width:0;padding:0;position:relative;background:#e7d9bd;color:#274336;cursor:pointer;aspect-ratio:1}.cell:focus{outline:3px solid var(--orange);z-index:2}.cell.anchor{outline:3px solid var(--orange);z-index:2}
 .premium{position:absolute;inset:3px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:8px;font-weight:800;line-height:1.05}.tw{background:#cf7c6f;color:white}.dw{background:#e6aaa2}.tl{background:#5c99aa;color:white}.dl{background:#a8cbd0}
 .tile{position:absolute;inset:3px;background:var(--tile);border-radius:4px;box-shadow:0 1px 2px #8d7548;display:flex;align-items:center;justify-content:center;font-size:clamp(13px,2.1vw,26px);font-weight:900;color:#25291e}.tile b{position:absolute;right:3px;bottom:1px;font-size:9px}.tile.blank:after{content:"•";font-size:10px;position:absolute;top:1px;left:4px}
-.below-board{display:grid;grid-template-columns:repeat(15,1fr);gap:var(--gap);margin-top:8px;width:100%;padding:0 var(--pad);align-items:start}
+.below-board{display:grid;grid-template-columns:repeat(15,1fr);gap:var(--gap);margin-top:8px;width:100%;padding:0 var(--pad);align-items:stretch}
 .rack{grid-column:1 / 8;grid-row:1;display:grid;grid-template-columns:repeat(7,1fr);gap:var(--gap);width:100%}
 .rack-tile{aspect-ratio:1;width:100%;border:0;border-radius:4px;background:var(--tile);box-shadow:0 1px 2px #8d7548;position:relative;font-size:clamp(13px,2.1vw,26px);font-weight:900;color:#25291e;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .rack-tile small{position:absolute;right:3px;bottom:1px;font-size:9px}.rack-tile.selected{outline:3px solid var(--orange);transform:translateY(-2px);z-index:1}
@@ -23,11 +23,11 @@
 .entry-row input::placeholder{text-transform:none;font-style:italic;font-size:12px}
 .entry-row button{height:44px;flex:0 0 auto;padding:0 14px;white-space:nowrap;border:0;border-radius:8px;font-weight:800;cursor:pointer}
   #shuffle{background:#e4dfd3;color:var(--ink)}#playWord{background:var(--green);color:white}
-.gameplay-box{grid-column:10 / 16;grid-row:1;align-self:start;min-height:44px;display:flex;flex-direction:column;justify-content:center;gap:2px;background:#fffdf8;border:1px solid var(--line);border-radius:8px;padding:6px 8px;box-shadow:0 2px 7px #362c1711}
+.gameplay-box{grid-column:10 / 16;grid-row:1;align-self:stretch;min-height:0;height:100%;display:flex;flex-direction:column;justify-content:center;gap:2px;background:#fffdf8;border:1px solid var(--line);border-radius:8px;padding:6px 8px;box-shadow:0 2px 7px #362c1711}
 .placement{font-size:11px;color:var(--muted);font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1}
-.status{font-size:11px;color:var(--ink);font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2;transition:color.2s}
-.status.prompt{font-size:14px;font-style:normal;color:#c0392b;white-space:normal;animation:btPulse 0.5s ease-in-out 2}
-@keyframes btPulse{0%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(1.04)}100%{opacity:1;transform:scale(1)}}
+.status{font-size:11px;color:var(--ink);font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
+.status.prompt{font-size:14px;font-style:normal;color:#c0392b;white-space:normal;animation:btBreathe 2.8s ease-in-out infinite}
+@keyframes btBreathe{0%{opacity:1}50%{opacity:0.62}100%{opacity:1}}
 .actions-row{display:flex;gap:6px;margin-top:8px;grid-column:10 / 16;grid-row:2}
 .side{display:flex;flex-direction:column;gap:12px}.card{background:#fffdf8;border:1px solid var(--line);border-radius:12px;padding:14px;box-shadow:0 2px 7px #362c1711}.card h2{font-size:12px;letter-spacing:.8px;margin:0 0 9px;color:#426050}
 .action{border:0;border-radius:9px;padding:11px 7px;font-weight:800;background:var(--green);color:white;cursor:pointer}.action:disabled{opacity:.5}.action.alt{background:#e4dfd3;color:var(--ink)}
@@ -78,17 +78,23 @@
     if(!state)return;waiting=false;waitingRack=null;waitingOpp=null;
     var b=$('board');b.innerHTML='';for(var r=0;r<N;r++)for(var c=0;c<N;c++){var btn=document.createElement('button');btn.className='cell '+premium(r,c).toLowerCase()+(anchor&&anchor.r===r&&anchor.c===c?' anchor':'');btn.dataset.r=r;btn.dataset.c=c;if(state.board[r][c]&&isNew(r,c))btn.draggable=true;var t2=state.board[r][c];var pr=premium(r,c);if(t2){var sp=document.createElement('span');sp.className='tile '+(t2.blank?'blank':'');sp.textContent=t2.l;var b2=document.createElement('b');b2.textContent=t2.blank?0:V[t2.l];sp.appendChild(b2);btn.appendChild(sp);}else if(pr){var prs=document.createElement('span');prs.className='premium';prs.textContent=pr;btn.appendChild(prs);}b.appendChild(btn);}
     var cells=b.getElementsByTagName('button');for(var i=0;i<cells.length;i++){cells[i].onclick=place;cells[i].ondblclick=vertical;cells[i].ondragover=allowDrop;cells[i].ondrop=dropCell;cells[i].ondragstart=dragBoard;cells[i].onmousedown=startGesture;cells[i].onmouseup=endGesture}
-    var rack=state.players[state.turn].rack;var rh='';for(i=0;i<rack.length;i++)rh+='<button draggable="true" class="rack-tile '+(i===selected?'selected':'')+'" data-i="'+i+'">'+rack[i].l+'<small>'+V[rack[i].l]+'</small></button>';$('rack').innerHTML=rh;var rs=$('rack').getElementsByTagName('button');for(i=0;i<rs.length;i++){rs[i].onclick=pick;rs[i].ondragstart=dragRack}$('rack').ondragover=allowDrop;$('rack').ondrop=dropRack;$('scores').innerHTML=state.players.map(function(x,i){return '<div class="score '+(i===state.turn?'active':'')+'"><span>'+esc(x.name)+(i===state.turn?' - turn':'')+'</span><strong>'+x.score+'</strong></div>'}).join('');$('history').innerHTML=state.history.slice().reverse().map(function(x){return'<li>'+esc(x)+'</li>'}).join('');$('bag').textContent=state.bag.length+' tiles remain.';$('turnPill').textContent=state.players[state.turn].name+"'s turn";$('placement').textContent=anchor?'Starts at '+String.fromCharCode(65+anchor.c)+(anchor.r+1)+' '+(anchor.d==='H'?'across':'down'):'';$('wordInput').disabled=false;$('wordInput').placeholder='Type word or word 8,8,0';$('playWord').disabled=false;$('submitWord').disabled=false;$('pass').disabled=false;$('undo').disabled=false;if(!pending.length&&!pendingWord)message(state.players[state.turn].name+': type word + Enter, add 8,8,0 for coords, or word alone then click board.');
+    var rack=state.players[state.turn].rack;var rh='';for(i=0;i<rack.length;i++)rh+='<button draggable="true" class="rack-tile '+(i===selected?'selected':'')+'" data-i="'+i+'">'+rack[i].l+'<small>'+V[rack[i].l]+'</small></button>';$('rack').innerHTML=rh;var rs=$('rack').getElementsByTagName('button');for(i=0;i<rs.length;i++){rs[i].onclick=pick;rs[i].ondragstart=dragRack}$('rack').ondragover=allowDrop;$('rack').ondrop=dropRack;$('scores').innerHTML=state.players.map(function(x,i){return '<div class="score '+(i===state.turn?'active':'')+'"><span>'+esc(x.name)+(i===state.turn?' - turn':'')+'</span><strong>'+x.score+'</strong></div>'}).join('');$('history').innerHTML=state.history.slice().reverse().map(function(x){return'<li>'+esc(x)+'</li>'}).join('');$('bag').textContent=state.bag.length+' tiles remain.';$('turnPill').textContent=state.players[state.turn].name+"'s turn";$('placement').textContent=anchor?'Starts at '+String.fromCharCode(65+anchor.c)+(anchor.r+1)+' '+(anchor.d==='H'?'across':'down'):'';$('wordInput').disabled=false;$('wordInput').placeholder='Type word or word 8,8,0 (1-15)';$('playWord').disabled=false;$('submitWord').disabled=false;$('pass').disabled=false;$('undo').disabled=false;if(!pending.length&&!pendingWord)message(state.players[state.turn].name+': type word + Enter, add 8,8,0 for coords (1-15), or word alone then click board.');
     setTimeout(function(){ if(!waiting){ var inp=$('wordInput'); if(inp) inp.focus(); } },0);
   }
   function renderWaitingRack(){var rh='';for(var i=0;i<waitingRack.length;i++)rh+='<button class="rack-tile" disabled>'+waitingRack[i].l+'<small>'+V[waitingRack[i].l]+'</small></button>';$('rack').innerHTML=rh;}
-  function enterWaitingMode(myRack, opponentName){
+  function enterWaitingMode(myRack, opponentName, isPass){
     waiting=true;waitingRack=myRack.slice();waitingOpp=opponentName;
     renderWaitingRack();
     $('wordInput').value='';$('wordInput').disabled=true;$('wordInput').placeholder='Waiting';
     $('playWord').disabled=true;$('submitWord').disabled=true;$('pass').disabled=true;$('undo').disabled=true;
-    $('placement').textContent='Open link from opponent to continue play.';
     $('turnPill').textContent='Waiting for '+opponentName;
+    if(isPass){
+      $('placement').textContent='';
+      var el=$('status'); el.textContent=''; el.classList.remove('prompt');
+    } else {
+      $('placement').textContent='Open link from opponent to continue play.';
+      var el2=$('status'); el2.textContent="The Bear's tracks have been captured. Use your paste function to send to opponent"; el2.classList.remove('prompt'); void el2.offsetWidth; el2.classList.add('prompt');
+    }
   }
   function shuffleRack(){if(waiting && waitingRack){shuffle(waitingRack);renderWaitingRack();return;}if(!state)return;shuffle(state.players[state.turn].rack);selected=-1;var rack=state.players[state.turn].rack;var rh='';for(var i=0;i<rack.length;i++)rh+='<button draggable="true" class="rack-tile '+(i===selected?'selected':'')+'" data-i="'+i+'">'+rack[i].l+'<small>'+V[rack[i].l]+'</small></button>';$('rack').innerHTML=rh;var rs=$('rack').getElementsByTagName('button');for(var j=0;j<rs.length;j++){rs[j].onclick=pick;rs[j].ondragstart=dragRack}}
   function pick(e){if(waiting)return;var n=Number(e.currentTarget.getAttribute('data-i'));selected=(selected===n)?-1:n;render()}
@@ -243,9 +249,7 @@
     var link=buildLink(gs);
     if(!link){message('Could not create link');return null}
     if(navigator.clipboard&&navigator.clipboard.writeText){
-      navigator.clipboard.writeText(link).then(function(){
-        message('Link copied! Send it to '+gs.players[gs.turn].name+' - pass it on.');
-      }).catch(function(){
+      navigator.clipboard.writeText(link).catch(function(){
         prompt('Copy this link and send to opponent:',link);
       });
     }else{
@@ -301,8 +305,7 @@
       $('scores').innerHTML=state.players.map(function(x,i){return '<div class="score '+(i===state.turn?'active':'')+'"><span>'+esc(x.name)+(i===state.turn?' - turn':'')+'</span><strong>'+x.score+'</strong></div>'}).join('');
       $('history').innerHTML=state.history.slice().reverse().map(function(x){return'<li>'+esc(x)+'</li>'}).join('');
       $('bag').textContent=state.bag.length+' tiles remain.';
-      enterWaitingMode(myRack, oppName);
-      message('Link copied! Send it to '+oppName+' - pass it on.');
+      enterWaitingMode(myRack, oppName, false);
     }catch(e){message(e.message);}
   }
   function pass(){
@@ -323,8 +326,7 @@
         $('scores').innerHTML=state.players.map(function(x,i){return '<div class="score '+(i===state.turn?'active':'')+'"><span>'+esc(x.name)+'</span><strong>'+x.score+'</strong></div>'}).join('');
         $('history').innerHTML=state.history.slice().reverse().map(function(x){return'<li>'+esc(x)+'</li>'}).join('');
         $('bag').textContent=state.bag.length+' tiles remain.';
-        enterWaitingMode(myRackPass, oppName);
-        message('You passed. '+oppName+' to start - opening link copied.');
+        enterWaitingMode(myRackPass, oppName, true);
       }
       return;
     }
@@ -337,8 +339,7 @@
     $('scores').innerHTML=state.players.map(function(x,i){return '<div class="score '+(i===state.turn?'active':'')+'"><span>'+esc(x.name)+(i===state.turn?' - turn':'')+'</span><strong>'+x.score+'</strong></div>'}).join('');
     $('history').innerHTML=state.history.slice().reverse().map(function(x){return'<li>'+esc(x)+'</li>'}).join('');
     $('bag').textContent=state.bag.length+' tiles remain.';
-    enterWaitingMode(myRackPass, oppName);
-    message('Link copied! Send it to '+oppName+' - pass it on.');
+    enterWaitingMode(myRackPass, oppName, true);
   }
   function startGame(){
     var a=$('nameA').value.replace(/[<>]/g,'').trim();
@@ -354,25 +355,26 @@
     var link=buildLink(opp);
     if(link && navigator.clipboard && navigator.clipboard.writeText){
       navigator.clipboard.writeText(link).then(function(){
-        message('Link copied! Share it with '+init.players[1].name+'. Decide with opponent who will play first.');
+        $('placement').textContent='Link for '+init.players[1].name+' copied - decide who plays first';
+        var el=$('status'); el.textContent="The Bear's tracks have been captured. Use your paste function to send to opponent"; el.classList.remove('prompt'); void el.offsetWidth; el.classList.add('prompt');
       }).catch(function(){
         prompt('Share this link with '+init.players[1].name+'. Decide with opponent who will play first:', link);
       });
     }else if(link){
       prompt('Share this link with '+init.players[1].name+'. Decide with opponent who will play first:', link);
-      message('Share the link with '+init.players[1].name+'. Decide with opponent who will play first.');
+      $('placement').textContent='Link for '+init.players[1].name+' copied - decide who plays first';
+      var el2=$('status'); el2.textContent="The Bear's tracks have been captured. Use your paste function to send to opponent"; el2.classList.remove('prompt'); void el2.offsetWidth; el2.classList.add('prompt');
     }else{
       downloadOpponentFile(init);
-      message('File for '+init.players[1].name+'. Share it. Decide with opponent who will play first.');
+      var el3=$('status'); el3.textContent="The Bear's tracks have been captured. Use your paste function to send to opponent"; el3.classList.remove('prompt'); void el3.offsetWidth; el3.classList.add('prompt');
     }
-    $('placement').textContent='Link for '+init.players[1].name+' copied - decide who plays first';
   }
   function handleSetupKeyDown(e){if(e.key==='Enter'){e.preventDefault();startGame();}}
   $('submitWord').onclick=commit;$('undo').onclick=undo;$('pass').onclick=pass;
   $('playWord').onclick=playTyped;$('shuffle').onclick=shuffleRack;
   $('wordInput').onkeydown=function(e){if(e.key==='Enter'){if(waiting)return;e.preventDefault();playTyped()}};
   $('nameA').onclick=function(){this.select();};$('nameB').onclick=function(){this.select();};$('nameA').onkeydown=handleSetupKeyDown;$('nameB').onkeydown=handleSetupKeyDown;
-  $('start').onclick=startGame;$('help').onclick=function(){alert('Type word + Enter. Add 8,8,0 across / 8,8,1 down in any order. Or word alone then click for across, double-click for down. Submit copies link - decide who plays first.')};
+  $('start').onclick=startGame;$('help').onclick=function(){alert('Type word + Enter. Add 8,8,0 across / 8,8,1 down in any order (1-15). Or word alone then click for across, double-click for down. Submit copies link.')};
   try{state=JSON.parse($('game-state').textContent)}catch(e){state=null}
   var hs=tryLoadFromHash(); if(hs){state=hs}
   if(state){$('setup').hidden=true;render();}else{$('setup').hidden=false;$('nameA').focus();}
