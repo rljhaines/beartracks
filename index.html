@@ -43,6 +43,19 @@
 .start-game-box{border:1px solid var(--line);border-radius:12px;padding:14px;margin:12px 0;background:#fffdf8}
 .error{color:#a12a2a;font-size:12px;min-height:16px;margin-top:6px}
   #invite-copy{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+#bt-headsup{position:fixed;top:6%;left:50%;transform:translateX(-50%);width:min(680px,58vw);z-index:20}
+#bt-headsup[hidden]{display:none}
+#bt-headsup-box{display:grid;grid-template-columns:1fr 200px;gap:12px;align-items:start;background:#fffdf8;border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:0 12px 40px #00000033}
+#bt-headsup-left{display:flex;flex-direction:column;gap:8px;min-width:0}
+#bt-headsup-help{font-size:13px;line-height:1.3;color:var(--ink);font-weight:600}
+#bt-headsup-input{width:100%;border:1px solid #b7bcad;border-radius:8px;padding:9px 10px;font:12px/1.3 ui-monospace,Menlo,monospace;background:#fefaf0;color:var(--ink);word-break:break-all;resize:none;height:58px}
+#bt-headsup-right{display:flex;flex-direction:column;gap:8px}
+#bt-headsup-right button{height:38px;border:0;border-radius:8px;font-weight:800;font-size:13px;cursor:pointer;padding:0 12px;white-space:nowrap}
+#bt-headsup-right button:disabled{opacity:1;background:#e2ddd1;color:#8a857a;cursor:default}
+#bt-headsup-copy-msg{background:#e2ddd1}
+#bt-headsup-copy-link{background:var(--green);color:white}
+#bt-headsup-continue{background:#23392f;color:white;margin-top:4px}
+@media(max-width:700px){#bt-headsup{width:92vw;top:3%}#bt-headsup-box{grid-template-columns:1fr;gap:10px}#bt-headsup-right{flex-direction:row;flex-wrap:wrap}#bt-headsup-right button{flex:1 1 140px}}
 </style>
 </head>
 <body>
@@ -71,6 +84,19 @@
 <div id="box-register" class="start-game-box"><h1>BearTracks Registration</h1><p>Register to play.</p><label>Username<input id="reg-user" placeholder="Username"></label><label>Password<input id="reg-pass" type="password"></label><label>Confirm password<input id="reg-pass2" type="password"></label><button id="btn-register">Register</button><div id="reg-error" class="error"></div></div>
 <div id="box-start" class="start-game-box" hidden><h1>Start a game</h1><div><strong id="owner-name"></strong></div><label>Opponent's name (optional)<input id="nameB" maxlength="28" placeholder="Opponent username"></label><div style="display:flex;gap:8px;margin-top:10px"><button id="btn-begin">Begin Game</button><button id="btn-invite" class="action alt">Create Invitation</button></div><div id="invite-copy" hidden><div class="help">Join me in a scrabble-like game on BearTracks:</div><div style="display:flex;gap:6px"><input id="invite-url" readonly><button id="btn-copy">Copy</button></div></div><button id="btn-logout" class="action alt" style="margin-top:12px">Log out</button></div>
 </section></div>
+<div id="bt-headsup" hidden>
+  <div id="bt-headsup-box">
+    <div id="bt-headsup-left">
+      <div id="bt-headsup-help">Join me in a scrabble-like game on BearTracks:</div>
+      <textarea id="bt-headsup-input" readonly></textarea>
+    </div>
+    <div id="bt-headsup-right">
+      <button id="bt-headsup-copy-msg" disabled>Message copied</button>
+      <button id="bt-headsup-copy-link">Copy link instead</button>
+      <button id="bt-headsup-continue">Continue to game</button>
+    </div>
+  </div>
+</div>
 <script id="game-state" type="application/json">null</script>
 <script>
 // BUILD: fix-sooh-2026-05-13c - verify this string in View Source
@@ -284,6 +310,61 @@
       renderBoxes();
     }
   }
+  let pendingGameForHeadsUp=null;
+  let headsupData={url:"",msg:""};
+  let headsupMode="msg";
+  function showHeadsUp(inviteId, gameObj){
+    let url = makeInviteUrl(inviteId);
+    let fullMsg = "Join me in a scrabble-like game on BearTracks: " + url;
+    headsupData.url = url;
+    headsupData.msg = fullMsg;
+    headsupMode = "msg";
+    let input=$('bt-headsup-input');
+    if(input) input.value = fullMsg;
+    try{ if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(fullMsg).catch(()=>{}); }catch(e){}
+    let btnMsg=$('bt-headsup-copy-msg');
+    let btnLink=$('bt-headsup-copy-link');
+    if(btnMsg){ btnMsg.disabled=true; btnMsg.textContent="Message copied"; }
+    if(btnLink){ btnLink.disabled=false; btnLink.textContent="Copy link instead"; }
+    $('bt-headsup').hidden=false;
+    pendingGameForHeadsUp = gameObj;
+    showShare(url);
+  }
+  function handleHeadsUpCopyMsg(){
+    if(headsupMode==="msg") return;
+    headsupMode="msg";
+    $('bt-headsup-input').value=headsupData.msg;
+    try{ navigator.clipboard.writeText(headsupData.msg).catch(()=>{}); }catch(e){}
+    $('bt-headsup-copy-msg').disabled=true;
+    $('bt-headsup-copy-msg').textContent="Message copied";
+    $('bt-headsup-copy-link').disabled=false;
+    $('bt-headsup-copy-link').textContent="Copy link instead";
+  }
+  function handleHeadsUpCopyLink(){
+    if(headsupMode==="link") return;
+    headsupMode="link";
+    $('bt-headsup-input').value=headsupData.url;
+    try{ navigator.clipboard.writeText(headsupData.url).catch(()=>{}); }catch(e){}
+    $('bt-headsup-copy-link').disabled=true;
+    $('bt-headsup-copy-link').textContent="Link copied";
+    $('bt-headsup-copy-msg').disabled=false;
+    $('bt-headsup-copy-msg').textContent="Copy message instead";
+  }
+  function handleHeadsUpContinue(){
+    $('bt-headsup').hidden=true;
+    if(pendingGameForHeadsUp){
+      let g=pendingGameForHeadsUp;
+      let opp=($('nameB')?$('nameB').value.trim():'');
+      let iid=currentInvite?currentInvite.id:null;
+      state=g;
+      $('setup').hidden=true;
+      render();
+      let url = iid? makeInviteUrl(iid) : makeInviteUrl("temp");
+      if(opp){message(`Game with ${opp} started. Share this link to send game-state to ${opp}: ${url}`, true);}
+      else{message(`Game started as invitation-with-board. Share this link to invite an opponent: ${url}`, true);}
+      pendingGameForHeadsUp=null;
+    }
+  }
   function handleBegin(){
     let owner=getOwner(); if(!owner){renderBoxes(); return;}
     let opp=($('nameB')?$('nameB').value.trim():'');
@@ -293,23 +374,23 @@
     currentInvite={id:iid};
     saveInviteToCF({id:iid,invitedBy:owner,invitedByOpponents:getOpponents(),gameId:g.id,mode:"game-invite",created:Date.now()});
     if(opp) addOpponent(opp);
-    state=g;
-    $('setup').hidden=true;
-    render();
-    let url=makeInviteUrl(iid);
-    let full="Join me in a scrabble-like game on BearTracks: "+url;
-    showShare(url);
-    try{navigator.clipboard.writeText(full).catch(()=>{});}catch(e){}
-    if(opp){message(`Game with ${opp} started. Share this link to send game-state to ${opp}: ${url}`, true);}
-    else{message(`Game started as invitation-with-board. Share this link to invite an opponent: ${url}`, true);}
+    showHeadsUp(iid, g);
   }
   function handleCreateInvitation(){
     let owner=getOwner(); if(!owner){renderBoxes(); return;}
     let id=Date.now().toString(36)+Math.random().toString(36).slice(2,7);
     saveInviteToCF({id:id,invitedBy:owner,invitedByOpponents:getOpponents(),mode:"unregistered-invite",created:Date.now()});
-    let url=makeInviteUrl(id); currentInvite={id:id}; showShare(url);
-    try{navigator.clipboard.writeText("Join me in a scrabble-like game on BearTracks: "+url).catch(()=>{});}catch(e){}
-    message(`Invitation created. Share this link: ${url}`, true);
+    currentInvite={id:id};
+    let url=makeInviteUrl(id);
+    let fullMsg="Join me in a scrabble-like game on BearTracks: "+url;
+    headsupData.url=url; headsupData.msg=fullMsg; headsupMode="msg";
+    let input=$('bt-headsup-input'); if(input) input.value=fullMsg;
+    try{ if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(fullMsg).catch(()=>{}); }catch(e){}
+    let btnMsg=$('bt-headsup-copy-msg'); if(btnMsg){btnMsg.disabled=true; btnMsg.textContent="Message copied";}
+    let btnLink=$('bt-headsup-copy-link'); if(btnLink){btnLink.disabled=false; btnLink.textContent="Copy link instead";}
+    $('bt-headsup').hidden=false;
+    pendingGameForHeadsUp=null;
+    showShare(url);
   }
   function fit(){
     var vv=window.visualViewport; var w=vv?vv.width:window.innerWidth; var h=vv?vv.height:window.innerHeight;
@@ -325,8 +406,11 @@
   $('btn-register').onclick=handleRegister; $('btn-begin').onclick=handleBegin; $('btn-invite').onclick=handleCreateInvitation;
   $('btn-copy').onclick=function(){let u=$('invite-url').value; try{navigator.clipboard.writeText("Join me in a scrabble-like game on BearTracks: "+u)}catch(e){prompt("Copy:",u)}};
   $('share-copy').onclick=function(){let u=$('share-url').value; try{navigator.clipboard.writeText("Join me in a scrabble-like game on BearTracks: "+u).catch(()=>{})}catch(e){prompt("Copy:",u)}};
-  $('btn-logout').onclick=function(){localStorage.removeItem("bt_owner"); clearInviteUrl(); $('setup').hidden=false; renderBoxes(); $('reg-user').value=''; $('reg-pass').value=''; $('reg-pass2').value=''; $('nameB').value=''; $('invite-copy').hidden=true; let sp=$('share-panel'); if(sp) sp.hidden=true; currentInvite=null};
+  $('btn-logout').onclick=function(){localStorage.removeItem("bt_owner"); clearInviteUrl(); $('setup').hidden=false; renderBoxes(); $('reg-user').value=''; $('reg-pass').value=''; $('reg-pass2').value=''; $('nameB').value=''; $('invite-copy').hidden=true; let sp=$('share-panel'); if(sp) sp.hidden=true; currentInvite=null; $('bt-headsup').hidden=true; pendingGameForHeadsUp=null;};
   $('reg-user').onkeydown=function(e){if(e.key==='Enter')handleRegister()}; $('reg-pass2').onkeydown=function(e){if(e.key==='Enter')handleRegister()}; $('nameB').onkeydown=function(e){if(e.key==='Enter')handleBegin()};
+  $('bt-headsup-copy-msg').onclick=handleHeadsUpCopyMsg;
+  $('bt-headsup-copy-link').onclick=handleHeadsUpCopyLink;
+  $('bt-headsup-continue').onclick=handleHeadsUpContinue;
   try{state=JSON.parse($('game-state').textContent);}catch(e){state=null;}
   var hs=tryLoadFromHash(); if(hs)state=hs;
   (async()=>{
@@ -335,7 +419,6 @@
       let inv=await loadInvite(iid);
       if(inv){
         currentInvite=inv;
-        // CRITICAL: only load game state if we already have an owner
         if(getOwner() && inv.gameId){
           let g=await loadGame(inv.gameId); if(g){ state=g; }
         }
