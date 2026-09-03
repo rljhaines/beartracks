@@ -7,12 +7,9 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>BearTracks</title>
-<script id="lexicon" type="application/json">null</script>
 <style>
   :root{--ink:#23392f;--paper:#f6f0e4;--tile:#f8e5af;--line:#d7cfbd;--green:#28604b;--orange:#d66f42;--muted:#65756b;--gap:2px;--pad:4px}
-  *{box-sizing:border-box}
-  html,body{margin:0;height:100%;overflow:hidden}
-  body{background:var(--paper);color:var(--ink);font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+  *{box-sizing:border-box}html,body{margin:0;height:100%;overflow:hidden}body{background:var(--paper);color:var(--ink);font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
   #game,.wrap{width:100vw;height:100dvh;display:flex;flex-direction:column;max-width:1300px;margin:auto;padding:16px 22px 16px;box-sizing:border-box}
 .mast{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin-bottom:8px;flex:0 0 auto}.brand{font-size:29px;font-weight:800;letter-spacing:-1.2px}.brand small{display:block;font-size:10px;letter-spacing:1.2px;color:var(--muted);margin-top:3px}.turn-pill{background:#e5eee7;border-radius:20px;padding:8px 12px;font-weight:700;font-size:13px}
 .layout{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:20px;flex:1;min-height:0;align-items:start}.left-col{display:flex;flex-direction:column;gap:0;min-height:0;flex:1}
@@ -76,22 +73,11 @@
 </section></div>
 <script id="game-state" type="application/json">null</script>
 <script>
-// BUILD: 2026-05-13-final-001 - cache-busted build
 (function(){
   'use strict';
-  const BUILD="2026-05-13-final-001";
-  // Instance 1: kill service workers and force fresh HTML on next load
+  const BUILD="2026-05-13-final-003";
   if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister()));}
-  try{
-    let last=localStorage.getItem("bt_build");
-    if(last && last!==BUILD){
-      // don't wipe owner, just flag that we loaded new build
-      localStorage.setItem("bt_build",BUILD);
-    }else if(!last){
-      localStorage.setItem("bt_build",BUILD);
-    }
-  }catch(e){}
-
+  try{localStorage.setItem("bt_build",BUILD);}catch(e){}
   var N=15,C=7, V={A:1,B:3,C:3,D:2,E:1,F:4,G:2,H:4,I:1,J:8,K:5,L:1,M:3,N:1,O:1,P:3,Q:10,R:1,S:1,T:1,U:1,V:4,W:4,X:8,Y:4,Z:10,"?":0};
   var D={A:9,B:2,C:2,D:4,E:12,F:2,G:3,H:2,I:9,J:1,K:1,L:4,M:2,N:6,O:8,P:2,Q:1,R:6,S:4,T:6,U:4,V:2,W:2,X:1,Y:2,Z:1,"?":2};
   var TW=[[0,0],[0,7],[0,14],[7,0],[7,14],[14,0],[14,7],[14,14]], DW=[[1,1],[2,2],[3,3],[4,4],[10,10],[11,11],[12,12],[13,13],[1,13],[2,12],[3,11],[4,10],[10,4],[11,3],[12,2],[13,1],[7,7]], TL=[[1,5],[1,9],[5,1],[5,5],[5,9],[5,13],[9,1],[9,5],[9,9],[9,13],[13,5],[13,9]], DL=[[0,3],[0,11],[2,6],[2,8],[3,0],[3,7],[3,14],[6,2],[6,6],[6,8],[6,12],[7,3],[7,11],[8,2],[8,6],[8,8],[8,12],[11,0],[11,7],[11,14],[12,6],[12,8],[14,3],[14,11]];
@@ -102,12 +88,11 @@
   function getOwner(){return localStorage.getItem("bt_owner")}
   function getOpponents(){try{return JSON.parse(localStorage.getItem("bt_opponents")||"[]")}catch(e){return[]}}
   function addOpponent(n){if(!n)return;let o=getOpponents();if(o.indexOf(n)===-1){o.push(n);localStorage.setItem("bt_opponents",JSON.stringify(o))}}
-  // Instance 2: cache-busted fetches
   async function loadInvite(id){try{let r=await fetch(API+"/invites/"+id+"?_cb="+Date.now()+"&v="+BUILD,{cache:"no-store"});if(!r.ok)return null;let j=await r.json();return j.invite}catch(e){return null}}
   async function loadGame(id){try{let r=await fetch(API+"/games/"+id+"?_cb="+Date.now()+"&v="+BUILD,{cache:"no-store"});if(!r.ok)return null;let j=await r.json();return j.game}catch(e){return null}}
   function makeInviteUrl(id){
     if(location.protocol==='file:'){return LIVE_SITE+"?invite="+encodeURIComponent(id)+"&v="+BUILD;}
-    let path=location.pathname; if(path.endsWith('.html')) path=path.substring(0,path.lastIndexOf('/')+1); if(path.slice(-1)!=='/') path+='/'; let base=location.origin+path; if(!base.includes('github.io')) base=LIVE_SITE; return base+"?invite="+encodeURIComponent(id)+"&v="+BUILD+"&_cb="+Date.now();
+    let path=location.pathname; if(path.endsWith('.html')) path=path.substring(0,path.lastIndexOf('/')+1); if(path.slice(-1)!=='/') path+='/'; let base=location.origin+path; if(!base.includes('github.io')) base=LIVE_SITE; return base+"?invite="+encodeURIComponent(id)+"&v="+BUILD;
   }
   function saveGameToCF(g){fetch(API+"/games",{method:"POST",headers:{"Content-Type":"application/json","Cache-Control":"no-cache"},body:JSON.stringify({game:g})}).catch(()=>{})}
   function saveInviteToCF(inv){fetch(API+"/invites",{method:"POST",headers:{"Content-Type":"application/json","Cache-Control":"no-cache"},body:JSON.stringify({invite:inv})}).catch(()=>{})}
@@ -148,7 +133,6 @@
   function dragRack(e){if(waiting)return; dragItem={kind:'rack',i:Number(e.currentTarget.getAttribute('data-i'))};}
   function dragBoard(e){if(waiting)return; var r=Number(e.currentTarget.getAttribute('data-r')),c=Number(e.currentTarget.getAttribute('data-c')); if(!isNew(r,c)){e.preventDefault();return} dragItem={kind:'board',r:r,c:c};}
   function dropCell(e){if(waiting)return; e.preventDefault(); if(!dragItem)return; var r=Number(e.currentTarget.getAttribute('data-r')),c=Number(e.currentTarget.getAttribute('data-c'));if(state.board[r][c]&&!(dragItem.kind==='board'&&dragItem.r===r&&dragItem.c===c))return;if(dragItem.kind==='rack'){var q=state.players[state.turn].rack.splice(dragItem.i,1)[0]; putTile(r,c,q);}else{var idx=-1; for(var i=0;i<pending.length;i++) if(pending[i].r===dragItem.r&&pending[i].c===dragItem.c)idx=i; if(idx<0)return; var t=state.board[dragItem.r][dragItem.c]; state.board[dragItem.r][dragItem.c]=null; state.board[r][c]=t; pending[idx].r=r; pending[idx].c=c;}dragItem=null; clearLive(); render();}
-  function dropRack(e){if(waiting)return; e.preventDefault(); if(!dragItem||dragItem.kind!=='board')return;for(var i=0;i<pending.length;i++) if(pending[i].r===dragItem.r&&pending[i].c===dragItem.c){state.players[dragItem.r][dragItem.c]=null; state.players[state.turn].rack.push(pending[i].tile.blank?tile('?'):pending[i].tile); state.board[dragItem.r][dragItem.c]=null; pending.splice(i,1); break;}dragItem=null; clearLive(); render();}
   function startGesture(e){if(waiting||selected>=0||state.board[Number(e.currentTarget.getAttribute('data-r'))][Number(e.currentTarget.getAttribute('data-c'))])return; gesture={r:Number(e.currentTarget.getAttribute('data-r')),c:Number(e.currentTarget.getAttribute('data-c'))}}
   function endGesture(e){if(waiting||!gesture)return; var r=Number(e.currentTarget.getAttribute('data-r')),c=Number(e.currentTarget.getAttribute('data-c'));if(r===gesture.r&&c!==gesture.c){anchor={r:gesture.r,c:gesture.c,d:'H'}; suppressClick=true;}else if(c===gesture.c&&r!==gesture.r){anchor={r:gesture.r,c:gesture.c,d:'V'}; suppressClick=true;}gesture=null; if(suppressClick){render(); if($('wordInput').value.trim())showLive($('wordInput').value);}}
   function undo(){if(waiting)return; clearLive(); for(var i=0;i<pending.length;i++){var x=pending[i]; state.board[x.r][x.c]=null; state.players[state.turn].rack.push(x.tile.blank?tile('?'):x.tile);} pending=[]; selected=-1; anchor=null; pendingWord=null; $('wordInput').value=''; clearPrompt(); render();}
@@ -162,11 +146,70 @@
   function showShare(url){let sp=$('share-panel'), su=$('share-url'), sh=$('share-help');if(sp&&su){su.value=url; sp.hidden=false; if(sh) sh.textContent='Join me in a scrabble-like game on BearTracks:';}let iu=$('invite-url'), ic=$('invite-copy'); if(iu) iu.value=url; if(ic) ic.hidden=false;}
   function copyLink(gs){if(!currentInvite){let iid=Date.now().toString(36)+Math.random().toString(36).slice(2,7); currentInvite={id:iid}; let owner=getOwner()||"player"; saveInviteToCF({id:iid,invitedBy:owner,invitedByOpponents:getOpponents(),gameId:gs.id,mode:"game-invite",created:Date.now()}); saveGameToCF(gs);}let url=makeInviteUrl(currentInvite.id); let full="Join me in a scrabble-like game on BearTracks: "+url;if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(full).catch(function(){});}showShare(url); return url;}
   function tryLoadFromHash(){var h=location.hash||''; if(h.indexOf('#s=')===0){try{var b64=decodeURIComponent(h.slice(3)); var gs=decodeState(b64); if(gs)return gs;}catch(e){}} try{var q=new URLSearchParams(location.search); var qs=q.get('s'); if(qs){var gs2=decodeState(decodeURIComponent(qs)); if(gs2)return gs2;}}catch(e){} return null;}
+
   function commit(){try{if(liveGhosts.length)promoteLiveToPending(); var words=validate(),pts=0,nms=[]; for(var i=0;i<words.length;i++){pts+=score(words[i]); nms.push(words[i].map(function(x){return x.t.l}).join(''));} if(pending.length===7)pts+=50;state.undoStack=state.undoStack||[]; if(state.undoStack.length>0)state.undoStack.shift(); state.undoStack.push(snapshotForRollback());var myIdx=state.turn; var p=state.players[myIdx]; p.score+=pts; state.history.push(p.name+': '+nms.join(' + ')+' for '+pts); state.moveCount=(state.moveCount||0)+1; draw(state,p); pending=[]; anchor=null; pendingWord=null; var myRack=p.rack.slice(); var oppName=state.players[1-myIdx].name; state.turn=1-state.turn;fetch(API+"/games/"+state.id,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({game:state})}).catch(()=>{}); copyLink(state);$('scores').innerHTML=state.players.map(function(x,i){return '<div class="score '+(i===state.turn?'active':'')+'"><span>'+esc(x.name)+(i===state.turn?' - turn':'')+'</span><strong>'+x.score+'</strong></div>'}).join('');$('history').innerHTML=state.history.slice().reverse().map(function(x){return'<li>'+esc(x)+'</li>'}).join(''); $('bag').textContent=state.bag.length+' tiles remain.'; enterWaitingMode(myRack,oppName,false);}catch(e){message(e.message);}}
   function pass(){if(pending.length||liveGhosts.length) return message('Undo unplayed tiles before passing.'); var myIdx=state.turn; var myRackPass=state.players[myIdx].rack.slice(); var oppName=state.players[1-myIdx].name; var p=state.players[myIdx];state.undoStack=state.undoStack||[]; if(state.undoStack.length>3)state.undoStack.shift(); state.undoStack.push(snapshotForRollback());if(state.moveCount===0){if(confirm('Allow '+oppName+' to play the first word?')){state.history.push(p.name+' passed - '+oppName+' to start'); state.moveCount=1; state.turn=1-state.turn; fetch(API+"/games/"+state.id,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({game:state})}).catch(()=>{}); copyLink(state); $('scores').innerHTML=state.players.map(function(x,i){return '<div class="score '+(i===state.turn?'active':'')+'"><span>'+esc(x.name)+'</span><strong>'+x.score+'</strong></div>'}).join(''); $('history').innerHTML=state.history.slice().reverse().map(function(x){return'<li>'+esc(x)+'</li>'}).join(''); $('bag').textContent=state.bag.length+' tiles remain.'; enterWaitingMode(myRackPass,oppName,true);} return;}state.history.push(p.name+' passed'); draw(state,p); state.moveCount=(state.moveCount||0)+1; state.turn=1-state.turn; anchor=null; fetch(API+"/games/"+state.id,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({game:state})}).catch(()=>{}); copyLink(state);$('scores').innerHTML=state.players.map(function(x,i){return '<div class="score '+(i===state.turn?'active':'')+'"><span>'+esc(x.name)+'</span><strong>'+x.score+'</strong></div>'}).join(''); $('history').innerHTML=state.history.slice().reverse().map(function(x){return'<li>'+esc(x)+'</li>'}).join(''); $('bag').textContent=state.bag.length+' tiles remain.'; enterWaitingMode(myRackPass,oppName,true);}
-  function handleRegister(){let uEl=$('reg-user'), pEl=$('reg-pass'), p2El=$('reg-pass2'), errEl=$('reg-error'); let u=uEl?uEl.value.trim():'', p=pEl?pEl.value:'', p2=p2El?p2El.value:''; if(errEl) errEl.textContent=''; if(!u||!p){if(errEl) errEl.textContent='Fill username and password'; return;} if(p!==p2){if(errEl) errEl.textContent='Passwords do not match'; return;}let users=[]; try{users=JSON.parse(localStorage.getItem("bt_users")||"[]")}catch(e){users=[]} if(users.some(x=>x.toLowerCase()===u.toLowerCase())){if(errEl) errEl.textContent='Username taken'; return;}localStorage.setItem("bt_owner",u); localStorage.setItem("bt_pass_"+u.toLowerCase(),p); users.push(u); localStorage.setItem("bt_users",JSON.stringify(users));if(currentInvite && currentInvite.gameId){loadGame(currentInvite.gameId).then(g=>{if(g){ if(g.players[1].name==="Opponent") g.players[1].name=u; fetch(API+"/games/"+g.id,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({game:g})}).catch(()=>{}); state=g; $('setup').hidden=true; render();}else{ renderBoxes(); }});} else {renderBoxes();}}
-  function handleBegin(){let owner=getOwner(); if(!owner){renderBoxes(); return;}let opp=($('nameB')?$('nameB').value.trim():'');let g=fresh(owner, opp||"Opponent");saveGameToCF(g);let iid=Date.now().toString(36)+Math.random().toString(36).slice(2,7);currentInvite={id:iid};saveInviteToCF({id:iid,invitedBy:owner,invitedByOpponents:getOpponents(),gameId:g.id,mode:"game-invite",created:Date.now()});if(opp) addOpponent(opp);state=g;$('setup').hidden=true;render();let url=makeInviteUrl(iid);let full="Join me in a scrabble-like game on BearTracks: "+url;showShare(url);try{navigator.clipboard.writeText(full).catch(()=>{});}catch(e){}if(opp){message(`Game with ${opp} started. Share this link to send game-state to ${opp}: ${url}`, true);}else{message(`Game started as invitation-with-board. Share this link to invite an opponent: ${url}`, true);}}
-  function handleCreateInvitation(){let owner=getOwner(); if(!owner){renderBoxes(); return;}let id=Date.now().toString(36)+Math.random().toString(36).slice(2,7);saveInviteToCF({id:id,invitedBy:owner,invitedByOpponents:getOpponents(),mode:"unregistered-invite",created:Date.now()});let url=makeInviteUrl(id); currentInvite={id:id}; showShare(url);try{navigator.clipboard.writeText("Join me in a scrabble-like game on BearTracks: "+url).catch(()=>{});}catch(e){}message(`Invitation created. Share this link: ${url}`, true);}
+
+  async function handleRegister(){
+    let uEl=$('reg-user'), pEl=$('reg-pass'), p2El=$('reg-pass2'), errEl=$('reg-error');
+    let u=uEl?uEl.value.trim():'', p=pEl?pEl.value:'', p2=p2El?p2El.value:'';
+    if(errEl) errEl.textContent='';
+    if(!u||!p){if(errEl) errEl.textContent='Fill username and password'; return;}
+    if(p!==p2){if(errEl) errEl.textContent='Passwords do not match'; return;}
+    let users=[]; try{users=JSON.parse(localStorage.getItem("bt_users")||"[]")}catch(e){users=[]}
+    if(users.some(x=>x.toLowerCase()===u.toLowerCase())){if(errEl) errEl.textContent='Username taken'; return;}
+    localStorage.setItem("bt_owner",u); localStorage.setItem("bt_pass_"+u.toLowerCase(),p); users.push(u); localStorage.setItem("bt_users",JSON.stringify(users));
+
+    let iid=null; try{let qs=new URLSearchParams(location.search); iid=qs.get("invite")}catch(e){}
+    let hashGame = tryLoadFromHash();
+    if(hashGame){
+      if(hashGame.players[1] && hashGame.players[1].name==="Opponent") hashGame.players[1].name=u;
+      state=hashGame; saveGameToCF(state);
+      $('setup').hidden=true; render(); return;
+    }
+    if(iid){
+      let inv = await loadInvite(iid);
+      if(inv){
+        currentInvite=inv;
+        if(inv.gameId){
+          let g = await loadGame(inv.gameId);
+          if(g){
+            if(g.players[1].name==="Opponent") g.players[1].name=u;
+            if(g.players[0].name==="Opponent") g.players[0].name=inv.invitedBy||g.players[0].name;
+            state=g;
+            fetch(API+"/games/"+g.id,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({game:g})}).catch(()=>{});
+            $('setup').hidden=true; render(); return;
+          }
+        }
+      }
+    }
+    renderBoxes();
+  }
+
+  function handleBegin(){
+    let owner=getOwner(); if(!owner){renderBoxes(); return;}
+    let opp=($('nameB')?$('nameB').value.trim():'');
+    let g=fresh(owner, opp||"Opponent");
+    saveGameToCF(g);
+    let iid=Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+    currentInvite={id:iid};
+    saveInviteToCF({id:iid,invitedBy:owner,invitedByOpponents:getOpponents(),gameId:g.id,mode:"game-invite",created:Date.now()});
+    if(opp) addOpponent(opp);
+    state=g; $('setup').hidden=true; render();
+    let url=makeInviteUrl(iid); showShare(url);
+    try{navigator.clipboard.writeText("Join me in a scrabble-like game on BearTracks: "+url).catch(()=>{});}catch(e){}
+    if(opp){message(`Game with ${opp} started. Share this link to send game-state to ${opp}: ${url}`, true);}
+    else{message(`Game started as invitation-with-board. Share this link to invite an opponent: ${url}`, true);}
+  }
+  function handleCreateInvitation(){
+    let owner=getOwner(); if(!owner){renderBoxes(); return;}
+    let id=Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+    saveInviteToCF({id:id,invitedBy:owner,invitedByOpponents:getOpponents(),mode:"unregistered-invite",created:Date.now()});
+    let url=makeInviteUrl(id); currentInvite={id:id}; showShare(url);
+    try{navigator.clipboard.writeText("Join me in a scrabble-like game on BearTracks: "+url).catch(()=>{});}catch(e){}
+    message(`Invitation created. Share this link: ${url}`, true);
+  }
+
   function fit(){var vv=window.visualViewport; var w=vv?vv.width:window.innerWidth; var h=vv?vv.height:window.innerHeight;var mast=document.querySelector('.mast')?.offsetHeight||50; var below=document.querySelector('.below-board')?.offsetHeight||96;var availH=h-mast-below-32; var leftColW=document.querySelector('.left-col')?.clientWidth||w; var size=Math.min(leftColW,availH,h-210); if(size<200)size=200;var boardEl=document.getElementById('board'); if(boardEl){boardEl.style.width=size+'px'; boardEl.style.height=size+'px';}}
   window.addEventListener('resize',fit); if(window.visualViewport){window.visualViewport.addEventListener('resize',fit); window.visualViewport.addEventListener('scroll',fit);}
   $('submitWord').onclick=commit; $('undo').onclick=undo; $('pass').onclick=pass; $('playWord').onclick=playTyped; $('shuffle').onclick=shuffleRack;
