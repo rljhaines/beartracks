@@ -99,7 +99,7 @@
 </div>
 <script id="game-state" type="application/json">null</script>
 <script>
-// BUILD: fix-sooh-2026-05-13f - game without opponent still creates game-state + fix path bug
+// BUILD: fix-sooh-2026-05-13g - ensure game-state exists and invitee always lands on board
 (function(){
   'use strict';
   var N=15,C=7, V={A:1,B:3,C:3,D:2,E:1,F:4,G:2,H:4,I:1,J:8,K:5,L:1,M:3,N:1,O:1,P:3,Q:10,R:1,S:1,T:1,U:1,V:4,W:4,X:8,Y:4,Z:10,"?":0};
@@ -120,8 +120,8 @@
     if(location.protocol==='file:'){return LIVE_SITE+"?invite="+encodeURIComponent(id);}
     let path=location.pathname; if(path.endsWith('.html')) path=path.substring(0,path.lastIndexOf('/')+1); if(path.slice(-1)!=='/') path += '/'; let base=location.origin+path; if(!base.includes('github.io')) base=LIVE_SITE; return base+"?invite="+encodeURIComponent(id);
   }
-  function saveGameToCF(g){ addGameId(g.id); return fetch(API+"/games",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({game:g})}).then(()=>g).catch(()=>g);}
-  function saveInviteToCF(inv){ return fetch(API+"/invites",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({invite:inv})}).then(()=>inv).catch(()=>inv);}
+  async function saveGameToCF(g){ addGameId(g.id); let r=await fetch(API+"/games",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({game:g})}); if(!r.ok) throw new Error("save game failed "+r.status); return g; }
+  async function saveInviteToCF(inv){ let r=await fetch(API+"/invites",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({invite:inv})}); if(!r.ok) throw new Error("save invite failed "+r.status); return inv; }
   function clearInviteUrl(){ try{let u=new URL(location.href); u.searchParams.delete('invite'); u.hash=''; history.replaceState(null,'',u.pathname+u.search);}catch(e){} currentInvite=null; }
   function renderBoxes(){
     let owner=getOwner(); let br=$('box-register'), bs=$('box-start');
@@ -263,7 +263,7 @@
     let iu=$('invite-url'), ic=$('invite-copy'); if(iu) iu.value=url; if(ic) ic.hidden=false;
   }
   function copyLink(gs){
-    if(!currentInvite){let iid=Date.now().toString(36)+Math.random().toString(36).slice(2,7); currentInvite={id:iid}; let owner=getOwner()||"player"; saveInviteToCF({id:iid,invitedBy:owner,invitedByOpponents:getOpponents(),gameId:gs.id,mode:"game-invite",created:Date.now()}); saveGameToCF(gs);}
+    if(!currentInvite){let iid=Date.now().toString(36)+Math.random().toString(36).slice(2,7); currentInvite={id:iid}; let owner=getOwner()||"player"; saveInviteToCF({id:iid,invitedBy:owner,invitedByOpponents:getOpponents(),gameId:gs.id,mode:"game-invite",created:Date.now()}).catch(()=>{}); saveGameToCF(gs).catch(()=>{});}
     let url=makeInviteUrl(currentInvite.id); let full="Join me in a scrabble-like game on BearTracks: "+url;
     if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(full).catch(function(){});}
     showShare(url); return url;
@@ -287,18 +287,40 @@
     $('scores').innerHTML=state.players.map(function(x,i){return '<div class="score '+(i===state.turn?'active':'')+'"><span>'+esc(x.name)+'</span><strong>'+x.score+'</strong></div>'}).join(''); $('history').innerHTML=state.history.slice().reverse().map(function(x){return'<li>'+esc(x)+'</li>'}).join(''); $('bag').textContent=state.bag.length+' tiles remain.'; enterWaitingMode(myRackPass,oppName,true);
   }
   async function linkGameViaInvite(inviteId, newUsername){
+    let inv=null;
     for(let attempt=0; attempt<3; attempt++){
-      let inv=await loadInvite(inviteId);
-      if(!inv){ await new Promise(r=>setTimeout(r,600)); continue; }
-      if(!inv.gameId){ if(attempt<2){ await new Promise(r=>setTimeout(r,600)); continue; } return null; }
-      let g=await loadGame(inv.gameId);
-      if(!g){ await new Promise(r=>setTimeout(r,600)); continue; }
-      let p1=(g.players[1].name||"").toLowerCase();
-      if(p1==="opponent" || p1===newUsername.toLowerCase()){ g.players[1].name=newUsername; await fetch(API+"/games/"+g.id,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({game:g})}).catch(()=>{}); }
-      addOpponent(g.players[0].name); addOpponent(g.players[1].name); addGameId(g.id);
-      return g;
+      inv=await loadInvite(inviteId);
+      if(inv) break;
+      await new Promise(r=>setTimeout(r,600));
     }
-    return null;
+    if(!inv) return null;
+    if(inv.gameId){
+      for(let attempt=0; attempt<3; attempt++){
+        let g=await loadGame(inv.gameId);
+        if(g){
+          let p1=(g.players[1].name||"").toLowerCase();
+          if(p1==="opponent" || p1===newUsername.toLowerCase()){
+            g.players[1].name=newUsername;
+            await fetch(API+"/games/"+g.id,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({game:g})}).catch(()=>{});
+          }
+          addOpponent(g.players[0].name); addOpponent(g.players[1].name); addGameId(g.id);
+          return g;
+        }
+        await new Promise(r=>setTimeout(r,400));
+      }
+      // gameId exists but game missing - create fallback game-state so invitee always lands on board
+      console.warn("invite has gameId but game missing, creating fallback", inviteId, inv.gameId);
+      let fallback=fresh(inv.invitedBy||"pooh", newUsername);
+      try{ await saveGameToCF(fallback); inv.gameId=fallback.id; inv.mode="game-invite"; await saveInviteToCF(inv); }catch(e){ console.error(e); }
+      addOpponent(inv.invitedBy||"pooh"); addGameId(fallback.id);
+      return fallback;
+    } else {
+      // old unregistered-invite without gameId - create now
+      let ng=fresh(inv.invitedBy||"pooh", newUsername);
+      try{ await saveGameToCF(ng); inv.gameId=ng.id; inv.mode="game-invite"; await saveInviteToCF(inv); }catch(e){ console.error(e); }
+      addOpponent(inv.invitedBy||"pooh"); addGameId(ng.id);
+      return ng;
+    }
   }
   async function handleRegister(){
     let uEl=$('reg-user'), pEl=$('reg-pass'), p2El=$('reg-pass2'), errEl=$('reg-error');
@@ -314,18 +336,10 @@
     localStorage.setItem("bt_users",JSON.stringify(users));
     let inviteParam=null; try{ inviteParam=new URLSearchParams(location.search).get("invite"); }catch(e){}
     if(inviteParam){
-      let g=await linkGameViaInvite(inviteParam, u);
-      if(g){ state=g; $('setup').hidden=true; try{ let url=new URL(location.href); url.searchParams.delete('invite'); history.replaceState(null,'',url.pathname+url.search);}catch(e){} currentInvite=null; render(); return; }
-      let inv=await loadInvite(inviteParam);
-      if(inv &&!inv.gameId && inv.mode==="unregistered-invite"){
-        let inviter=inv.invitedBy||"Opponent";
-        let ng=fresh(inviter, u);
-        await saveGameToCF(ng);
-        inv.gameId=ng.id; inv.mode="game-invite";
-        await saveInviteToCF(inv);
-        addOpponent(inviter); addGameId(ng.id);
-        state=ng; $('setup').hidden=true; try{ let url=new URL(location.href); url.searchParams.delete('invite'); history.replaceState(null,'',url.pathname+url.search);}catch(e){} currentInvite=null; render(); return;
-      }
+      try{
+        let g=await linkGameViaInvite(inviteParam, u);
+        if(g){ state=g; $('setup').hidden=true; try{ let url=new URL(location.href); url.searchParams.delete('invite'); history.replaceState(null,'',url.pathname+url.search);}catch(e){} currentInvite=null; render(); return; }
+      }catch(e){ console.error("link via invite failed", e); if(errEl) errEl.textContent="Invite link failed: "+e.message+" - creating fresh game"; }
     }
     let ids=getAllGameIds();
     for(let i=ids.length-1;i>=0;i--){
@@ -395,8 +409,13 @@
     let g=fresh(owner, opp||"Opponent");
     let iid=Date.now().toString(36)+Math.random().toString(36).slice(2,7);
     currentInvite={id:iid, invitedBy:owner, invitedByOpponents:getOpponents(), gameId:g.id, mode:"game-invite", created:Date.now()};
-    await saveGameToCF(g);
-    await saveInviteToCF(currentInvite);
+    try{
+      await saveGameToCF(g);
+      await saveInviteToCF(currentInvite);
+    }catch(e){
+      let errEl=$('reg-error'); if(errEl) errEl.textContent="Save failed: "+e.message+" Check tracker-api worker logs";
+      console.error(e); return;
+    }
     if(opp) addOpponent(opp);
     showHeadsUp(iid,g);
   }
@@ -404,10 +423,12 @@
     let owner=getOwner(); if(!owner){renderBoxes(); return;}
     let id=Date.now().toString(36)+Math.random().toString(36).slice(2,7);
     let placeholder=fresh(owner, "Opponent");
-    await saveGameToCF(placeholder);
-    let inv={id:id, invitedBy:owner, invitedByOpponents:getOpponents(), gameId:placeholder.id, mode:"unregistered-invite", created:Date.now()};
-    await saveInviteToCF(inv);
-    currentInvite=inv;
+    try{
+      await saveGameToCF(placeholder);
+      let inv={id:id, invitedBy:owner, invitedByOpponents:getOpponents(), gameId:placeholder.id, mode:"unregistered-invite", created:Date.now()};
+      await saveInviteToCF(inv);
+      currentInvite=inv;
+    }catch(e){ console.error(e); alert("Save failed: "+e.message); return; }
     let url=makeInviteUrl(id);
     let fullMsg="Join me in a scrabble-like game on BearTracks: "+url;
     headsupData.url=url; headsupData.msg=fullMsg; headsupMode="msg";
