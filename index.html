@@ -102,7 +102,6 @@
     let br=$('box-register'), bs=$('box-start');
     if(!br||!bs) return;
     if(!owner){
-      clearInviteUrl();
       br.hidden=false; bs.hidden=true;
       let sp=$('share-panel'); if(sp) sp.hidden=true;
       setTimeout(()=>{let f=$('reg-user'); if(f) f.focus();}, 0);
@@ -325,11 +324,11 @@
     if(iid){
       let inv=await loadInvite(iid);
       if(inv){
-        if(!getOwner() &&!inv.gameId){
-          currentInvite=inv;
-        }else{
-          currentInvite=inv; if(inv.gameId){let g=await loadGame(inv.gameId); if(g){ state=g; }}
+        currentInvite=inv;
+        if(getOwner() && inv.gameId){
+          let g=await loadGame(inv.gameId); if(g){ state=g; }
         }
+        // no owner -> keep currentInvite but do NOT set state, so Registration shows first
       }
     }
     if(state){$('setup').hidden=true; render();}else{$('setup').hidden=false; renderBoxes();} fit();
