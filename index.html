@@ -295,21 +295,57 @@
     $('scores').innerHTML=state.players.map(function(x,i){return '<div class="score '+(i===state.turn?'active':'')+'"><span>'+esc(x.name)+'</span><strong>'+x.score+'</strong></div>'}).join(''); $('history').innerHTML=state.history.slice().reverse().map(function(x){return'<li>'+esc(x)+'</li>'}).join(''); $('bag').textContent=state.bag.length+' tiles remain.'; enterWaitingMode(myRackPass,oppName,true);
   }
   function handleRegister(){
-    let uEl=$('reg-user'), pEl=$('reg-pass'), p2El=$('reg-pass2'), errEl=$('reg-error'); let u=uEl?uEl.value.trim():'', p=pEl?pEl.value:'', p2=p2El?p2El.value:''; if(errEl) errEl.textContent=''; if(!u||!p){if(errEl) errEl.textContent='Fill username and password'; return;} if(p!==p2){if(errEl) errEl.textContent='Passwords do not match'; return;}
-    let users=[]; try{users=JSON.parse(localStorage.getItem("bt_users")||"[]")}catch(e){users=[]} if(users.some(x=>x.toLowerCase()===u.toLowerCase())){if(errEl) errEl.textContent='Username taken'; return;}
-    localStorage.setItem("bt_owner",u); localStorage.setItem("bt_pass_"+u.toLowerCase(),p); users.push(u); localStorage.setItem("bt_users",JSON.stringify(users));
-    if(currentInvite && currentInvite.gameId){
-      loadGame(currentInvite.gameId).then(g=>{
-        if(g){
-          if(g.players[1].name==="Opponent") g.players[1].name=u;
-          fetch(API+"/games/"+g.id,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({game:g})}).catch(()=>{});
-          state=g; $('setup').hidden=true; render();
-        }else{ renderBoxes(); }
-      });
-    } else {
-      renderBoxes();
+    let uEl=$('reg-user'), pEl=$('reg-pass'), p2El=$('reg-pass2'), errEl=$('reg-error');
+    let u=uEl?uEl.value.trim():'', p=pEl?pEl.value:'', p2=p2El?p2El.value:'';
+    if(errEl) errEl.textContent='';
+    if(!u||!p){ if(errEl) errEl.textContent='Fill username and password'; return; }
+    if(p!==p2){ if(errEl) errEl.textContent='Passwords do not match'; return; }
+    let users=[]; try{users=JSON.parse(localStorage.getItem("bt_users")||"[]")}catch(e){users=[]}
+    if(users.some(x=>x.toLowerCase()===u.toLowerCase())){ if(errEl) errEl.textContent='Username taken'; return; }
+
+    localStorage.setItem("bt_owner",u);
+    localStorage.setItem("bt_pass_"+u.toLowerCase(),p);
+    users.push(u);
+    localStorage.setItem("bt_users",JSON.stringify(users));
+
+    if(currentInvite){
+      if(currentInvite.gameId){
+        loadGame(currentInvite.gameId).then(g=>{
+          if(g){
+            let p1 = (g.players[1].name||"").toLowerCase();
+            if(p1==="opponent" || p1===u.toLowerCase()){
+              g.players[1].name = u;
+            }
+            fetch(API+"/games/"+g.id,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({game:g})}).catch(()=>{});
+            addOpponent(g.players[0].name);
+            addOpponent(g.players[1].name);
+            state=g;
+            $('setup').hidden=true;
+            try{ let url=new URL(location.href); url.searchParams.delete('invite'); history.replaceState(null,'',url.pathname+url.search); }catch(e){}
+            currentInvite=null;
+            render();
+          }else{ renderBoxes(); }
+        });
+        return;
+      }else if(currentInvite.mode==="unregistered-invite"){
+        let inviter = currentInvite.invitedBy || "Opponent";
+        let g = fresh(inviter, u);
+        saveGameToCF(g);
+        currentInvite.gameId = g.id;
+        currentInvite.mode = "game-invite";
+        saveInviteToCF(currentInvite);
+        addOpponent(inviter);
+        state=g;
+        $('setup').hidden=true;
+        try{ let url=new URL(location.href); url.searchParams.delete('invite'); history.replaceState(null,'',url.pathname+url.search); }catch(e){}
+        currentInvite=null;
+        render();
+        return;
+      }
     }
+    renderBoxes();
   }
+
   let pendingGameForHeadsUp=null;
   let headsupData={url:"",msg:""};
   let headsupMode="msg";
@@ -380,7 +416,7 @@
     let owner=getOwner(); if(!owner){renderBoxes(); return;}
     let id=Date.now().toString(36)+Math.random().toString(36).slice(2,7);
     saveInviteToCF({id:id,invitedBy:owner,invitedByOpponents:getOpponents(),mode:"unregistered-invite",created:Date.now()});
-    currentInvite={id:id};
+    currentInvite={id:id,invitedBy:owner,invitedByOpponents:getOpponents(),mode:"unregistered-invite"};
     let url=makeInviteUrl(id);
     let fullMsg="Join me in a scrabble-like game on BearTracks: "+url;
     headsupData.url=url; headsupData.msg=fullMsg; headsupMode="msg";
