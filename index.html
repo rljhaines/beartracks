@@ -40,7 +40,6 @@
 .history{margin:0;padding-left:18px;max-height:180px;overflow:auto;font-size:12px}.history li{margin:5px 0}.help{font-size:12px;line-height:1.4;color:#526359}
 .modal{position:fixed;inset:0;background:#17342899;display:flex;align-items:center;justify-content:center;padding:18px;z-index:5}.modal[hidden]{display:none}.dialog{width:min(460px,100%);background:#fffdf8;border-radius:15px;padding:23px;box-shadow:0 18px 55px #0008}.dialog h1{margin:0 0 8px}.dialog p{color:#526359;line-height:1.4}.dialog label{display:block;font-weight:700;margin:13px 0}.dialog input{display:block;width:100%;margin-top:5px;border:1px solid #b7bcad;border-radius:8px;padding:9px;font:inherit}.dialog input::placeholder{color:#9aa89e;font-style:italic}.dialog button{border:0;border-radius:9px;background:var(--green);color:white;padding:10px 14px;font-weight:800;cursor:pointer;margin-top:8px}
   @media(max-width:900px){.layout{grid-template-columns:1fr}.below-board{padding:0}}
-  /* boxes only - no existing rule modified */
 .start-game-box{border:1px solid var(--line);border-radius:12px;padding:14px;margin:12px 0;background:#fffdf8}
 .error{color:#a12a2a;font-size:12px;min-height:16px;margin-top:6px}
   #invite-copy{display:flex;flex-direction:column;gap:6px;margin-top:10px}
@@ -63,7 +62,9 @@
         <div class="actions-row"><button class="action" id="submitWord">Submit Word</button><button class="action alt" id="undo">Undo</button><button class="action alt" id="pass">Pass</button></div>
       </div>
     </section>
-    <aside class="side"><section class="card"><h2>Scoreboard</h2><div class="scores" id="scores"></div><p class="help" id="bag"></p></section><section class="card"><h2>Moves</h2><ol class="history" id="history"></ol><button class="action alt" id="help" style="margin-top:10px;width:100%">How this works</button></section></aside>
+    <aside class="side">
+      <section class="card" id="share-panel" hidden><h2>Share</h2><div class="help" id="share-help">Join me in a scrabble-like game on BearTracks:</div><div style="display:flex;gap:6px;margin-top:6px"><input id="share-url" readonly style="flex:1;border:1px solid #b7bcad;border-radius:8px;padding:8px"><button id="share-copy" class="action alt">Copy</button></div></section>
+      <section class="card"><h2>Scoreboard</h2><div class="scores" id="scores"></div><p class="help" id="bag"></p></section><section class="card"><h2>Moves</h2><ol class="history" id="history"></ol><button class="action alt" id="help" style="margin-top:10px;width:100%">How this works</button></section></aside>
   </div>
 </main>
 <div class="modal" id="setup"><section class="dialog">
@@ -90,16 +91,12 @@
     if(location.protocol==='file:'){
       return LIVE_SITE+"?invite="+encodeURIComponent(id);
     }
-    // On live site, use current origin/path so username is automatic
     let path = location.pathname;
-    // if index.html, keep folder
     if(path.endsWith('.html')){
       path = path.substring(0, path.lastIndexOf('/')+1);
     }
-    // ensure trailing slash
     if(path.slice(-1)!=='/') path += '/';
     let base = location.origin + path;
-    // fallback if somehow not github.io
     if(!base.includes('github.io')){
       base = LIVE_SITE;
     }
@@ -113,7 +110,6 @@
     if(!br||!bs) return;
     if(!owner){br.hidden=false;bs.hidden=true;}else{br.hidden=true;bs.hidden=false;let on=document.getElementById('owner-name'); if(on) on.textContent=owner;}
   }
-
   function $(id){return document.getElementById(id)}
   function has(a,r,c){for(var i=0;i<a.length;i++)if(a[i][0]===r&&a[i][1]===c)return true;return false}
   function premium(r,c){if(has(TW,r,c))return'TW';if(has(DW,r,c))return'DW';if(has(TL,r,c))return'TL';if(has(DL,r,c))return'DL';return''}
@@ -713,8 +709,20 @@
     if(!b64)return null;
     return location.href.split('#')[0].split('?')[0]+'#s='+encodeURIComponent(b64);
   }
+  function showShare(url){
+    // persistent panel
+    let sp=$('share-panel'), su=$('share-url'), sh=$('share-help');
+    if(sp&&su){
+      su.value=url;
+      sp.hidden=false;
+      if(sh) sh.textContent = url.includes('invite=')? 'Join me in a scrabble-like game on BearTracks:' : 'Game link:';
+    }
+    // legacy boxes for backward compat
+    let iu=$('invite-url'), ic=$('invite-copy');
+    if(iu) iu.value=url;
+    if(ic) ic.hidden=false;
+  }
   function copyLink(gs){
-    // FIX: if no invite yet, create one that carries game-state via gameId
     if(!currentInvite){
       let iid=Date.now().toString(36)+Math.random().toString(36).slice(2,7);
       currentInvite={id:iid};
@@ -727,10 +735,7 @@
     if(navigator.clipboard&&navigator.clipboard.writeText){
       navigator.clipboard.writeText(full).catch(function(){});
     }
-    // also show in UI if present
-    let iu=$('invite-url'), ic=$('invite-copy');
-    if(iu) iu.value=url;
-    if(ic) ic.hidden=false;
+    showShare(url);
     return url;
   }
   function tryLoadFromHash(){
@@ -834,7 +839,6 @@
     $('bag').textContent=state.bag.length+' tiles remain.';
     enterWaitingMode(myRackPass,oppName,true);
   }
-
   function handleRegister(){
     let uEl=$('reg-user'), pEl=$('reg-pass'), p2El=$('reg-pass2'), errEl=$('reg-error');
     let u=uEl?uEl.value.trim():'', p=pEl?pEl.value:'', p2=p2El?p2El.value:'';
@@ -866,11 +870,15 @@
     $('setup').hidden=true;
     render();
     let url=makeInviteUrl(iid);
-    let iu=$('invite-url');
-    let ic=$('invite-copy');
-    if(iu) iu.value=url;
-    if(ic) ic.hidden=false;
-    try{navigator.clipboard.writeText("Join me in a scrabble-like game on BearTracks: "+url)}catch(e){}
+    let full="Join me in a scrabble-like game on BearTracks: "+url;
+    showShare(url);
+    try{navigator.clipboard.writeText(full).catch(()=>{});}catch(e){}
+    if(opp){
+      message(`Game with ${opp} started. Share this link to send game-state to ${opp}: ${url}`, true);
+    }else{
+      // no opponent = invite-with-board form of invitation
+      message(`Game started as invitation-with-board. Share this link to invite an opponent: ${url}`, true);
+    }
   }
   function handleCreateInvitation(){
     let owner=getOwner(); if(!owner){renderBoxes(); return;}
@@ -878,8 +886,9 @@
     saveInviteToCF({id:id,invitedBy:owner,invitedByOpponents:getOpponents(),mode:"unregistered-invite",created:Date.now()});
     let url=makeInviteUrl(id);
     currentInvite={id:id};
-    let iu=$('invite-url'); let ic=$('invite-copy'); if(iu) iu.value=url; if(ic) ic.hidden=false;
-    try{navigator.clipboard.writeText("Join me in a scrabble-like game on BearTracks: "+url)}catch(e){}
+    showShare(url);
+    try{navigator.clipboard.writeText("Join me in a scrabble-like game on BearTracks: "+url).catch(()=>{});}catch(e){}
+    message(`Invitation created. Share this link: ${url}`, true);
   }
   function fit(){
     var vv=window.visualViewport;
@@ -925,7 +934,8 @@
   $('btn-begin').onclick=handleBegin;
   $('btn-invite').onclick=handleCreateInvitation;
   $('btn-copy').onclick=function(){let u=$('invite-url').value; try{navigator.clipboard.writeText("Join me in a scrabble-like game on BearTracks: "+u)}catch(e){prompt("Copy:",u)}};
-  $('btn-logout').onclick=function(){localStorage.removeItem("bt_owner");$('setup').hidden=false;renderBoxes();$('reg-user').value='';$('reg-pass').value='';$('reg-pass2').value='';$('nameB').value='';$('invite-copy').hidden=true; currentInvite=null};
+  $('share-copy').onclick=function(){let u=$('share-url').value; try{navigator.clipboard.writeText("Join me in a scrabble-like game on BearTracks: "+u).catch(()=>{})}catch(e){prompt("Copy:",u)}};
+  $('btn-logout').onclick=function(){localStorage.removeItem("bt_owner");$('setup').hidden=false;renderBoxes();$('reg-user').value='';$('reg-pass').value='';$('reg-pass2').value='';$('nameB').value='';$('invite-copy').hidden=true; let sp=$('share-panel'); if(sp) sp.hidden=true; currentInvite=null};
   $('reg-user').onkeydown=function(e){if(e.key==='Enter')handleRegister()};
   $('reg-pass2').onkeydown=function(e){if(e.key==='Enter')handleRegister()};
   $('nameB').onkeydown=function(e){if(e.key==='Enter')handleBegin()};
