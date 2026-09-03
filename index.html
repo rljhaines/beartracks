@@ -73,6 +73,7 @@
 </section></div>
 <script id="game-state" type="application/json">null</script>
 <script>
+// BUILD: fix-sooh-2026-05-13c - verify this string in View Source
 (function(){
   'use strict';
   var N=15,C=7, V={A:1,B:3,C:3,D:2,E:1,F:4,G:2,H:4,I:1,J:8,K:5,L:1,M:3,N:1,O:1,P:3,Q:10,R:1,S:1,T:1,U:1,V:4,W:4,X:8,Y:4,Z:10,"?":0};
@@ -271,8 +272,17 @@
     let uEl=$('reg-user'), pEl=$('reg-pass'), p2El=$('reg-pass2'), errEl=$('reg-error'); let u=uEl?uEl.value.trim():'', p=pEl?pEl.value:'', p2=p2El?p2El.value:''; if(errEl) errEl.textContent=''; if(!u||!p){if(errEl) errEl.textContent='Fill username and password'; return;} if(p!==p2){if(errEl) errEl.textContent='Passwords do not match'; return;}
     let users=[]; try{users=JSON.parse(localStorage.getItem("bt_users")||"[]")}catch(e){users=[]} if(users.some(x=>x.toLowerCase()===u.toLowerCase())){if(errEl) errEl.textContent='Username taken'; return;}
     localStorage.setItem("bt_owner",u); localStorage.setItem("bt_pass_"+u.toLowerCase(),p); users.push(u); localStorage.setItem("bt_users",JSON.stringify(users));
-    if(currentInvite && currentInvite.gameId){loadGame(currentInvite.gameId).then(g=>{if(g){ if(g.players[1].name==="Opponent") g.players[1].name=u; fetch(API+"/games/"+g.id,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({game:g})}).catch(()=>{}); state=g; $('setup').hidden=true; render();}});}
-    renderBoxes();
+    if(currentInvite && currentInvite.gameId){
+      loadGame(currentInvite.gameId).then(g=>{
+        if(g){
+          if(g.players[1].name==="Opponent") g.players[1].name=u;
+          fetch(API+"/games/"+g.id,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({game:g})}).catch(()=>{});
+          state=g; $('setup').hidden=true; render();
+        }else{ renderBoxes(); }
+      });
+    } else {
+      renderBoxes();
+    }
   }
   function handleBegin(){
     let owner=getOwner(); if(!owner){renderBoxes(); return;}
@@ -325,10 +335,10 @@
       let inv=await loadInvite(iid);
       if(inv){
         currentInvite=inv;
+        // CRITICAL: only load game state if we already have an owner
         if(getOwner() && inv.gameId){
           let g=await loadGame(inv.gameId); if(g){ state=g; }
         }
-        // no owner -> keep currentInvite but do NOT set state, so Registration shows first
       }
     }
     if(state){$('setup').hidden=true; render();}else{$('setup').hidden=false; renderBoxes();} fit();
