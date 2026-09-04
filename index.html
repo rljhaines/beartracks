@@ -40,7 +40,7 @@
 <div id="bt-headsup" hidden><div id="bt-headsup-box"><div id="bt-headsup-left"><div id="bt-headsup-help">Join me in a scrabble-like game on BearTracks:</div><textarea id="bt-headsup-input" readonly></textarea></div><div id="bt-headsup-right"><button id="bt-headsup-copy-msg" disabled>Message copied</button><button id="bt-headsup-copy-link">Copy link instead</button><button id="bt-headsup-continue">Continue to game</button></div></div></div>
 <script id="game-state" type="application/json">null</script>
 <script>
-// BUILD: h-fix-2-4 2026-05-14
+// BUILD: h-fix-invite-reg 2026-05-14
 (function(){
 'use strict';
 var N=15,C=7,V={A:1,B:3,C:3,D:2,E:1,F:4,G:2,H:4,I:1,J:8,K:5,L:1,M:3,N:1,O:1,P:3,Q:10,R:1,S:1,T:1,U:1,V:4,W:4,X:8,Y:4,Z:10,"?":0};
@@ -57,33 +57,8 @@ function addGameId(id){if(!id)return;let a=getAllGameIds();if(a.indexOf(id)===-1
 async function loadInvite(id){for(let k=0;k<3;k++){try{let r=await fetch(API+"/invites/"+id);if(r.ok){let j=await r.json();return j.invite}}catch(e){}await new Promise(r=>setTimeout(r,400));}return null}
 async function loadGame(id){for(let k=0;k<3;k++){try{let r=await fetch(API+"/games/"+id);if(r.ok){let j=await r.json();return j.game}}catch(e){}await new Promise(r=>setTimeout(r,400));}return null}
 function makeInviteUrl(id){return LIVE_SITE+"?invite="+encodeURIComponent(id);}
-
-// --- FIX 2: PUT first, POST fallback, no more always-POST ---
-async function saveGameToCF(g){
-  addGameId(g.id);
-  try{
-    let r=await fetch(API+"/games/"+g.id,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({game:g})});
-    if(r.status===404){
-      r=await fetch(API+"/games",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({game:g})});
-    }
-    if(!r.ok) throw new Error("save game failed "+r.status);
-  }catch(e){
-    console.warn("saveGame offline, queuing locally",e);
-    try{localStorage.setItem("bt_pending_game_"+g.id,JSON.stringify(g));}catch(_e){}
-  }
-  return g;
-}
-async function saveInviteToCF(inv){
-  try{
-    let r=await fetch(API+"/invites",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({invite:inv})});
-    if(!r.ok) throw new Error("save invite failed "+r.status);
-  }catch(e){
-    console.warn("saveInvite offline",e);
-    try{localStorage.setItem("bt_pending_invite_"+inv.id,JSON.stringify(inv));}catch(_e){}
-  }
-  return inv;
-}
-
+async function saveGameToCF(g){addGameId(g.id);try{let r=await fetch(API+"/games/"+g.id,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({game:g})});if(r.status===404){r=await fetch(API+"/games",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({game:g})});}if(!r.ok)throw new Error("save game failed "+r.status);}catch(e){console.warn("saveGame offline, queuing",e);try{localStorage.setItem("bt_pending_game_"+g.id,JSON.stringify(g));}catch(_e){}}return g;}
+async function saveInviteToCF(inv){try{let r=await fetch(API+"/invites",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({invite:inv})});if(!r.ok)throw new Error("save invite failed "+r.status);}catch(e){console.warn("saveInvite offline",e);try{localStorage.setItem("bt_pending_invite_"+inv.id,JSON.stringify(inv));}catch(_e){}}return inv;}
 function renderBoxes(){let owner=getOwner();let br=document.getElementById("box-register"),bs=document.getElementById("box-start");if(!br||!bs)return;if(!owner){br.hidden=false;bs.hidden=true;let sp=document.getElementById("share-panel");if(sp)sp.hidden=true;requestAnimationFrame(()=>{setTimeout(()=>{let f=document.getElementById("reg-user");if(f){f.focus();f.select();}},50);});}else{br.hidden=true;bs.hidden=false;let on=document.getElementById("owner-name");if(on)on.textContent=owner;setTimeout(()=>{let f=document.getElementById("nameB");if(f)f.focus();},0);}}
 function $(id){return document.getElementById(id)}
 function has(a,r,c){for(var i=0;i<a.length;i++)if(a[i][0]===r&&a[i][1]===c)return true;return false}
@@ -106,7 +81,8 @@ function shuffleRack(){if(waiting&&waitingRack){shuffle(waitingRack);renderWaiti
 function pick(e){if(waiting)return;var n=Number(e.currentTarget.getAttribute('data-i'));selected=(selected===n)?-1:n;render();}
 function place(e){if(waiting)return;if(suppressClick){suppressClick=false;return}var r=Number(e.currentTarget.getAttribute('data-r')),c=Number(e.currentTarget.getAttribute('data-c'));if(pendingWord){anchor={r:r,c:c,d:'H'};placeWordAtAnchor(pendingWord);return;}if(liveGhosts.length||$('wordInput').value.trim()){anchor={r:r,c:c,d:'H'};render();if($('wordInput').value.trim())showLive($('wordInput').value);else{$('placement').textContent='Starts at '+String.fromCharCode(65+c)+(r+1)+' across — type your word';message('Type your word — letters will appear on board as you type',true);}return;}if(selected<0){anchor={r:r,c:c,d:'H'};render();if(!$('wordInput').value.trim()){$('placement').textContent='Starts at '+String.fromCharCode(65+c)+(r+1)+' across — type your word';message('Type your word — letters will appear on board as you type',true);}return;}if(state.board[r][c])return message('That square is occupied.');putTile(r,c,state.players[state.turn].rack.splice(selected,1)[0]);selected=-1;render();}
 function vertical(e){if(waiting)return;e.preventDefault();var r=Number(e.currentTarget.getAttribute('data-r')),c=Number(e.currentTarget.getAttribute('data-c'));if(pendingWord){anchor={r:r,c:c,d:'V'};placeWordAtAnchor(pendingWord);return;}anchor={r:r,c:c,d:'V'};render();if($('wordInput').value.trim()){showLive($('wordInput').value);}else{$('placement').textContent='Starts at '+String.fromCharCode(65+c)+(r+1)+' down — type your word';message('Type your word — letters will appear on board as you type',true);}}
-function putTile(r,c,q){if(q.l==='?'){var z=prompt('Blank = a-z');z=(z||'').trim().toUpperCase();if(!/^[A-Z]$/.test(z)){state.players[state.turn].rack.push(q);message('Blank cancelled.');return false;}q={l:z,blank:true}}state.board[r][c]=q;pending.push({r:r,c:c,tile:q});return true}function placeWordAtAnchor(word){if(!state)return;if(!anchor){message('select a starting square with a click or double-click',true);return;}var dr=anchor.d==='V'?1:0,dc=anchor.d==='H'?1:0;var cands=[];if(state.board[anchor.r][anchor.c]){var bl=state.board[anchor.r][anchor.c].l;for(var k=0;k<word.length;k++)if(word[k]===bl)cands.push({r0:anchor.r-k*dr,c0:anchor.c-k*dc});if(!cands.length){message('Anchor '+(anchor.r+1)+','+(anchor.c+1)+' is '+bl+' not in '+word);return;}}else{cands.push({r0:anchor.r,c0:anchor.c});}var last='';for(var ci=0;ci<cands.length;ci++){var r0=cands[ci].r0,c0=cands[ci].c0,copy=state.players[state.turn].rack.slice(),planned=[],ok=true;for(var i=0;i<word.length;i++){var r=r0+i*dr,c=c0+i*dc;if(r<0||r>=N||c<0||c>=N){ok=false;last='Off board at '+(r+1)+','+(c+1);break;}if(state.board[r][c]){if(state.board[r][c].l!==word.charAt(i)){ok=false;last='Conflict at '+(r+1)+','+(c+1)+' has '+state.board[r][c].l+' vs '+word.charAt(i);break;}}else{var at=copy.findIndex(function(x){return x.l===word.charAt(i)});if(at<0)at=copy.findIndex(function(x){return x.l==='?'});if(at<0){ok=false;last='Need '+word.charAt(i)+' have ['+state.players[state.turn].rack.map(function(x){return x.l}).join('')+']';break;}planned.push({r:r,c:c,q:copy.splice(at,1)[0],idx:i});}}if(!ok)continue;for(var j=0;j<planned.length;j++){var actual=state.players[state.turn].rack.findIndex(function(x){return x.l===planned[j].q.l});if(actual<0)actual=state.players[state.turn].rack.findIndex(function(x){return x.l==='?'});var q=state.players[state.turn].rack.splice(actual,1)[0];if(q.l==='?')q={l:word.charAt(planned[j].idx),blank:true};state.board[planned[j].r][planned[j].c]=q;pending.push({r:planned[j].r,c:planned[j].c,tile:q});}pendingWord=null;$('wordInput').value='';clearPrompt();render();return;}message(last||'Cannot place '+word);}
+function putTile(r,c,q){if(q.l==='?'){var z=prompt('Blank = a-z');z=(z||'').trim().toUpperCase();if(!/^[A-Z]$/.test(z)){state.players[state.turn].rack.push(q);message('Blank cancelled.');return false;}q={l:z,blank:true}}state.board[r][c]=q;pending.push({r:r,c:c,tile:q});return true}
+function placeWordAtAnchor(word){if(!state)return;if(!anchor){message('select a starting square with a click or double-click',true);return;}var dr=anchor.d==='V'?1:0,dc=anchor.d==='H'?1:0;var cands=[];if(state.board[anchor.r][anchor.c]){var bl=state.board[anchor.r][anchor.c].l;for(var k=0;k<word.length;k++)if(word[k]===bl)cands.push({r0:anchor.r-k*dr,c0:anchor.c-k*dc});if(!cands.length){message('Anchor '+(anchor.r+1)+','+(anchor.c+1)+' is '+bl+' not in '+word);return;}}else{cands.push({r0:anchor.r,c0:anchor.c});}var last='';for(var ci=0;ci<cands.length;ci++){var r0=cands[ci].r0,c0=cands[ci].c0,copy=state.players[state.turn].rack.slice(),planned=[],ok=true;for(var i=0;i<word.length;i++){var r=r0+i*dr,c=c0+i*dc;if(r<0||r>=N||c<0||c>=N){ok=false;last='Off board at '+(r+1)+','+(c+1);break;}if(state.board[r][c]){if(state.board[r][c].l!==word.charAt(i)){ok=false;last='Conflict at '+(r+1)+','+(c+1)+' has '+state.board[r][c].l+' vs '+word.charAt(i);break;}}else{var at=copy.findIndex(function(x){return x.l===word.charAt(i)});if(at<0)at=copy.findIndex(function(x){return x.l==='?'});if(at<0){ok=false;last='Need '+word.charAt(i)+' have ['+state.players[state.turn].rack.map(function(x){return x.l}).join('')+']';break;}planned.push({r:r,c:c,q:copy.splice(at,1)[0],idx:i});}}if(!ok)continue;for(var j=0;j<planned.length;j++){var actual=state.players[state.turn].rack.findIndex(function(x){return x.l===planned[j].q.l});if(actual<0)actual=state.players[state.turn].rack.findIndex(function(x){return x.l==='?'});var q=state.players[state.turn].rack.splice(actual,1)[0];if(q.l==='?')q={l:word.charAt(planned[j].idx),blank:true};state.board[planned[j].r][planned[j].c]=q;pending.push({r:planned[j].r,c:planned[j].c,tile:q});}pendingWord=null;$('wordInput').value='';clearPrompt();render();return;}message(last||'Cannot place '+word);}
 function parseEntry(raw){if(!raw)return{word:'',nums:[]};var letters=(raw.match(/[A-Za-z]+/g)||[]).join('');var word=letters.toUpperCase();var numMatches=raw.match(/\d+/g)||[];var nums=numMatches.map(function(n){return parseInt(n,10);});return{word:word,nums:nums};}
 function playTyped(){if(waiting)return;if(liveGhosts.length){promoteLiveToPending();return;}var raw=$('wordInput').value.trim();if(!raw){message('Type a word first.');return;}var parsed=parseEntry(raw);var word=parsed.word;var nums=parsed.nums;if(!word){message('Type a word first.');return;}if(nums.length>=2){var rr=nums[0],cc=nums[1],dir=nums.length>=3?nums[2]:0;if(rr<1||rr>15||cc<1||cc>15){message('Rows and cols 1-15. 1,1 is top-left.');return;}if(dir!==0&&dir!==1){message('Direction 0=across, 1=down.');return;}anchor={r:rr-1,c:cc-1,d:dir===1?'V':'H'};placeWordAtAnchor(word);}else{if(anchor){placeWordAtAnchor(word);}else{pendingWord=word;message('select a starting square with a click or double-click',true);$('placement').textContent='Word: '+word+' — click for across, double-click for down';}}}
 function allowDrop(e){if(waiting)return;e.preventDefault();}
@@ -124,85 +100,12 @@ function score(w){var total=0,mult=1;for(var i=0;i<w.length;i++){var x=w[i],v=x.
 function snapshotForRollback(){return{board:JSON.parse(JSON.stringify(state.board)),players:JSON.parse(JSON.stringify(state.players)),bag:state.bag.slice(),history:state.history.slice(),moveCount:state.moveCount,turn:state.turn};}
 function showShare(url){let sp=$('share-panel'),su=$('share-url'),sh=$('share-help');if(sp&&su){su.value=url;sp.hidden=false;if(sh)sh.textContent='Join me in a scrabble-like game on BearTracks:';}let iu=$('invite-url'),ic=$('invite-copy');if(iu)iu.value=url;if(ic)ic.hidden=false;}
 async function copyLink(gs){if(!currentInvite){let iid=Date.now().toString(36)+Math.random().toString(36).slice(2,7);currentInvite={id:iid};let owner=getOwner()||"player";let inv={id:iid,invitedBy:owner,invitedByOpponents:getOpponents(),gameId:gs.id,mode:"game-invite",created:Date.now()};await saveInviteToCF(inv);await saveGameToCF(gs);}else{await saveGameToCF(gs);}let url=makeInviteUrl(currentInvite.id);let full="Join me in a scrabble-like game on BearTracks: "+url;if(navigator.clipboard&&navigator.clipboard.writeText){try{await navigator.clipboard.writeText(full);}catch(e){}}showShare(url);return url;}
-
-// --- FIX 4: proper unicode base64, no escape/unescape ---
-function b64DecodeUnicode(b64){
-  try{
-    // normalize url-safe base64
-    b64=b64.replace(/-/g,'+').replace(/_/g,'/').replace(/\s/g,'');
-    while(b64.length%4) b64+='=';
-    const bin=atob(b64);
-    const bytes=Uint8Array.from(bin, c=>c.charCodeAt(0));
-    return new TextDecoder().decode(bytes);
-  }catch(e){ return null; }
-}
-function tryLoadFromHash(){
-  var h=location.hash||'';
-  if(h.indexOf('#s=')===0){
-    try{
-      var b64=decodeURIComponent(h.slice(3));
-      var txt=b64DecodeUnicode(b64);
-      if(!txt) return null;
-      var gs=JSON.parse(txt);
-      if(gs) return gs;
-    }catch(e){}
-  }
-  try{
-    var q=new URLSearchParams(location.search);
-    var qs=q.get('s');
-    if(qs){
-      var txt2=b64DecodeUnicode(decodeURIComponent(qs));
-      if(!txt2) return null;
-      var gs2=JSON.parse(txt2);
-      if(gs2) return gs2;
-    }
-  }catch(e){}
-  return null;
-}
-
+function b64DecodeUnicode(b64){try{b64=b64.replace(/-/g,'+').replace(/_/g,'/').replace(/\s/g,'');while(b64.length%4)b64+='=';const bin=atob(b64);const bytes=Uint8Array.from(bin,c=>c.charCodeAt(0));return new TextDecoder().decode(bytes);}catch(e){return null;}}
+function tryLoadFromHash(){var h=location.hash||'';if(h.indexOf('#s=')===0){try{var b64=decodeURIComponent(h.slice(3));var txt=b64DecodeUnicode(b64);if(!txt)return null;var gs=JSON.parse(txt);if(gs)return gs;}catch(e){}}try{var q=new URLSearchParams(location.search);var qs=q.get('s');if(qs){var txt2=b64DecodeUnicode(decodeURIComponent(qs));if(!txt2)return null;var gs2=JSON.parse(txt2);if(gs2)return gs2;}}catch(e){}return null;}
 async function commit(){try{if(liveGhosts.length)promoteLiveToPending();var words=validate(),pts=0,nms=[];for(var i=0;i<words.length;i++){pts+=score(words[i]);nms.push(words[i].map(function(x){return x.t.l}).join(''));}if(pending.length===7)pts+=50;state.undoStack=state.undoStack||[];if(state.undoStack.length>0)state.undoStack.shift();state.undoStack.push(snapshotForRollback());var myIdx=state.turn;var p=state.players[myIdx];p.score+=pts;state.history.push(p.name+': '+nms.join(' + ')+' for '+pts);state.moveCount=(state.moveCount||0)+1;draw(state,p);pending=[];anchor=null;pendingWord=null;var myRack=p.rack.slice();var oppName=state.players[1-myIdx].name;state.turn=1-state.turn;try{await fetch(API+"/games/"+state.id,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({game:state})});}catch(e){}await copyLink(state);$('scores').innerHTML=state.players.map(function(x,i){return '<div class="score '+(i===state.turn?'active':'')+'"><span>'+esc(x.name)+(i===state.turn?' - turn':'')+'</span><strong>'+x.score+'</strong></div>'}).join('');$('history').innerHTML=state.history.slice().reverse().map(function(x){return'<li>'+esc(x)+'</li>'}).join('');$('bag').textContent=state.bag.length+' tiles remain.';enterWaitingMode(myRack,oppName,false);}catch(e){message(e.message);}}
 function pass(){if(pending.length||liveGhosts.length)return message('Undo unplayed tiles before passing.');var myIdx=state.turn;var myRackPass=state.players[myIdx].rack.slice();var oppName=state.players[1-myIdx].name;var p=state.players[myIdx];state.undoStack=state.undoStack||[];if(state.undoStack.length>3)state.undoStack.shift();state.undoStack.push(snapshotForRollback());if(state.moveCount===0){if(confirm('Allow '+oppName+' to play the first word?')){state.history.push(p.name+' passed - '+oppName+' to start');state.moveCount=1;state.turn=1-state.turn;fetch(API+"/games/"+state.id,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({game:state})}).catch(()=>{});copyLink(state).then(()=>{});$('scores').innerHTML=state.players.map(function(x,i){return '<div class="score '+(i===state.turn?'active':'')+'"><span>'+esc(x.name)+'</span><strong>'+x.score+'</strong></div>'}).join('');$('history').innerHTML=state.history.slice().reverse().map(function(x){return'<li>'+esc(x)+'</li>'}).join('');$('bag').textContent=state.bag.length+' tiles remain.';enterWaitingMode(myRackPass,oppName,true);}return;}state.history.push(p.name+' passed');draw(state,p);state.moveCount=(state.moveCount||0)+1;state.turn=1-state.turn;anchor=null;fetch(API+"/games/"+state.id,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({game:state})}).catch(()=>{});copyLink(state).then(()=>{});$('scores').innerHTML=state.players.map(function(x,i){return '<div class="score '+(i===state.turn?'active':'')+'"><span>'+esc(x.name)+'</span><strong>'+x.score+'</strong></div>'}).join('');$('history').innerHTML=state.history.slice().reverse().map(function(x){return'<li>'+esc(x)+'</li>'}).join('');$('bag').textContent=state.bag.length+' tiles remain.';enterWaitingMode(myRackPass,oppName,true);}
 async function linkGameViaInvite(inviteId,newUsername){let inv=null;for(let a=0;a<5;a++){inv=await loadInvite(inviteId);if(inv)break;await new Promise(r=>setTimeout(r,500));}if(!inv)return null;if(inv.gameId){for(let a=0;a<5;a++){let g=await loadGame(inv.gameId);if(g){let p1=(g.players[1].name||"").toLowerCase();if(p1==="opponent"||p1===""||p1===newUsername.toLowerCase()){g.players[1].name=newUsername;try{await fetch(API+"/games/"+g.id,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({game:g})});}catch(e){}}addOpponent(g.players[0].name);addOpponent(g.players[1].name);addGameId(g.id);return g;}await new Promise(r=>setTimeout(r,400));}}let fb=fresh(inv.invitedBy||"pooh",newUsername);try{await saveGameToCF(fb);inv.gameId=fb.id;inv.mode="game-invite";await saveInviteToCF(inv);}catch(e){}addOpponent(inv.invitedBy||"pooh");addGameId(fb.id);return fb;}
-
-// --- FIX 3: no plain-text password storage ---
-async function handleRegister(){
-  let uEl=$('reg-user'),pEl=$('reg-pass'),p2El=$('reg-pass2'),errEl=$('reg-error');
-  let u=uEl?uEl.value.trim():'',p=pEl?pEl.value:'',p2=p2El?p2El.value:'';
-  if(errEl)errEl.textContent='';
-  if(!u||!p){if(errEl)errEl.textContent='Fill username and password';return;}
-  if(p!==p2){if(errEl)errEl.textContent='Passwords do not match';return;}
-  let users=[];try{users=JSON.parse(localStorage.getItem("bt_users")||"[]")}catch(e){users=[]}
-  if(users.some(x=>x.toLowerCase()===u.toLowerCase())){if(errEl)errEl.textContent='Username taken';return;}
-  localStorage.setItem("bt_owner",u);
-  // intentionally not storing password - placeholder auth for prototype
-  try{localStorage.removeItem("bt_pass_"+u.toLowerCase());}catch(e){}
-  users.push(u);localStorage.setItem("bt_users",JSON.stringify(users));
-  let inviteParam=null;try{inviteParam=new URLSearchParams(location.search).get("invite");}catch(e){}
-  if(inviteParam){
-    try{
-      let g=await linkGameViaInvite(inviteParam,u);
-      if(g){
-        state=g;$('setup').hidden=true;
-        try{let url=new URL(location.href);url.searchParams.delete('invite');history.replaceState(null,'',url.pathname+url.search);}catch(e){}
-        currentInvite=null;render();return;
-      }else{if(errEl)errEl.textContent="Invite not found, starting fresh";}
-    }catch(e){if(errEl)errEl.textContent="Invite link failed: "+e.message;await new Promise(r=>setTimeout(r,800));}
-  }
-  let ids=getAllGameIds();
-  for(let i=ids.length-1;i>=0;i--){
-    let g=await loadGame(ids[i]);if(!g)continue;
-    if((g.players[1].name||"").toLowerCase()==="opponent"||(g.players[1].name||"").toLowerCase()===""){
-      g.players[1].name=u;
-      try{await fetch(API+"/games/"+g.id,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({game:g})});}catch(e){}
-      addOpponent(g.players[0].name);state=g;$('setup').hidden=true;render();return;
-    }
-    if((g.players[1].name||"").toLowerCase()===u.toLowerCase()||(g.players[0].name||"").toLowerCase()===u.toLowerCase()){
-      state=g;$('setup').hidden=true;render();return;
-    }
-  }
-  renderBoxes();
-}
-
+async function handleRegister(){let uEl=$('reg-user'),pEl=$('reg-pass'),p2El=$('reg-pass2'),errEl=$('reg-error');let u=uEl?uEl.value.trim():'',p=pEl?pEl.value:'',p2=p2El?p2El.value:'';if(errEl)errEl.textContent='';if(!u||!p){if(errEl)errEl.textContent='Fill username and password';return;}if(p!==p2){if(errEl)errEl.textContent='Passwords do not match';return;}let users=[];try{users=JSON.parse(localStorage.getItem("bt_users")||"[]")}catch(e){users=[]}if(users.some(x=>x.toLowerCase()===u.toLowerCase())){if(errEl)errEl.textContent='Username taken';return;}localStorage.setItem("bt_owner",u);try{localStorage.removeItem("bt_pass_"+u.toLowerCase());}catch(e){}users.push(u);localStorage.setItem("bt_users",JSON.stringify(users));let inviteParam=null;try{inviteParam=new URLSearchParams(location.search).get("invite");}catch(e){}if(inviteParam){try{let g=await linkGameViaInvite(inviteParam,u);if(g){state=g;$('setup').hidden=true;try{let url=new URL(location.href);url.searchParams.delete('invite');history.replaceState(null,'',url.pathname+url.search);}catch(e){}currentInvite=null;render();return;}else{if(errEl)errEl.textContent="Invite not found, starting fresh";}}catch(e){if(errEl)errEl.textContent="Invite link failed: "+e.message;await new Promise(r=>setTimeout(r,800));}}let ids=getAllGameIds();for(let i=ids.length-1;i>=0;i--){let g=await loadGame(ids[i]);if(!g)continue;if((g.players[1].name||"").toLowerCase()==="opponent"||(g.players[1].name||"").toLowerCase()===""){g.players[1].name=u;try{await fetch(API+"/games/"+g.id,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({game:g})});}catch(e){}addOpponent(g.players[0].name);state=g;$('setup').hidden=true;render();return;}if((g.players[1].name||"").toLowerCase()===u.toLowerCase()||(g.players[0].name||"").toLowerCase()===u.toLowerCase()){state=g;$('setup').hidden=true;render();return;}}renderBoxes();}
 let pendingGameForHeadsUp=null;let headsupData={url:"",msg:""};let headsupMode="msg";
 async function showHeadsUp(inviteId,gameObj){let url=makeInviteUrl(inviteId);let fullMsg="Join me in a scrabble-like game on BearTracks: "+url;headsupData.url=url;headsupData.msg=fullMsg;headsupMode="msg";let input=$('bt-headsup-input');if(input)input.value=fullMsg;try{if(navigator.clipboard&&navigator.clipboard.writeText){await navigator.clipboard.writeText(fullMsg);}}catch(e){}let btnMsg=$('bt-headsup-copy-msg');if(btnMsg){btnMsg.disabled=true;btnMsg.textContent="Message copied";}let btnLink=$('bt-headsup-copy-link');if(btnLink){btnLink.disabled=false;btnLink.textContent="Copy link instead";}$('bt-headsup').hidden=false;pendingGameForHeadsUp=gameObj;showShare(url);}
 function handleHeadsUpCopyMsg(){if(headsupMode==="msg")return;headsupMode="msg";$('bt-headsup-input').value=headsupData.msg;try{navigator.clipboard.writeText(headsupData.msg).catch(()=>{});}catch(e){}$('bt-headsup-copy-msg').disabled=true;$('bt-headsup-copy-msg').textContent="Message copied";$('bt-headsup-copy-link').disabled=false;$('bt-headsup-copy-link').textContent="Copy link instead";}
@@ -222,9 +125,50 @@ $('share-copy').onclick=function(){let u=$('share-url').value;try{navigator.clip
 $('btn-logout').onclick=function(){localStorage.removeItem("bt_owner");$('setup').hidden=false;renderBoxes();$('reg-user').value='';$('reg-pass').value='';$('reg-pass2').value='';$('nameB').value='';$('invite-copy').hidden=true;let sp=$('share-panel');if(sp)sp.hidden=true;currentInvite=null;$('bt-headsup').hidden=true;pendingGameForHeadsUp=null;};
 $('reg-user').onkeydown=function(e){if(e.key==='Enter')handleRegister()};$('reg-pass2').onkeydown=function(e){if(e.key==='Enter')handleRegister()};$('nameB').onkeydown=function(e){if(e.key==='Enter')handleBegin()};
 $('bt-headsup-copy-msg').onclick=handleHeadsUpCopyMsg;$('bt-headsup-copy-link').onclick=handleHeadsUpCopyLink;$('bt-headsup-continue').onclick=handleHeadsUpContinue;
-try{state=JSON.parse($('game-state').textContent);}catch(e){state=null;}
-var hs=tryLoadFromHash();if(hs)state=hs;
-(async()=>{let iid=null;try{let qs=new URLSearchParams(location.search);iid=qs.get("invite")}catch(e){}if(iid){let inv=await loadInvite(iid);if(inv){currentInvite=inv;let g=null;if(inv.gameId)g=await loadGame(inv.gameId);if(g){state=g;addGameId(g.id);}else{console.warn("invite has no game yet",inv);}}}if(state){$('setup').hidden=true;render();}else{$('setup').hidden=false;renderBoxes();}fit();})();
+
+// --- FIX: invite must force registration for new opponent ---
+(async()=>{
+  let iid=null;
+  try{ iid=new URLSearchParams(location.search).get("invite"); }catch(e){}
+  let owner=getOwner();
+  let hasState=false;
+
+  if(iid){
+    let inv=await loadInvite(iid);
+    if(inv){
+      currentInvite=inv;
+      if(owner){
+        // already logged in -> load game now
+        let g=null;
+        if(inv.gameId) g=await loadGame(inv.gameId);
+        if(g){ state=g; addGameId(g.id); hasState=true; }
+      }else{
+        // new user via invite -> do NOT set state, force registration
+        hasState=false;
+      }
+    }
+  }
+
+  if(!hasState){
+    var hs=tryLoadFromHash(); if(hs){ state=hs; hasState=true; }
+  }
+
+  try{
+    if(!state){
+      let gsTxt=$('game-state').textContent;
+      if(gsTxt && gsTxt.trim()!=='null' && gsTxt.trim()!==''){ state=JSON.parse(gsTxt); hasState=!!state; }
+    }
+  }catch(e){}
+
+  if(state && owner && hasState){
+    $('setup').hidden=true;
+    render();
+  }else{
+    $('setup').hidden=false;
+    renderBoxes();
+  }
+  fit();
+})();
 }());
 </script>
 </body>
