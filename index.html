@@ -124,6 +124,7 @@ function cloneRacks(g){
 }
 function message(t,isPrompt){var el=$('status');el.textContent=t;el.classList.remove('prompt');void el.offsetWidth;if(isPrompt)el.classList.add('prompt')}
 function clearPrompt(){var el=$('status');el.classList.remove('prompt');}
+function getOwner(){return localStorage.getItem("bt_owner")}
 function getLocalIdx(){let owner=(getOwner()||"").toLowerCase();if(!state) return 0;for(let i=0;i<state.players.length;i++){if((state.players[i].name||"").toLowerCase()===owner) return i;}return 1;}
 function getLocalRack(){ if(!state) return []; return state.players[getLocalIdx()].rack; }
 function getMoverIdxForCommit(){
@@ -337,7 +338,7 @@ async function linkGameViaInvite(inviteId,newUsername){
       if(g){
         g=cloneRacks(g);
         let p1=(g.players[1].name||"").toLowerCase();
-        let isPlaceholder = p1==="opponent"||p1===""||p1==="opponent updated to "+newUsername.toLowerCase() || p1.indexOf("opponent")===0;
+        let isPlaceholder = p1==="opponent"||p1===""||p1.indexOf("opponent")===0;
         if(isPlaceholder || p1===newUsername.toLowerCase()){
           let old=g.players[1].name;
           g.players[1].name=newUsername;
@@ -360,7 +361,7 @@ async function linkGameViaInvite(inviteId,newUsername){
 async function handleRegister(){
   let uEl=$('reg-user'),pEl=$('reg-pass'),p2El=$('reg-pass2'),errEl=$('reg-error');
   let u=uEl?uEl.value.trim():'',p=pEl?pEl.value:'',p2=p2El?p2El.value:'';
-  if(errEl){errEl.textContent='';errEl.style.color='#b00020';}
+  if(errEl)errEl.textContent='';
   if(!u||!p){if(errEl)errEl.textContent='Fill username and password';return;}
   if(p!==p2){if(errEl)errEl.textContent='Passwords do not match';return;}
   let users=[];try{users=JSON.parse(localStorage.getItem("bt_users")||"[]")}catch(e){users=[]}
@@ -378,7 +379,7 @@ async function handleRegister(){
         try{let url=new URL(location.href);url.searchParams.delete('invite');history.replaceState(null,'',url.pathname+url.search);}catch(e){}
         currentInvite=null;
         let upd=null;try{upd=localStorage.getItem("bt_last_update");}catch(e){}
-        if(upd && errEl){errEl.style.color='#2e7d32';errEl.textContent=upd;}
+        if(upd && errEl){errEl.textContent=upd;}
         render();return;
       }else{
         if(errEl)errEl.textContent="Invite not found, starting fresh";
@@ -388,7 +389,6 @@ async function handleRegister(){
       await new Promise(r=>setTimeout(r,800));
     }
   }
-  // no invite param: check local games for Opponent placeholder and update it
   let ids=getAllGameIds();
   for(let i=ids.length-1;i>=0;i--){
     let g=await loadGame(ids[i]);
@@ -404,7 +404,7 @@ async function handleRegister(){
         addOpponent(g.players[0].name);
         state=g;$('setup').hidden=true;
         try{localStorage.setItem("bt_last_update","Opponent updated to "+u);}catch(e){}
-        if(errEl){errEl.style.color='#2e7d32';errEl.textContent="Opponent updated to "+u+(oldName?" (was "+oldName+")":"");}
+        if(errEl){errEl.textContent="Opponent updated to "+u+(oldName?" (was "+oldName+")":"");}
         didUpdate=true;
         render();
         return;
@@ -416,7 +416,7 @@ async function handleRegister(){
   }
   if(!didUpdate && errEl){
     let last=null;try{last=localStorage.getItem("bt_last_update");}catch(e){}
-    if(last){errEl.style.color='#2e7d32';errEl.textContent=last;}
+    if(last){errEl.textContent=last;}
   }
   renderBoxes();
 }
