@@ -50,7 +50,6 @@ var TW=[[0,0],[0,7],[0,14],[7,0],[7,14],[14,0],[14,7],[14,14]],DW=[[1,1],[2,2],[
 var state=null,pending=[],selected=-1,anchor=null,dragItem=null,gesture=null,suppressClick=false,waiting=false,waitingRack=null,waitingOpp=null,pendingWord=null;
 const API="https://tracker-api.beartracksgames.workers.dev";const LIVE_SITE="https://rljhaines.github.io/beartracks/";
 let currentInvite=null;
-// BroadcastChannel - CLEAN - only on io
 let btChannel=null;
 function applyExternalState(g){
  if(!g||!g.id||!state||g.id!==state.id) return;
@@ -150,7 +149,33 @@ state.players[1].name=server.players[1].name;
 }
 if(server && server.moveCount!==state.moveCount){state=cloneRacks(server);pending=[]; anchor=null; pendingWord=null; selected=-1;render();throw Error('Game updated elsewhere - reloaded bag/board. Try again.');}if(server && server.bag) state.bag = server.bag.slice();var words=validate(),pts=0,nms=[];for(var i=0;i<words.length;i++){pts+=score(words[i]);nms.push(words[i].map(function(x){return x.t.l}).join(''));}if(pending.length===7)pts+=50;state.undoStack=state.undoStack||[];if(state.undoStack.length>0)state.undoStack.shift();state.undoStack.push(snapshotForRollback());var myIdx=getLocalIdx(); var oppIdx=1-myIdx;var p=state.players[myIdx];p.score+=pts;state.history.push(p.name+': '+nms.join(' + ')+' for '+pts);state.moveCount=(state.moveCount||0)+1;draw(state,p);state.turn = 1-state.turn;var myRack=p.rack.slice();var oppName=state.players[oppIdx].name;pending=[];anchor=null;pendingWord=null;let gameToSave = JSON.parse(JSON.stringify(state));await saveGameToCF(gameToSave);broadcastGame(gameToSave);let gsUrl=makeGameStateUrl(gameToSave);try{if(navigator.clipboard&&navigator.clipboard.writeText) await navigator.clipboard.writeText(gsUrl);}catch(e){}showShare(gsUrl,true);$('scores').innerHTML=state.players.map(function(x,i){return '<div class="score '+(i===state.turn?'active':'')+'"><span>'+esc(x.name)+(i===state.turn?' - turn':'')+'</span><strong>'+x.score+'</strong></div>'}).join('');$('history').innerHTML=state.history.slice().reverse().map(function(x){return'<li>'+esc(x)+'</li>'}).join('');$('bag').textContent=state.bag.length+' tiles remain.';enterWaitingMode(myRack,oppName,false);}catch(e){message(e.message);}}
 async function pass(){let li=getLocalIdx();if(state.moveCount!==0 && state.turn!==li) return message('Not your turn');if(pending.length)return message('Undo unplayed tiles before passing.');let server=null; try{ server=await loadGame(state.id); }catch(e){}if(server && server.moveCount!==state.moveCount){state=cloneRacks(server);pending=[]; anchor=null; pendingWord=null; selected=-1;render();return message('Game updated elsewhere - reloaded. Try again. Turn: '+(state.turn===getLocalIdx()?'yours':state.players[state.turn].name));}if(server && server.bag) state.bag = server.bag.slice();var myIdx=getLocalIdx();var oppIdx=1-myIdx;var myRackPass=state.players[myIdx].rack.slice();var oppName=state.players[oppIdx].name;var p=state.players[myIdx];state.undoStack=state.undoStack||[];if(state.undoStack.length>3)state.undoStack.shift();state.undoStack.push(snapshotForRollback());if(state.moveCount===0){if(confirm('Allow '+oppName+' to play the first word?')){state.history.push(p.name+' passed - '+oppName+' to start');state.moveCount=1;state.turn=1-state.turn;let gameToSavePass0 = JSON.parse(JSON.stringify(state));saveGameToCF(gameToSavePass0).then(()=>{broadcastGame(gameToSavePass0);let gsUrl=makeGameStateUrl(gameToSavePass0); try{navigator.clipboard.writeText(gsUrl)}catch(e){} showShare(gsUrl,true);}).catch(()=>{});$('scores').innerHTML=state.players.map(function(x,i){return '<div class="score '+(i===state.turn?'active':'')+'"><span>'+esc(x.name)+'</span><strong>'+x.score+'</strong></div>'}).join('');$('history').innerHTML=state.history.slice().reverse().map(function(x){return'<li>'+esc(x)+'</li>'}).join('');$('bag').textContent=state.bag.length+' tiles remain.';enterWaitingMode(myRackPass,oppName,true);}return;}state.history.push(p.name+' passed');draw(state,p);state.moveCount=(state.moveCount||0)+1;state.turn=1-state.turn;anchor=null;let gameToSavePass = JSON.parse(JSON.stringify(state));saveGameToCF(gameToSavePass).then(()=>{broadcastGame(gameToSavePass);let gsUrl=makeGameStateUrl(gameToSavePass); try{navigator.clipboard.writeText(gsUrl)}catch(e){} showShare(gsUrl,true);}).catch(()=>{});$('scores').innerHTML=state.players.map(function(x,i){return '<div class="score '+(i===state.turn?'active':'')+'"><span>'+esc(x.name)+'</span><strong>'+x.score+'</strong></div>'}).join('');$('history').innerHTML=state.history.slice().reverse().map(function(x){return'<li>'+esc(x)+'</li>'}).join('');$('bag').textContent=state.bag.length+' tiles remain.';enterWaitingMode(myRackPass,oppName,true);}
-async function linkGameViaInvite(inviteId,newUsername){let inv=null;for(let a=0;a<5;a++){inv=await loadInvite(inviteId);if(inv)break;await new Promise(r=>setTimeout(r,500));}if(!inv)return null;if(inv.gameId){for(let a=0;a<5;a++){let g=await loadGame(inv.gameId);if(g){g=cloneRacks(g);let p1=(g.players[1].name||"").toLowerCase();let isPlaceholder=p1==="opponent"||p1===""||p1.indexOf("opponent")===0;if(isPlaceholder||p1===newUsername.toLowerCase()){g.players[1].name=newUsername;try{await fetch(API+"/games/"+g.id,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({game:g})});}catch(e){}}addOpponent(g.players[0].name);addOpponent(g.players[1].name);addGameId(g.id);return {game:g,invite:inv};}await new Promise(r=>setTimeout(r,400));}}let fb=fresh(inv.invitedBy||"pooh",newUsername);try{await saveGameToCF(fb);inv.gameId=fb.id;inv.mode="game-invite";await saveInviteToCF(inv);}catch(e){}addOpponent(inv.invitedBy||"pooh");addGameId(fb.id);return {game:fb,invite:inv};}
+async function linkGameViaInvite(inviteId,newUsername){
+  let inv=null;
+  for(let a=0;a<5;a++){inv=await loadInvite(inviteId);if(inv)break;await new Promise(r=>setTimeout(r,500));}
+  if(!inv)return null;
+  if(inv.gameId){
+    for(let a=0;a<5;a++){
+      let g=await loadGame(inv.gameId);
+      if(g){
+        g=cloneRacks(g);
+        let p1=(g.players[1].name||"").toLowerCase();
+        let isPlaceholder=p1==="opponent"||p1===""||p1.indexOf("opponent")===0;
+        if(isPlaceholder||p1===newUsername.toLowerCase()){
+          g.players[1].name=newUsername;
+          try{await fetch(API+"/games/"+g.id,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({game:g})});}catch(e){}
+        }
+        addOpponent(g.players[0].name);addOpponent(g.players[1].name);addGameId(g.id);
+        return {game:g,invite:inv};
+      }
+      await new Promise(r=>setTimeout(r,400));
+    }
+  }
+  let host = inv.invitedBy || getOwner() || "Player 1";
+  let fb=fresh(host,newUsername);
+  try{await saveGameToCF(fb);inv.gameId=fb.id;inv.mode="game-invite";await saveInviteToCF(inv);}catch(e){}
+  addOpponent(host);addGameId(fb.id);
+  return {game:fb,invite:inv};
+}
 let pendingGameForHeadsUp=null;let headsupData={url:"",msg:"",isInvite:true};let headsupMode="msg";
 function getCollabMessage(inv, inviteeName, type){
   var base="Hello, "+inviteeName+"!! "+inv.invitedBy+" thanks you for joining in on this word-building collaboration.";
@@ -181,7 +206,7 @@ function handleHeadsUpContinue(){
     state=g;initBroadcastChannel(g.id);
     $('setup').hidden=true;render();
     pendingGameForHeadsUp=null;
-    try{let url=new URL(location.href);url.searchParams.delete('invite');url.searchParams.delete('game');history.replaceState(null,'',url.pathname+url.search+location.hash);}catch(e){}
+    try{let url=new URL(location.href);url.searchParams.delete('invite');url.searchParams.delete('game');url.searchParams.delete('p');history.replaceState(null,'',url.pathname+url.search+location.hash);}catch(e){}
   }
 }
 async function handleRegister(){let uEl=$('reg-user'),pEl=$('reg-pass'),p2El=$('reg-pass2'),errEl=$('reg-error');let u=uEl?uEl.value.trim():'',p=pEl?pEl.value:'',p2=p2El?p2El.value:'';if(errEl)errEl.textContent='';if(!u||!p){if(errEl)errEl.textContent='Fill username and password';return;}if(p!==p2){if(errEl)errEl.textContent='Passwords do not match';return;}let users=[];try{users=JSON.parse(localStorage.getItem("bt_users")||"[]")}catch(e){users=[]}if(users.some(x=>x.toLowerCase()===u.toLowerCase())){if(errEl)errEl.textContent='Username taken';return;}localStorage.setItem("bt_owner",u);try{localStorage.removeItem("bt_pass_"+u.toLowerCase());}catch(e){}users.push(u);localStorage.setItem("bt_users",JSON.stringify(users));let inviteParam=null;try{inviteParam=new URLSearchParams(location.search).get("invite");}catch(e){}if(inviteParam){try{let res=await linkGameViaInvite(inviteParam,u);if(res && res.game && res.invite){let type = res.invite.mode==="unregistered-invite"? "active" : "passive";$('setup').hidden=true;showCollabHeadsUp(res.invite, res.game, type, u);return;}else{if(errEl)errEl.textContent="Invite not found, starting fresh";}}catch(e){if(errEl)errEl.textContent="Invite link failed: "+e.message;await new Promise(r=>setTimeout(r,800));}}renderBoxes();}
@@ -203,16 +228,32 @@ $('bt-headsup-copy-msg').onclick=handleHeadsUpCopyMsg;$('bt-headsup-copy-link').
   let params=null;try{params=new URLSearchParams(location.search);}catch(e){params={get:()=>null}}
   let iid=params.get("invite");
   let gid=params.get("game");
+  let pParam=params.get("p");
   let owner=getOwner();let hasState=false;
   let sState=tryLoadFromHash();if(sState){ state=sState; hasState=true; if(state) initBroadcastChannel(state.id); }
   if(!hasState && gid){
     let g=await loadGame(gid);
-    if(g){ state=cloneRacks(g); hasState=true; if(state) initBroadcastChannel(state.id); try{localStorage.setItem("bt_local_idx_"+state.id,"0");}catch(e){} }
+    if(g){
+      state=cloneRacks(g); hasState=true; if(state) initBroadcastChannel(state.id);
+      try{
+        if(pParam==="0"){
+          localStorage.setItem("bt_owner", state.players[0].name);
+          localStorage.setItem("bt_local_idx_"+state.id,"0");
+          owner = state.players[0].name;
+        }
+      }catch(e){}
+    }
   }
   if(!hasState && iid){
     let inv=await loadInvite(iid);
     if(inv){
       currentInvite=inv;
+      try{
+        if(pParam==="0" && inv.invitedBy){
+          localStorage.setItem("bt_owner", inv.invitedBy);
+          owner = inv.invitedBy;
+        }
+      }catch(e){}
       if(owner){
         let g=null; if(inv.gameId) g=await loadGame(inv.gameId);
         if(g){
@@ -228,8 +269,23 @@ $('bt-headsup-copy-msg').onclick=handleHeadsUpCopyMsg;$('bt-headsup-copy-link').
     }
   }
   try{if(!state){let gsTxt=$('game-state').textContent;if(gsTxt && gsTxt.trim()!=='null' && gsTxt.trim()!==''){ state=cloneRacks(JSON.parse(gsTxt)); hasState=!!state; if(state) initBroadcastChannel(state.id); }}}catch(e){}
-  if(state && owner && hasState){ $('setup').hidden=true; initBroadcastChannel(state.id); render(); }
-  else if(!iid &&!gid){ $('setup').hidden=false; renderBoxes(); }
+  if(state && hasState){
+    try{ if(!owner) owner=localStorage.getItem("bt_owner"); }catch(e){}
+    if(owner){
+      $('setup').hidden=true; initBroadcastChannel(state.id); render();
+      try{
+        let url=new URL(location.href);
+        if(url.searchParams.has("p")){
+          url.searchParams.delete("p");
+          history.replaceState(null,'',url.pathname+url.search+location.hash);
+        }
+      }catch(e){}
+    }else{
+      $('setup').hidden=false; renderBoxes();
+    }
+  }else if(!iid &&!gid){
+    $('setup').hidden=false; renderBoxes();
+  }
   fit();
 })();
 }());
