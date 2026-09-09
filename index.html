@@ -63,9 +63,7 @@ function initBroadcastChannel(id){
  try{
   if(btChannel) btChannel.close();
   btChannel=new BroadcastChannel('bt_'+id);
-  btChannel.onmessage=function(e){
-    if(e.data && e.data.game) applyExternalState(e.data.game);
-  };
+  btChannel.onmessage=function(e){ if(e.data && e.data.game) applyExternalState(e.data.game); };
  }catch(e){}
 }
 function broadcastGame(g){
@@ -109,15 +107,12 @@ if(!pending.length&&!pendingWord){if(state.moveCount===0){let other=state.player
 function renderWaitingRack(){var rh='';for(var i=0;i<waitingRack.length;i++)rh+='<button class="rack-tile" disabled>'+waitingRack[i].l+'<small>'+V[waitingRack[i].l]+'</small></button>';$('rack').innerHTML=rh;}
 function enterWaitingMode(myRack,opponentName,isPass){
  waitingRack=myRack.slice(); waitingOpp=opponentName;
- render();
- if(waitingRack) renderWaitingRack();
- $('wordInput').value='';
- $('wordInput').disabled=true;
- $('wordInput').placeholder='Waiting';
+ render(); if(waitingRack) renderWaitingRack();
+ $('wordInput').value=''; $('wordInput').disabled=true; $('wordInput').placeholder='Waiting';
  $('playWord').disabled=true;$('submitWord').disabled=true;$('pass').disabled=true;$('undo').disabled=true;
  $('turnPill').textContent='Waiting for '+opponentName;
- if(isPass){$('placement').textContent='';var el=$('status');el.textContent='';el.classList.remove('prompt');}
- else{$('placement').textContent='Game saved to cloud. Backup link copied.';var el2=$('status');el2.textContent="The Bear's tracks have been captured. Backup game-state link in clipboard.";el2.classList.remove('prompt');}
+ if(isPass){$('placement').textContent='';$('status').textContent='';$('status').classList.remove('prompt');}
+ else{$('placement').textContent='Game saved to cloud. Backup link copied.';$('status').textContent="The Bear's tracks have been captured. Backup game-state link in clipboard.";$('status').classList.remove('prompt');}
 }
 function shuffleRack(){if(waiting&&waitingRack){shuffle(waitingRack);renderWaitingRack();return;}if(!state)return;shuffle(getLocalRack());selected=-1;renderRack();}
 function pick(e){if(waiting)return;let li=getLocalIdx();let isMyTurn=(state.moveCount===0)?true:(state.turn===li);if(!isMyTurn) return;var n=Number(e.currentTarget.getAttribute('data-i'));selected=(selected===n)?-1:n;renderRack();}
@@ -144,9 +139,7 @@ function showShare(url,isGameState){let sp=$('share-panel'),su=$('share-url'),sh
 function b64DecodeUnicode(b64){try{b64=b64.replace(/-/g,'+').replace(/_/g,'/').replace(/\s/g,'');while(b64.length%4)b64+='=';const bin=atob(b64);const bytes=Uint8Array.from(bin,c=>c.charCodeAt(0));return new TextDecoder().decode(bytes);}catch(e){return null;}}
 function tryLoadFromHash(){var h=location.hash||'';if(h.indexOf('#s=')===0){try{var b64=decodeURIComponent(h.slice(3));var txt=b64DecodeUnicode(b64);if(!txt)return null;var gs=JSON.parse(txt);if(gs)return cloneRacks(gs);}catch(e){}}try{var q=new URLSearchParams(location.search);var qs=q.get('s');if(qs){var txt2=b64DecodeUnicode(decodeURIComponent(qs));if(!txt2)return null;var gs2=JSON.parse(txt2);if(gs2)return cloneRacks(gs2);}}catch(e){}return null;}
 async function commit(){try{let li=getLocalIdx();let isMyTurn=(state.moveCount===0)?true:(state.turn===li);if(!isMyTurn) throw Error("Not your turn");let server=null; try{ server=await loadGame(state.id); }catch(e){}
-if(server?.players?.[1]?.name && server.players[1].name.toLowerCase()!=="opponent"){
-state.players[1].name=server.players[1].name;
-}
+if(server?.players?.[1]?.name && server.players[1].name.toLowerCase()!=="opponent"){ state.players[1].name=server.players[1].name; }
 if(server && server.moveCount!==state.moveCount){state=cloneRacks(server);pending=[]; anchor=null; pendingWord=null; selected=-1;render();throw Error('Game updated elsewhere - reloaded bag/board. Try again.');}if(server && server.bag) state.bag = server.bag.slice();var words=validate(),pts=0,nms=[];for(var i=0;i<words.length;i++){pts+=score(words[i]);nms.push(words[i].map(function(x){return x.t.l}).join(''));}if(pending.length===7)pts+=50;state.undoStack=state.undoStack||[];if(state.undoStack.length>0)state.undoStack.shift();state.undoStack.push(snapshotForRollback());var myIdx=getLocalIdx(); var oppIdx=1-myIdx;var p=state.players[myIdx];p.score+=pts;state.history.push(p.name+': '+nms.join(' + ')+' for '+pts);state.moveCount=(state.moveCount||0)+1;draw(state,p);state.turn = 1-state.turn;var myRack=p.rack.slice();var oppName=state.players[oppIdx].name;pending=[];anchor=null;pendingWord=null;let gameToSave = JSON.parse(JSON.stringify(state));await saveGameToCF(gameToSave);broadcastGame(gameToSave);let gsUrl=makeGameStateUrl(gameToSave);try{if(navigator.clipboard&&navigator.clipboard.writeText) await navigator.clipboard.writeText(gsUrl);}catch(e){}showShare(gsUrl,true);$('scores').innerHTML=state.players.map(function(x,i){return '<div class="score '+(i===state.turn?'active':'')+'"><span>'+esc(x.name)+(i===state.turn?' - turn':'')+'</span><strong>'+x.score+'</strong></div>'}).join('');$('history').innerHTML=state.history.slice().reverse().map(function(x){return'<li>'+esc(x)+'</li>'}).join('');$('bag').textContent=state.bag.length+' tiles remain.';enterWaitingMode(myRack,oppName,false);}catch(e){message(e.message);}}
 async function pass(){let li=getLocalIdx();if(state.moveCount!==0 && state.turn!==li) return message('Not your turn');if(pending.length)return message('Undo unplayed tiles before passing.');let server=null; try{ server=await loadGame(state.id); }catch(e){}if(server && server.moveCount!==state.moveCount){state=cloneRacks(server);pending=[]; anchor=null; pendingWord=null; selected=-1;render();return message('Game updated elsewhere - reloaded. Try again. Turn: '+(state.turn===getLocalIdx()?'yours':state.players[state.turn].name));}if(server && server.bag) state.bag = server.bag.slice();var myIdx=getLocalIdx();var oppIdx=1-myIdx;var myRackPass=state.players[myIdx].rack.slice();var oppName=state.players[oppIdx].name;var p=state.players[myIdx];state.undoStack=state.undoStack||[];if(state.undoStack.length>3)state.undoStack.shift();state.undoStack.push(snapshotForRollback());if(state.moveCount===0){if(confirm('Allow '+oppName+' to play the first word?')){state.history.push(p.name+' passed - '+oppName+' to start');state.moveCount=1;state.turn=1-state.turn;let gameToSavePass0 = JSON.parse(JSON.stringify(state));saveGameToCF(gameToSavePass0).then(()=>{broadcastGame(gameToSavePass0);let gsUrl=makeGameStateUrl(gameToSavePass0); try{navigator.clipboard.writeText(gsUrl)}catch(e){} showShare(gsUrl,true);}).catch(()=>{});$('scores').innerHTML=state.players.map(function(x,i){return '<div class="score '+(i===state.turn?'active':'')+'"><span>'+esc(x.name)+'</span><strong>'+x.score+'</strong></div>'}).join('');$('history').innerHTML=state.history.slice().reverse().map(function(x){return'<li>'+esc(x)+'</li>'}).join('');$('bag').textContent=state.bag.length+' tiles remain.';enterWaitingMode(myRackPass,oppName,true);}return;}state.history.push(p.name+' passed');draw(state,p);state.moveCount=(state.moveCount||0)+1;state.turn=1-state.turn;anchor=null;let gameToSavePass = JSON.parse(JSON.stringify(state));saveGameToCF(gameToSavePass).then(()=>{broadcastGame(gameToSavePass);let gsUrl=makeGameStateUrl(gameToSavePass); try{navigator.clipboard.writeText(gsUrl)}catch(e){} showShare(gsUrl,true);}).catch(()=>{});$('scores').innerHTML=state.players.map(function(x,i){return '<div class="score '+(i===state.turn?'active':'')+'"><span>'+esc(x.name)+'</span><strong>'+x.score+'</strong></div>'}).join('');$('history').innerHTML=state.history.slice().reverse().map(function(x){return'<li>'+esc(x)+'</li>'}).join('');$('bag').textContent=state.bag.length+' tiles remain.';enterWaitingMode(myRackPass,oppName,true);}
 async function linkGameViaInvite(inviteId,newUsername){
@@ -176,7 +169,7 @@ async function linkGameViaInvite(inviteId,newUsername){
   addOpponent(host);addGameId(fb.id);
   return {game:fb,invite:inv};
 }
-let pendingGameForHeadsUp=null;let headsupData={url:"",msg:"",isInvite:true};let headsupMode="msg";
+let pendingGameForHeadsUp=null;let headsupData={url:"",msg:"",isInvite:true};
 function getCollabMessage(inv, inviteeName, type){
   var base="Hello, "+inviteeName+"!! "+inv.invitedBy+" thanks you for joining in on this word-building collaboration.";
   if(type==="passive"){
@@ -187,29 +180,45 @@ function getCollabMessage(inv, inviteeName, type){
 }
 function tryMessageOpponent(id){ alert("Message "+id+" - WebRTC/Socket to be wired"); }
 function tryCallOpponent(id){ alert("Call "+id+" - WebRTC/Socket to be wired"); }
-function showCollabHeadsUp(inv, gameObj, type, inviteeName){var url=makeInviteUrl(inv.id);var msg=getCollabMessage(inv, inviteeName||"there", type);headsupData.url=url; headsupData.msg=msg; headsupData.isInvite=true;var helpEl=$('bt-headsup-help'); if(helpEl) helpEl.textContent=msg;var inputEl=$('bt-headsup-input'); if(inputEl) inputEl.value=url;var btnMsg=$('bt-headsup-copy-msg');if(btnMsg){ btnMsg.disabled=false; btnMsg.textContent="Message "+inv.invitedBy; btnMsg.onclick=function(){ tryMessageOpponent(inv.invitedBy); }; }var btnLink=$('bt-headsup-copy-link');if(btnLink){ btnLink.disabled=false; btnLink.textContent="Call "+inv.invitedBy; btnLink.onclick=function(){ tryCallOpponent(inv.invitedBy); }; }$('bt-headsup').hidden=false;pendingGameForHeadsUp=gameObj;currentInvite=inv;showShare(url,false);}
-async function showHeadsUp(inviteId,gameObj,isInvite){let url=isInvite?makeInviteUrl(inviteId):makeGameStateUrl(gameObj);let fullMsg=isInvite?"Join me in a scrabble-like game on BearTracks: "+url:url;headsupData.url=url;headsupData.msg=fullMsg;headsupData.isInvite=isInvite;headsupMode=isInvite?"msg":"link";let input=$('bt-headsup-input');if(input)input.value=fullMsg;let help=$('bt-headsup-help');if(help)help.textContent="Join me in a scrabble-like game on BearTracks:";try{if(navigator.clipboard&&navigator.clipboard.writeText){await navigator.clipboard.writeText(fullMsg);}}catch(e){}let btnMsg=$('bt-headsup-copy-msg');if(btnMsg){btnMsg.disabled=true;btnMsg.textContent="Message copied";btnMsg.onclick=handleHeadsUpCopyMsg;}let btnLink=$('bt-headsup-copy-link');if(btnLink){btnLink.disabled=false;btnLink.textContent="Copy link instead";btnLink.onclick=handleHeadsUpCopyLink;}$('bt-headsup').hidden=false;pendingGameForHeadsUp=gameObj;showShare(url,isInvite?false:true);}
-function handleHeadsUpCopyMsg(){headsupMode="msg";$('bt-headsup-input').value=headsupData.msg;try{navigator.clipboard.writeText(headsupData.msg).catch(()=>{});}catch(e){}$('bt-headsup-copy-msg').disabled=true;$('bt-headsup-copy-msg').textContent="Message copied";$('bt-headsup-copy-link').disabled=false;$('bt-headsup-copy-link').textContent=headsupData.isInvite?"Copy link instead":"Copy link";}
-function handleHeadsUpCopyLink(){headsupMode="link";$('bt-headsup-input').value=headsupData.url;try{navigator.clipboard.writeText(headsupData.url).catch(()=>{});}catch(e){}$('bt-headsup-copy-link').disabled=true;$('bt-headsup-copy-link').textContent="Link copied";$('bt-headsup-copy-msg').disabled=false;$('bt-headsup-copy-msg').textContent="Copy message instead";}
+function showCollabHeadsUp(inv, gameObj, type, inviteeName){
+  var url=makeInviteUrl(inv.id);var msg=getCollabMessage(inv, inviteeName||"there", type);
+  headsupData.url=url; headsupData.msg=msg; headsupData.isInvite=true;
+  $('bt-headsup-help').textContent=msg;
+  $('bt-headsup-input').value=url;
+  $('bt-headsup-copy-msg').disabled=false; $('bt-headsup-copy-msg').textContent="Message "+inv.invitedBy; $('bt-headsup-copy-msg').onclick=function(){ tryMessageOpponent(inv.invitedBy); };
+  $('bt-headsup-copy-link').disabled=false; $('bt-headsup-copy-link').textContent="Call "+inv.invitedBy; $('bt-headsup-copy-link').onclick=function(){ tryCallOpponent(inv.invitedBy); };
+  $('bt-headsup').hidden=false;pendingGameForHeadsUp=gameObj;currentInvite=inv;showShare(url,false);
+}
+async function showHeadsUp(inviteId,gameObj,isInvite){
+  let url=isInvite?makeInviteUrl(inviteId):makeGameStateUrl(gameObj);
+  let fullMsg=isInvite?"Join me in a scrabble-like game on BearTracks: "+url:url;
+  headsupData.url=url;headsupData.msg=fullMsg;headsupData.isInvite=isInvite;
+  $('bt-headsup-input').value=fullMsg;
+  $('bt-headsup-help').textContent="Join me in a scrabble-like game on BearTracks:";
+  try{if(navigator.clipboard&&navigator.clipboard.writeText) await navigator.clipboard.writeText(fullMsg);}catch(e){}
+  $('bt-headsup-copy-msg').disabled=true;$('bt-headsup-copy-msg').textContent="Message copied";$('bt-headsup-copy-msg').onclick=handleHeadsUpCopyMsg;
+  $('bt-headsup-copy-link').disabled=false;$('bt-headsup-copy-link').textContent="Copy link instead";$('bt-headsup-copy-link').onclick=handleHeadsUpCopyLink;
+  $('bt-headsup').hidden=false;pendingGameForHeadsUp=gameObj;showShare(url,isInvite?false:true);
+}
+function handleHeadsUpCopyMsg(){ $('bt-headsup-input').value=headsupData.msg; try{navigator.clipboard.writeText(headsupData.msg).catch(()=>{});}catch(e){} $('bt-headsup-copy-msg').disabled=true;$('bt-headsup-copy-msg').textContent="Message copied"; $('bt-headsup-copy-link').disabled=false; $('bt-headsup-copy-link').textContent=headsupData.isInvite?"Copy link instead":"Copy link"; }
+function handleHeadsUpCopyLink(){ $('bt-headsup-input').value=headsupData.url; try{navigator.clipboard.writeText(headsupData.url).catch(()=>{});}catch(e){} $('bt-headsup-copy-link').disabled=true;$('bt-headsup-copy-link').textContent="Link copied"; $('bt-headsup-copy-msg').disabled=false; $('bt-headsup-copy-msg').textContent="Copy message instead"; }
 function handleHeadsUpContinue(){
   let id = pendingGameForHeadsUp?.id || currentInvite?.gameId;
   if(location.protocol==='file:'){
     let target = (currentInvite && headsupData.isInvite)
-     ? LIVE_SITE+"?invite="+encodeURIComponent(currentInvite.id)+"&p=0"
-      : LIVE_SITE+"?game="+encodeURIComponent(id)+"&p=0";
+    ? LIVE_SITE+"?invite="+encodeURIComponent(currentInvite.id)+"&p=0"
+     : LIVE_SITE+"?game="+encodeURIComponent(id)+"&p=0";
     location.href = target;
     return;
   }
   $('bt-headsup').hidden=true;
   if(pendingGameForHeadsUp){
-    let g=pendingGameForHeadsUp;
-    state=g;initBroadcastChannel(g.id);
-    $('setup').hidden=true;render();
-    pendingGameForHeadsUp=null;
+    let g=pendingGameForHeadsUp; state=g; initBroadcastChannel(g.id);
+    $('setup').hidden=true; render(); pendingGameForHeadsUp=null;
     try{let url=new URL(location.href);url.searchParams.delete('invite');url.searchParams.delete('game');url.searchParams.delete('p');history.replaceState(null,'',url.pathname+url.search+location.hash);}catch(e){}
   }
 }
-async function handleRegister(){let uEl=$('reg-user'),pEl=$('reg-pass'),p2El=$('reg-pass2'),errEl=$('reg-error');let u=uEl?uEl.value.trim():'',p=pEl?pEl.value:'',p2=p2El?p2El.value:'';if(errEl)errEl.textContent='';if(!u||!p){if(errEl)errEl.textContent='Fill username and password';return;}if(p!==p2){if(errEl)errEl.textContent='Passwords do not match';return;}let users=[];try{users=JSON.parse(localStorage.getItem("bt_users")||"[]")}catch(e){users=[]}if(users.some(x=>x.toLowerCase()===u.toLowerCase())){if(errEl)errEl.textContent='Username taken';return;}localStorage.setItem("bt_owner",u);try{localStorage.removeItem("bt_pass_"+u.toLowerCase());}catch(e){}users.push(u);localStorage.setItem("bt_users",JSON.stringify(users));let inviteParam=null;try{inviteParam=new URLSearchParams(location.search).get("invite");}catch(e){}if(inviteParam){try{let res=await linkGameViaInvite(inviteParam,u);if(res && res.game && res.invite){let type = res.invite.mode==="unregistered-invite"? "active" : "passive";$('setup').hidden=true;showCollabHeadsUp(res.invite, res.game, type, u);return;}else{if(errEl)errEl.textContent="Invite not found, starting fresh";}}catch(e){if(errEl)errEl.textContent="Invite link failed: "+e.message;await new Promise(r=>setTimeout(r,800));}}renderBoxes();}
+async function handleRegister(){let uEl=$('reg-user'),pEl=$('reg-pass'),p2El=$('reg-pass2'),errEl=$('reg-error');let u=uEl?uEl.value.trim():'',p=pEl?pEl.value:'',p2=p2El?p2El.value:'';if(errEl)errEl.textContent='';if(!u||!p){if(errEl)errEl.textContent='Fill username and password';return;}if(p!==p2){if(errEl)errEl.textContent='Passwords do not match';return;}let users=[];try{users=JSON.parse(localStorage.getItem("bt_users")||"[]")}catch(e){users=[]}if(users.some(x=>x.toLowerCase()===u.toLowerCase())){if(errEl)errEl.textContent='Username taken';return;}localStorage.setItem("bt_owner",u);try{localStorage.removeItem("bt_pass_"+u.toLowerCase());}catch(e){}users.push(u);localStorage.setItem("bt_users",JSON.stringify(users));let inviteParam=null;try{inviteParam=new URLSearchParams(location.search).get("invite");}catch(e){}if(inviteParam){try{let res=await linkGameViaInvite(inviteParam,u);if(res && res.game && res.invite){let type = res.invite.mode==="unregistered-invite"? "active" : "passive";$('setup').hidden=true;showCollabHeadsUp(res.invite, res.game, type, u);return;} }catch(e){}}renderBoxes();}
 async function handleBegin(){let owner=getOwner();if(!owner){renderBoxes();return;}let opp=($('nameB')?$('nameB').value.trim():'');let g=fresh(owner,opp||"Opponent");await saveGameToCF(g);initBroadcastChannel(g.id);if(!opp){let iid=Date.now().toString(36)+Math.random().toString(36).slice(2,7);currentInvite={id:iid,invitedBy:owner,invitedByOpponents:getOpponents(),gameId:g.id,mode:"game-invite",created:Date.now()};try{await saveInviteToCF(currentInvite);}catch(e){}addOpponent(opp); await showHeadsUp(iid,g,true);}else{currentInvite=null;if(opp) addOpponent(opp);await showHeadsUp(null,g,false);}}
 async function handleCreateInvitation(){let owner=getOwner();if(!owner){renderBoxes();return;}let id=Date.now().toString(36)+Math.random().toString(36).slice(2,7);let placeholder=fresh(owner,"Opponent");await saveGameToCF(placeholder);initBroadcastChannel(placeholder.id);let inv={id:id,invitedBy:owner,invitedByOpponents:getOpponents(),gameId:placeholder.id,mode:"unregistered-invite",created:Date.now()};await saveInviteToCF(inv);currentInvite=inv;await showHeadsUp(id,placeholder,true);}
 function fit(){var vv=window.visualViewport;var w=vv?vv.width:window.innerWidth;var h=vv?vv.height:window.innerHeight;var mast=document.querySelector('.mast')?.offsetHeight||50;var below=document.querySelector('.below-board')?.offsetHeight||96;var availH=h-mast-below-32;var leftColW=document.querySelector('.left-col')?.clientWidth||w;var size=Math.min(leftColW,availH,h-210);if(size<200)size=200;var boardEl=document.getElementById('board');if(boardEl){boardEl.style.width=size+'px';boardEl.style.height=size+'px';}}
@@ -219,7 +228,6 @@ $('wordInput').onkeydown=function(e){if(e.key==='Enter'){if(waiting)return;e.pre
 $('wordInput').addEventListener('input',function(){if(waiting) return;if(!anchor) return;let raw=this.value;if(!raw){if(pending.length){let lr=getLocalRack();for(let i=pending.length-1;i>=0;i--){let x=pending[i];state.board[x.r][x.c]=null;lr.push(x.tile.blank?tile('?'):x.tile);}pending=[]; render();}return;}let parsed=parseEntry(raw);let word=parsed.word;if(!word) return;if(word.length>=1) placeWordAtAnchor(word);});
 $('help').onclick=function(){alert('Type word + Enter. Add 8,8,0 across / 8,8,1 down in any order (1-15). Or word alone then click board. Contestants decide first move by longest word.') };
 $('btn-register').onclick=handleRegister;$('btn-begin').onclick=handleBegin;$('btn-invite').onclick=handleCreateInvitation;
-let _bc=document.getElementById('btn-copy'); if(_bc){ _bc.onclick=function(){let uEl=document.getElementById('invite-url'); let u=uEl?uEl.value:''; try{navigator.clipboard.writeText("Join me in a scrabble-like game on BearTracks: "+u)}catch(e){prompt("Copy:",u)}}; }
 let _sc=document.getElementById('share-copy'); if(_sc){ _sc.onclick=function(){let u=document.getElementById('share-url').value;try{navigator.clipboard.writeText(u).catch(()=>{})}catch(e){prompt("Copy:",u)}}; }
 $('btn-logout').onclick=function(){localStorage.removeItem("bt_owner");$('setup').hidden=false;renderBoxes();$('reg-user').value='';$('reg-pass').value='';$('reg-pass2').value='';$('nameB').value='';let sp=$('share-panel');if(sp)sp.hidden=true;currentInvite=null;$('bt-headsup').hidden=true;pendingGameForHeadsUp=null;};
 $('reg-user').onkeydown=function(e){if(e.key==='Enter')handleRegister()};$('reg-pass2').onkeydown=function(e){if(e.key==='Enter')handleRegister()};$('nameB').onkeydown=function(e){if(e.key==='Enter')handleBegin()};
@@ -248,44 +256,40 @@ $('bt-headsup-copy-msg').onclick=handleHeadsUpCopyMsg;$('bt-headsup-copy-link').
     let inv=await loadInvite(iid);
     if(inv){
       currentInvite=inv;
-      try{
-        if(pParam==="0" && inv.invitedBy){
-          localStorage.setItem("bt_owner", inv.invitedBy);
-          owner = inv.invitedBy;
-        }
-      }catch(e){}
+      // P0 returning from file:// - skip heads-up, go straight to game
+      if(pParam==="0"){
+        try{
+          if(inv.invitedBy){ localStorage.setItem("bt_owner", inv.invitedBy); owner=inv.invitedBy; }
+          if(inv.gameId){
+            let g=await loadGame(inv.gameId);
+            if(g){
+              state=cloneRacks(g); hasState=true; initBroadcastChannel(state.id);
+              localStorage.setItem("bt_local_idx_"+state.id,"0");
+              $('setup').hidden=true; $('bt-headsup').hidden=true; render();
+              try{let url=new URL(location.href);url.searchParams.delete("p");history.replaceState(null,'',url.pathname+url.search+location.hash);}catch(e){}
+              return;
+            }
+          }
+        }catch(e){}
+      }
       if(owner){
         let g=null; if(inv.gameId) g=await loadGame(inv.gameId);
         if(g){
           g=cloneRacks(g);
           let type = inv.mode==="unregistered-invite"? "active" : "passive";
-          $('setup').hidden=true;
-          showCollabHeadsUp(inv, g, type, owner);
-          hasState=false;
+          $('setup').hidden=true; showCollabHeadsUp(inv, g, type, owner); hasState=false;
         }
-      }else{
-        $('setup').hidden=false; renderBoxes();
-      }
+      }else{ $('setup').hidden=false; renderBoxes(); }
     }
   }
   try{if(!state){let gsTxt=$('game-state').textContent;if(gsTxt && gsTxt.trim()!=='null' && gsTxt.trim()!==''){ state=cloneRacks(JSON.parse(gsTxt)); hasState=!!state; if(state) initBroadcastChannel(state.id); }}}catch(e){}
   if(state && hasState){
     try{ if(!owner) owner=localStorage.getItem("bt_owner"); }catch(e){}
     if(owner){
-      $('setup').hidden=true; initBroadcastChannel(state.id); render();
-      try{
-        let url=new URL(location.href);
-        if(url.searchParams.has("p")){
-          url.searchParams.delete("p");
-          history.replaceState(null,'',url.pathname+url.search+location.hash);
-        }
-      }catch(e){}
-    }else{
-      $('setup').hidden=false; renderBoxes();
-    }
-  }else if(!iid &&!gid){
-    $('setup').hidden=false; renderBoxes();
-  }
+      $('setup').hidden=true; $('bt-headsup').hidden=true; initBroadcastChannel(state.id); render();
+      try{let url=new URL(location.href); if(url.searchParams.has("p")){ url.searchParams.delete("p"); history.replaceState(null,'',url.pathname+url.search+location.hash); }}catch(e){}
+    }else{ $('setup').hidden=false; renderBoxes(); }
+  }else if(!iid &&!gid &&!hasState){ $('setup').hidden=false; renderBoxes(); }
   fit();
 })();
 }());
