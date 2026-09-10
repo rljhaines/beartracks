@@ -290,37 +290,23 @@ setInterval(async()=>{
 })();
 }());
 </script>
-<script>
-// Shift+Option+C : P0 wipe everything
 window.addEventListener('keydown', (e) => {
   if (e.shiftKey && e.altKey && e.code === 'KeyC') {
     e.preventDefault();
-    try { localStorage.clear(); } catch {}
-    try { sessionStorage.clear(); } catch {}
-    try {
-      const u = new URL(location.href);
-      u.search = '';
-      u.hash = '';
-      history.replaceState(null, '', u.href);
+    try { 
+      localStorage.clear(); 
+      sessionStorage.clear();
+      // force file:// to dirty the backing file
+      localStorage.setItem('__bt_flush__','1');
+      localStorage.removeItem('__bt_flush__');
     } catch {}
-    location.reload();
+    const clean = location.origin + location.pathname;
+    try { history.replaceState(null,'',clean); } catch {}
+    // do NOT call location.reload() or location.href
+    // just close the tab by hand, then Quit Chrome
+    document.body.innerHTML = '<h1 style="font:20px sans-serif;padding:40px">Cleared - now Cmd+Q Chrome, then open index.html</h1>';
   }
-});
-
-// Other tabs follow P0
-window.addEventListener('storage', (ev) => {
-  if (ev.key === 'bt_owner' && ev.newValue === null) {
-    try { localStorage.clear(); } catch {}
-    try { sessionStorage.clear(); } catch {}
-    try {
-      const u = new URL(location.href);
-      u.search = '';
-      u.hash = '';
-      history.replaceState(null, '', u.href);
-    } catch {}
-    location.reload();
-  }
-});
+}, true);
 </script>
 </script>
 </body>
