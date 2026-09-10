@@ -291,36 +291,35 @@ setInterval(async()=>{
 }());
 </script>
 <script>
-// Shift+Option+C
 window.addEventListener('keydown', (e) => {
   if (e.shiftKey && e.altKey && e.code === 'KeyC') {
     e.preventDefault();
     if (!confirm('Wipe? Clears bt_*, session, #s=, ?s=, ?game=, ?invite= and reloads clean')) return;
-    try { if (window.btChannel) window.btChannel.close(); } catch {}
-    const toDelete = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i);
-      if (k && k.startsWith('bt_')) toDelete.push(k);
-    }
-    toDelete.forEach(k => { try { localStorage.removeItem(k); } catch {} });
-    try { localStorage.clear(); } catch {}
-    try { sessionStorage.clear(); } catch {}
-    try { localStorage.setItem('bt_wipe_signal', Date.now()); } catch {}
-    try { localStorage.removeItem('bt_wipe_signal'); } catch {}
-    // wipe URL - this is the part you identified
+    try { window.btChannel?.close(); } catch {}
     try {
-      const clean = location.origin + location.pathname;
-      history.replaceState(null,'', clean);
-      location.href = clean;
+      for (let i = localStorage.length-1; i>=0; i--) {
+        const k = localStorage.key(i);
+        if (k?.startsWith('bt_')) localStorage.removeItem(k);
+      }
+      localStorage.clear();
+    } catch {}
+    try { sessionStorage.clear(); } catch {}
+    try {
+      const u = new URL(location.href);
+      u.search = '';
+      u.hash = '';
+      history.replaceState(null,'', u.href);
     } catch {
       location.hash = '';
       location.search = '';
-      location.reload();
     }
+    location.reload();
   }
 });
 window.addEventListener('storage', (ev) => {
-  if (!ev.key || ev.key.startsWith('bt_') || ev.key === 'bt
+  if (ev.key === 'bt_owner' && ev.newValue === null) location.reload();
+});
+</script>
 </script>
 </body>
 </html>
