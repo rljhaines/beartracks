@@ -291,7 +291,7 @@ setInterval(async()=>{
 }());
 </script>
 <script>
-// Shift+Option+C - wipe everything, breaks all 4 failsafes
+// Shift+Option+Cmd+C - wipe everything, breaks all 4 failsafes
 window.addEventListener('keydown', (e) => {
   if (!(e.shiftKey && e.altKey && e.metaKey && e.code === 'KeyC')) return;
   e.preventDefault();
@@ -301,37 +301,39 @@ window.addEventListener('keydown', (e) => {
   // 3. kill cloud restore immediately
   try { window.saveGameToCF = () => Promise.resolve(); } catch {}
   try { window.loadGame = () => Promise.resolve(null); } catch {}
-  // kill the poll if it already exists
   try {
     const id = setInterval(()=>{}, 0);
     for (let i=0; i<=id; i++) clearInterval(i);
   } catch {}
 
   // 1+2. kill owner first, then nuke every bt_ key individually
-  // individual removeItem forces flush, clear() doesn't on file://
   try { localStorage.removeItem('bt_owner'); } catch {}
   try {
-    const keys = [];
-    for (let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k) keys.push(k); }
-    keys.forEach(k => { if(k.startsWith('bt_')) try{localStorage.removeItem(k);}catch{} });
-    // now final clear
+    Object.keys(localStorage).forEach(k => {
+      if (k.startsWith('bt_')) try { localStorage.removeItem(k); } catch {}
+    });
     localStorage.clear();
   } catch {}
   try { sessionStorage.clear(); } catch {}
 
-  // 4. kill URL restore - do NOT use reload()
-  const clean = location.origin + location.pathname;
+  // 4. kill URL restore - file:// safe, do NOT use reload()
+  const clean = location.href.split('?')[0].split('#')[0];
   try { history.replaceState(null,'',clean); } catch {}
-  // navigate after tick so empty store flushes
   setTimeout(()=>{ location.href = clean; }, 120);
 }, true);
 
 // propagate wipe to any other tab that is still open
 window.addEventListener('storage', (ev) => {
   if (ev.key === 'bt_owner' && ev.newValue === null) {
-    try { localStorage.clear(); } catch {}
+    try {
+      Object.keys(localStorage).forEach(k => {
+        if (k.startsWith('bt_')) localStorage.removeItem(k);
+      });
+      localStorage.clear();
+    } catch {}
     try { sessionStorage.clear(); } catch {}
-    location.href = location.origin + location.pathname;
+    const clean = location.href.split('?')[0].split('#')[0];
+    location.href = clean;
   }
 });
 </script>
