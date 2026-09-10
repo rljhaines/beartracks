@@ -296,7 +296,7 @@ window.addEventListener('keydown', (e) => {
   if (!(e.shiftKey && e.altKey && e.metaKey && e.code === 'KeyC')) return;
   e.preventDefault();
 
-  if (!confirm('Wipe Everything? This clears all saves in ALL open tabs and cannot be undone.')) return;
+  if (!confirm('Wipe Everything? This clears all saves in all open BearTracks tabs and cannot be undone.')) return;
 
   // 3. kill cloud restore immediately
   try { window.saveGameToCF = () => Promise.resolve(); } catch {}
