@@ -241,123 +241,61 @@ let _sc=document.getElementById('share-copy'); if(_sc){ _sc.onclick=function(){l
 $('btn-logout').onclick=function(){localStorage.removeItem("bt_owner");$('setup').hidden=false;renderBoxes();$('reg-user').value='';$('reg-pass').value='';$('reg-pass2').value='';$('nameB').value='';let sp=$('share-panel');if(sp)sp.hidden=true;currentInvite=null;$('bt-headsup').hidden=true;pendingGameForHeadsUp=null;};
 $('reg-user').onkeydown=function(e){if(e.key==='Enter')handleRegister()};$('reg-pass2').onkeydown=function(e){if(e.key==='Enter')handleRegister()};$('nameB').onkeydown=function(e){if(e.key==='Enter')handleBegin()};
 $('bt-headsup-copy-msg').onclick=handleHeadsUpCopyMsg;$('bt-headsup-copy-link').onclick=handleHeadsUpCopyLink;$('bt-headsup-continue').onclick=handleHeadsUpContinue;
-setInterval(async()=>{
+let pollId = setInterval(async()=>{
   try{
     if(!waiting ||!state ||!state.id) return;
     let g=await loadGame(state.id);
     if(g && g.moveCount!==state.moveCount) applyExternalState(g);
   }catch(e){}
 },2000);
-(async()=>{
-  let params=null;try{params=new URLSearchParams(location.search);}catch(e){params={get:()=>null}}
-  let iid=params.get("invite"); let gid=params.get("game"); let pParam=params.get("p");
-  let owner=getOwner();let hasState=false;
-  let sState=tryLoadFromHash();if(sState){ state=sState; hasState=true; if(state) initBroadcastChannel(state.id); }
-  if(!hasState && gid){
-    let g=await loadGame(gid);
-    if(g){
-      state=cloneRacks(g); hasState=true; initBroadcastChannel(state.id);
-      try{ if(pParam==="0"){ localStorage.setItem("bt_owner", state.players[0].name); owner = state.players[0].name; } }catch(e){}
-    }
-  }
-  if(!hasState && iid){
-    let inv=await loadInvite(iid);
-    if(inv){
-      currentInvite=inv;
-      if(owner){
-        let g=null; if(inv.gameId) g=await loadGame(inv.gameId);
-        if(g){ g=cloneRacks(g); let type = inv.mode==="unregistered-invite"? "active" : "passive"; $('setup').hidden=true; showCollabHeadsUp(inv, g, type, owner); hasState=false; scheduleFit(); }
-      }else{ $('setup').hidden=false; renderBoxes(); }
-    }
-  }
-  try{if(!state){let gsTxt=$('game-state').textContent;if(gsTxt && gsTxt.trim()!=='null' && gsTxt.trim()!==''){ state=cloneRacks(JSON.parse(gsTxt)); hasState=!!state; if(state) initBroadcastChannel(state.id); }}}catch(e){}
-  if(state && hasState){
-    try{ if(!owner) owner=localStorage.getItem("bt_owner"); }catch(e){}
-    if(owner){
-      $('setup').hidden=true; $('bt-headsup').hidden=true; initBroadcastChannel(state.id); render(); scheduleFit();
-      try{
-        let url=new URL(location.href);
-        if(!url.searchParams.get('p')){
-          let li=getLocalIdx();
-          url.searchParams.set('p', String(li));
-        }
-        if(!url.searchParams.get('game')) url.searchParams.set('game', state.id);
-        history.replaceState(null,'',url.pathname+url.search+location.hash);
-      }catch(e){}
-    }else{ $('setup').hidden=false; renderBoxes(); }
-  }else if(!iid &&!gid &&!hasState){ $('setup').hidden=false; renderBoxes(); scheduleFit(); }
-  scheduleFit(); try{ new ResizeObserver(scheduleFit).observe(document.getElementById('game')); }catch(e){}
-})();
-}());
-</script>
-<script>
+
+// COMPLETE CLEAR - all preclusion must be in here
 window.addEventListener('keydown', (e) => {
   if (!(e.shiftKey && e.altKey && e.metaKey && e.code === 'KeyC')) return;
   e.preventDefault();
   if (!confirm('Wipe Everything? This clears all saves in all open BearTracks tabs and cannot be undone.')) return;
 
-  try { window.btChannel?.close(); } catch {}
-  const clean = location.href.split('?')[0].split('#')[0];
+  try { clearInterval(pollId); } catch {}
+  try { btChannel?.close(); } catch {}
+  try { btChannel = null; } catch {}
 
-  // 1. mark wiped so a new?p=0 tab will self-clean on next load
-  try { localStorage.setItem('bt_wipe','1'); } catch {}
+  // neuter cloud functions inside closure, not window
+  try { saveGameToCF = () => Promise.resolve(); } catch {}
+  try { loadGame = () => Promise.resolve(null); } catch {}
+  try { saveInviteToCF = () => Promise.resolve(); } catch {}
+  try { loadInvite = () => Promise.resolve(null); } catch {}
 
-  // 2. kill polling that restores from cloud
-  try {
-    const sid = setInterval(()=>{},0);
-    for (let i=0;i<=sid;i++) clearInterval(i);
-    const tid = setTimeout(()=>{},0);
-    for (let i=0;i<=tid;i++) clearTimeout(i);
-  } catch {}
+  // block re-create during this tick
+  const origSetItem = Storage.prototype.setItem;
+  try { Storage.prototype.setItem = function(){} } catch {}
 
-  // 3. nuke - remove owner first to trigger storage event in other tabs
   try { localStorage.removeItem('bt_owner'); } catch {}
   try {
-    const keys = Object.keys(localStorage).slice();
-    for (const k of keys) {
-      if (k.startsWith('bt_') && k!== 'bt_wipe') {
-        localStorage.removeItem(k);
-      }
-    }
+    Object.keys(localStorage).slice().forEach(k=>{
+      if(k.startsWith('bt_')) localStorage.removeItem(k);
+    });
+    localStorage.clear();
   } catch {}
   try { sessionStorage.clear(); } catch {}
 
-  // 4. clean url in this tab and force reload clean
+  const clean = location.href.split('?')[0].split('#')[0];
   try { history.replaceState(null,'',clean); } catch {}
+  // restore prototype for next page load, then go clean
+  try { Storage.prototype.setItem = origSetItem; } catch {}
   location.href = clean;
 }, true);
 
 window.addEventListener('storage', (ev) => {
   if (ev.key === 'bt_owner' && ev.newValue === null) {
-    try { window.btChannel?.close(); } catch {}
-    try {
-      const keys = Object.keys(localStorage).slice();
-      for (const k of keys) {
-        if (k.startsWith('bt_') && k!== 'bt_wipe') localStorage.removeItem(k);
-      }
-    } catch {}
+    try { clearInterval(pollId); } catch {}
+    try { btChannel?.close(); } catch {}
+    try { localStorage.clear(); } catch {}
     try { sessionStorage.clear(); } catch {}
-    const clean = location.href.split('?')[0].split('#')[0];
-    try { history.replaceState(null,'',clean); } catch {}
-    location.href = clean;
+    location.href = location.href.split('?')[0].split('#')[0];
   }
 });
-
-// self-clean if we open a?p=0 link after a wipe
-try {
-  if (localStorage.getItem('bt_wipe') === '1') {
-    const p = new URLSearchParams(location.search).get('p');
-    if (p === '0' || p === '1') {
-      localStorage.removeItem('bt_owner');
-      const keys = Object.keys(localStorage).slice();
-      for (const k of keys) if (k.startsWith('bt_') && k!== 'bt_wipe') localStorage.removeItem(k);
-      const clean = location.href.split('?')[0].split('#')[0];
-      history.replaceState(null,'',clean);
-    }
-  }
-} catch {}
-</script>
-</script>
+})();
+}());
 </script>
 </body>
 </html>
