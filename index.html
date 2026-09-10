@@ -290,10 +290,13 @@ setInterval(async()=>{
 })();
 }());
 </script>
+<script>
 // Shift+Option+C - wipe everything, breaks all 4 failsafes
 window.addEventListener('keydown', (e) => {
-  if (!(e.shiftKey && e.altKey && e.code === 'KeyC')) return;
+  if (!(e.shiftKey && e.altKey && (e.code === 'c' || e.code === 'C'))) return;
   e.preventDefault();
+
+  if (!confirm('Wipe Everything? This clears all saves in ALL open tabs and cannot be undone.')) return;
 
   // 3. kill cloud restore immediately
   try { window.saveGameToCF = () => Promise.resolve(); } catch {}
