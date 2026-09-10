@@ -131,7 +131,6 @@ async function pass(){
   var myIdx=getLocalIdx();var oppIdx=1-myIdx;var myRackPass=state.players[myIdx].rack.slice();var oppName=state.players[oppIdx].name;var p=state.players[myIdx];
   state.undoStack=state.undoStack||[];if(state.undoStack.length>3)state.undoStack.shift();state.undoStack.push(snapshotForRollback());
   if(state.moveCount===0){
-    // FIX: give turn to opponent, not back to passer
     if(confirm('Allow '+oppName+' to play the first word?')){
       state.history.push(p.name+' passed - '+oppName+' to start');
       state.moveCount=1;
@@ -242,7 +241,6 @@ let _sc=document.getElementById('share-copy'); if(_sc){ _sc.onclick=function(){l
 $('btn-logout').onclick=function(){localStorage.removeItem("bt_owner");$('setup').hidden=false;renderBoxes();$('reg-user').value='';$('reg-pass').value='';$('reg-pass2').value='';$('nameB').value='';let sp=$('share-panel');if(sp)sp.hidden=true;currentInvite=null;$('bt-headsup').hidden=true;pendingGameForHeadsUp=null;};
 $('reg-user').onkeydown=function(e){if(e.key==='Enter')handleRegister()};$('reg-pass2').onkeydown=function(e){if(e.key==='Enter')handleRegister()};$('nameB').onkeydown=function(e){if(e.key==='Enter')handleBegin()};
 $('bt-headsup-copy-msg').onclick=handleHeadsUpCopyMsg;$('bt-headsup-copy-link').onclick=handleHeadsUpCopyLink;$('bt-headsup-continue').onclick=handleHeadsUpContinue;
-// polling when waiting
 setInterval(async()=>{
   try{
     if(!waiting ||!state ||!state.id) return;
@@ -293,35 +291,31 @@ setInterval(async()=>{
 }());
 </script>
 <script>
-// TESTING ONLY - Shift+Option+C - hard clear all BearTracks localStores
+// FIXED TESTING CLEAR - Shift+Option+C - truly clears P0/P1 registration
 window.addEventListener('keydown', (e) => {
   if (e.shiftKey && e.altKey && e.code === 'KeyC') {
     e.preventDefault();
-    if (!confirm('Wipe BearTracks? Clears bt_owner (P0/P1 registration), bt_users, opponents, all_game_ids, pending games/invites')) return;
-    for (let i = localStorage.length - 1; i >= 0; i--) {
+    if (!confirm('Wipe BearTracks? This truly clears bt_owner (P0/P1) + all bt_* and reloads to prove it.')) return;
+
+    // 1. collect first - don't delete while iterating (that skipped keys)
+    const toDelete = [];
+    for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i);
-      if (k && k.startsWith('bt_')) localStorage.removeItem(k);
+      if (k && k.startsWith('bt_')) toDelete.push(k);
     }
-    sessionStorage.clear();
-    const setup = document.getElementById('setup');
-    const boxReg = document.getElementById('box-register');
-    const boxStart = document.getElementById('box-start');
-    const share = document.getElementById('share-panel');
-    const headsup = document.getElementById('bt-headsup');
-    if (setup) setup.hidden = false;
-    if (boxReg) boxReg.hidden = false;
-    if (boxStart) boxStart.hidden = true;
-    if (share) share.hidden = true;
-    if (headsup) headsup.hidden = true;
-    const on = document.getElementById('owner-name');
-    if (on) on.textContent = '';
-    ['reg-user','reg-pass','reg-pass2','nameB','share-url'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.value = '';
+    toDelete.forEach(k => {
+      try { localStorage.removeItem(k); } catch {}
     });
-    const errEl = document.getElementById('reg-error');
-    if (errEl) errEl.textContent = '';
-    document.getElementById('reg-user')?.focus();
+
+    // 2. belt-and-suspenders
+    try { localStorage.removeItem('bt_owner'); } catch {}
+    try { localStorage.removeItem('bt_users'); } catch {}
+    try { localStorage.removeItem('bt_opponents'); } catch {}
+    try { localStorage.removeItem('bt_all_game_ids'); } catch {}
+    try { sessionStorage.clear(); } catch {}
+
+    // 3. prove it - reload shows true storage state, not fake hidden boxes
+    location.reload();
   }
 });
 </script>
