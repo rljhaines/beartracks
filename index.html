@@ -291,33 +291,35 @@ setInterval(async()=>{
 }());
 </script>
 <script>
+// Shift+Option+C : P0 wipe everything
 window.addEventListener('keydown', (e) => {
   if (e.shiftKey && e.altKey && e.code === 'KeyC') {
     e.preventDefault();
-    if (!confirm('Wipe? Clears bt_*, session, #s=, ?s=, ?game=, ?invite= and reloads clean')) return;
-    try { window.btChannel?.close(); } catch {}
-    try {
-      for (let i = localStorage.length-1; i>=0; i--) {
-        const k = localStorage.key(i);
-        if (k?.startsWith('bt_')) localStorage.removeItem(k);
-      }
-      localStorage.clear();
-    } catch {}
+    try { localStorage.clear(); } catch {}
     try { sessionStorage.clear(); } catch {}
     try {
       const u = new URL(location.href);
       u.search = '';
       u.hash = '';
-      history.replaceState(null,'', u.href);
-    } catch {
-      location.hash = '';
-      location.search = '';
-    }
+      history.replaceState(null, '', u.href);
+    } catch {}
     location.reload();
   }
 });
+
+// Other tabs follow P0
 window.addEventListener('storage', (ev) => {
-  if (ev.key === 'bt_owner' && ev.newValue === null) location.reload();
+  if (ev.key === 'bt_owner' && ev.newValue === null) {
+    try { localStorage.clear(); } catch {}
+    try { sessionStorage.clear(); } catch {}
+    try {
+      const u = new URL(location.href);
+      u.search = '';
+      u.hash = '';
+      history.replaceState(null, '', u.href);
+    } catch {}
+    location.reload();
+  }
 });
 </script>
 </script>
