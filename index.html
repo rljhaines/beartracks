@@ -106,25 +106,35 @@ $('btn-logout').onclick=function(){localStorage.removeItem("bt_owner");$('setup'
 $('reg-user').onkeydown=function(e){if(e.key==='Enter')handleRegister()};$('reg-pass2').onkeydown=function(e){if(e.key==='Enter')handleRegister()};$('nameB').onkeydown=function(e){if(e.key==='Enter')handleBegin()};
 $('bt-headsup-copy-msg').onclick=handleHeadsUpCopyMsg;$('bt-headsup-copy-link').onclick=handleHeadsUpCopyLink;$('bt-headsup-continue').onclick=handleHeadsUpContinue;
 let pollId = setInterval(async()=>{ if(isWiped()) return; try{ if(!waiting ||!state ||!state.id) return; let g=await loadGame(state.id); if(isWiped()) return; if(g && g.moveCount!==state.moveCount) applyExternalState(g); }catch(e){} },2000);
+
+// ONLY CHANGE: clean Clear that actually undoes registration, no storage listener
 async function hardClear(){
   if(isWiped()) return;
   wiping=true;
-  if(!confirm('Wipe Everything? This clears all saves in all open BearTracks tabs and cannot be undone.')){ wiping=false; return; }
+  if(!confirm('Wipe Everything? This clears all saves in this tab and cannot be undone.')){ wiping=false; return; }
   try{ clearInterval(pollId); }catch{}
   try{ let id=setInterval(()=>{},0); for(let i=0;i<=id;i++) clearInterval(i); let tid=setTimeout(()=>{},0); for(let i=0;i<=tid;i++) clearTimeout(i); }catch{}
   try{ btChannel?.close(); }catch{} btChannel=null;
   let ids=[]; try{ ids=getAllGameIds(); }catch{}
   saveGameToCF = ()=>Promise.resolve(); loadGame = ()=>Promise.resolve(null); saveInviteToCF = ()=>Promise.resolve(); loadInvite = ()=>Promise.resolve(null);
-  try{ Storage.prototype.setItem = function(){} }catch{}
   try{ for(let gid of ids){ try{ fetch(API+"/games/"+gid,{method:"DELETE"}).catch(()=>{}); }catch{} } }catch{}
   try{ localStorage.removeItem('bt_owner'); }catch{}
-  try{ let keys=Object.keys(localStorage); for(let k of keys){ if(k.startsWith('bt_')){ try{localStorage.removeItem(k);}catch{} } } localStorage.clear(); }catch{}
-  try{ sessionStorage.clear(); }catch{} try{ indexedDB.deleteDatabase && indexedDB.deleteDatabase('beartracks'); }catch{}
-  let clean = location.href.split('?')[0].split('#')[0];
-  try{ history.replaceState(null,'',clean); }catch{} try{ location.replace(clean); }catch{ location.href=clean; }
+  try{ localStorage.removeItem('bt_users'); }catch{}
+  try{ localStorage.removeItem('bt_opponents'); }catch{}
+  try{ localStorage.removeItem('bt_all_game_ids'); }catch{}
+  try{
+    let keys=Object.keys(localStorage);
+    for(let k of keys){ if(k.startsWith('bt_')){ try{localStorage.removeItem(k);}catch{} } }
+    localStorage.clear();
+  }catch{}
+  try{ sessionStorage.clear(); }catch{}
+  try{ Storage.prototype.setItem=function(){} }catch{}
+  let clean=location.href.split('?')[0].split('#')[0];
+  try{ history.replaceState(null,'',clean); }catch{}
+  try{ location.replace(clean); }catch{ location.href=clean; }
 }
 window.addEventListener('keydown',(e)=>{ if(!(e.shiftKey && e.altKey && e.metaKey && e.code==='KeyC')) return; e.preventDefault(); hardClear(); },true);
-window.addEventListener('storage',(ev)=>{ if(ev.key==='bt_owner' && ev.newValue===null &&!isWiped()){ wiping=true; try{ Storage.prototype.setItem=function(){} }catch{} try{ btChannel?.close(); }catch{} btChannel=null; saveGameToCF=()=>Promise.resolve(); loadGame=()=>Promise.resolve(null); try{ let keys=Object.keys(localStorage); for(let k of keys){ if(k.startsWith('bt_')){ try{localStorage.removeItem(k);}catch{} } } localStorage.clear(); }catch{} try{ sessionStorage.clear(); }catch{} let clean=location.href.split('?')[0].split('#')[0]; try{ location.replace(clean); }catch{ location.href=clean; } } });
+
 (async()=>{
   if(isWiped()) return;
   let params=null;try{params=new URLSearchParams(location.search);}catch(e){params={get:()=>null}}
