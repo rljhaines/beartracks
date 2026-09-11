@@ -106,61 +106,22 @@ $('btn-logout').onclick=function(){localStorage.removeItem("bt_owner");$('setup'
 $('reg-user').onkeydown=function(e){if(e.key==='Enter')handleRegister()};$('reg-pass2').onkeydown=function(e){if(e.key==='Enter')handleRegister()};$('nameB').onkeydown=function(e){if(e.key==='Enter')handleBegin()};
 $('bt-headsup-copy-msg').onclick=handleHeadsUpCopyMsg;$('bt-headsup-copy-link').onclick=handleHeadsUpCopyLink;$('bt-headsup-continue').onclick=handleHeadsUpContinue;
 let pollId = setInterval(async()=>{ if(isWiped()) return; try{ if(!waiting ||!state ||!state.id) return; let g=await loadGame(state.id); if(isWiped()) return; if(g && g.moveCount!==state.moveCount) applyExternalState(g); }catch(e){} },2000);
-
-// ONLY THIS FUNCTION CHANGED - active null-player, no DELETE
 async function hardClear(){
   if(isWiped()) return;
   wiping=true;
-  if(!confirm('Wipe Everything? Active unregister to null-player.')){ wiping=false; return; }
+  if(!confirm('Wipe Everything? This clears all saves in all open BearTracks tabs and cannot be undone.')){ wiping=false; return; }
   try{ clearInterval(pollId); }catch{}
+  try{ let id=setInterval(()=>{},0); for(let i=0;i<=id;i++) clearInterval(i); let tid=setTimeout(()=>{},0); for(let i=0;i<=tid;i++) clearTimeout(i); }catch{}
   try{ btChannel?.close(); }catch{} btChannel=null;
-  saveGameToCF = ()=>Promise.resolve(); loadGame = ()=>Promise.resolve(null);
-  saveInviteToCF = ()=>Promise.resolve(); loadInvite = ()=>Promise.resolve(null);
-
-  let owner=null; try{ owner=localStorage.getItem("bt_owner"); }catch{}
-  let ownerLC=(owner||'').toLowerCase();
-
-  // 1. replace in users
-  try{
-    let users=JSON.parse(localStorage.getItem("bt_users")||'[]');
-    if(ownerLC) users=users.filter(u=> (u||'').toLowerCase()!==ownerLC);
-    localStorage.setItem("bt_users", JSON.stringify(users));
-  }catch{ try{ localStorage.setItem("bt_users","[]"); }catch{} }
-
   let ids=[]; try{ ids=getAllGameIds(); }catch{}
-
-  // 2. overwrite cloud games with null-player - DO NOT DELETE
-  for(let gid of ids){
-    try{
-      let g=null;
-      try{ g=JSON.parse(localStorage.getItem('bt_pending_game_'+gid)||'null'); }catch{}
-      if(!g){ try{ let r=await fetch(API+"/games/"+gid); if(r.ok){ let j=await r.json(); g=j.game; } }catch{} }
-      if(g && g.players && g.players[0]){
-        g.players[0].name=""; // null-player, fails if(!owner)
-        g.players[0].rack=[];
-        g.players[0].score=0;
-        // overwrite, not delete - so old?game= link can't bring back pooh
-        try{ await fetch(API+"/games/"+gid,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({game:g})}); }catch{}
-        try{ localStorage.setItem('bt_pending_game_'+gid, JSON.stringify(g)); }catch{}
-      }
-    }catch{}
-  }
-
-  // 3. clear local game state but keep null registration
-  for(let gid of ids){
-    try{ localStorage.removeItem('bt_pending_game_'+gid); }catch{}
-    try{ localStorage.removeItem('bt_pending_invite_'+gid); }catch{}
-  }
-  try{ localStorage.removeItem('bt_all_game_ids'); }catch{}
-  try{ localStorage.removeItem('bt_opponents'); }catch{}
-  try{ sessionStorage.clear(); }catch{}
-
-  try{ localStorage.setItem("bt_owner",""); }catch{} // "" => renderBoxes shows registration
-  try{ Storage.prototype.setItem=function(){} }catch{}
-
-  let clean=location.href.split('?')[0].split('#')[0];
-  try{ history.replaceState(null,'',clean); }catch{}
-  try{ location.replace(clean); }catch{ location.href=clean; }
+  saveGameToCF = ()=>Promise.resolve(); loadGame = ()=>Promise.resolve(null); saveInviteToCF = ()=>Promise.resolve(); loadInvite = ()=>Promise.resolve(null);
+  try{ Storage.prototype.setItem = function(){} }catch{}
+  try{ for(let gid of ids){ try{ fetch(API+"/games/"+gid,{method:"DELETE"}).catch(()=>{}); }catch{} } }catch{}
+  try{ localStorage.removeItem('bt_owner'); }catch{}
+  try{ let keys=Object.keys(localStorage); for(let k of keys){ if(k.startsWith('bt_')){ try{localStorage.removeItem(k);}catch{} } } localStorage.clear(); }catch{}
+  try{ sessionStorage.clear(); }catch{} try{ indexedDB.deleteDatabase && indexedDB.deleteDatabase('beartracks'); }catch{}
+  let clean = location.href.split('?')[0].split('#')[0];
+  try{ history.replaceState(null,'',clean); }catch{} try{ location.replace(clean); }catch{ location.href=clean; }
 }
 window.addEventListener('keydown',(e)=>{ if(!(e.shiftKey && e.altKey && e.metaKey && e.code==='KeyC')) return; e.preventDefault(); hardClear(); },true);
 window.addEventListener('storage',(ev)=>{ if(ev.key==='bt_owner' && ev.newValue===null &&!isWiped()){ wiping=true; try{ Storage.prototype.setItem=function(){} }catch{} try{ btChannel?.close(); }catch{} btChannel=null; saveGameToCF=()=>Promise.resolve(); loadGame=()=>Promise.resolve(null); try{ let keys=Object.keys(localStorage); for(let k of keys){ if(k.startsWith('bt_')){ try{localStorage.removeItem(k);}catch{} } } localStorage.clear(); }catch{} try{ sessionStorage.clear(); }catch{} let clean=location.href.split('?')[0].split('#')[0]; try{ location.replace(clean); }catch{ location.href=clean; } } });
