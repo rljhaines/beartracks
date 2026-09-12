@@ -45,7 +45,7 @@ function fresh(a,b){var bag=[],k,i;for(k in D)for(i=0;i<D[k];i++)bag.push(k);shu
 function cloneRacks(g){if(!g||!g.players) return g;g.players=g.players.map(function(pl){return {name:pl.name,score:pl.score,rack:pl.rack.map(function(t){return {l:t.l,blank:!!t.blank}})}});return g;}
 function message(t,isPrompt){ if(isWiped()) return; var el=$('status');el.textContent=t;el.classList.remove('prompt');void el.offsetWidth;if(isPrompt)el.classList.add('prompt')}
 function clearPrompt(){var el=$('status');el.classList.remove('prompt');}
-function getLocalIdx(){ let q; try{ q=new URLSearchParams(location.search) }catch(e){ q={get:()=>null} } if(q.get('p')==='0'||q.get('p')==='1') return Number(q.get('p')); let owner=(getOwner()||"").toLowerCase(); if(!state) return 0; for(let i=0;i<state.players.length;i++) if((state.players[i].name||"").toLowerCase()===owner) return i; if(owner && (state.players[1].name||"").toLowerCase().indexOf("opponent")===0) return 1; return state.turn; }
+function getLocalIdx(){ let q; try{ q=new URLSearchParams(location.search) }catch(e){ q={get:()=>null} } if(q.get('p')==='0'||q.get('p')==='1') return Number(q.get('p')); let owner=(getOwner()||"").toLowerCase(); if(!state) return 0; for(let i=0;i<state.players.length;i++) if((state.players[i].name||"").toLowerCase()===owner) return i; return state.turn; }
 function getLocalRack(){ if(!state) return []; return state.players[getLocalIdx()].rack; }
 function renderRack(){if(isWiped()||!state) return;var rack=getLocalRack();if(waiting && waitingRack){rack=waitingRack;}var rh='';for(var i=0;i<rack.length;i++){rh+='<button draggable="true" class="rack-tile '+(i===selected?'selected':'')+'" data-i="'+i+'">'+rack[i].l+'<small>'+V[rack[i].l]+'</small></button>';}$('rack').innerHTML=rh;var rs=$('rack').getElementsByTagName('button');for(i=0;i<rs.length;i++){rs[i].onclick=pick;rs[i].ondragstart=dragRack;}}
 function render(){if(isWiped()||!state)return; let li=getLocalIdx(); let isMyTurn = (state.moveCount===0)? true : (state.turn===li); waiting =!isMyTurn; if(!waiting){ waitingRack=null; waitingOpp=null; } var b=$('board');b.innerHTML='';for(var r=0;r<N;r++)for(var c=0;c<N;c++){var btn=document.createElement('button');btn.className='cell '+premium(r,c).toLowerCase()+(anchor&&anchor.r===r&&anchor.c===c?' anchor':'');btn.dataset.r=r;btn.dataset.c=c;if(state.board[r][c]&&isNew(r,c))btn.draggable=true;var t2=state.board[r][c];var pr=premium(r,c);if(t2){var sp=document.createElement('span');sp.className='tile '+(t2.blank?'blank':'');sp.textContent=t2.l;var b2=document.createElement('b');b2.textContent=t2.blank?0:V[t2.l];sp.appendChild(b2);btn.appendChild(sp);}else if(pr){var prs=document.createElement('span');prs.className='premium';prs.textContent=pr;btn.appendChild(prs);}b.appendChild(btn);}var cells=b.getElementsByTagName('button');for(var i=0;i<cells.length;i++){cells[i].onclick=place;cells[i].ondblclick=vertical;cells[i].ondragover=allowDrop;cells[i].ondrop=dropCell;cells[i].ondragstart=dragBoard;cells[i].onmousedown=startGesture;cells[i].onmouseup=endGesture}renderRack();if(state.moveCount===0){$('scores').innerHTML=state.players.map(function(x){return '<div class="score"><span>'+esc(x.name)+'</span><strong>'+x.score+'</strong></div>'}).join('');}else{$('scores').innerHTML=state.players.map(function(x,i){return '<div class="score '+(i===state.turn?'active':'')+'"><span>'+esc(x.name)+(i===state.turn?' - turn':'')+'</span><strong>'+x.score+'</strong></div>'}).join('');}$('history').innerHTML=state.history.slice().reverse().map(function(x){return'<li>'+esc(x)+'</li>'}).join('');$('bag').textContent=state.bag.length+' tiles remain.';if(state.moveCount===0){$('turnPill').textContent='Decide first move - longest word';}else{$('turnPill').textContent=isMyTurn? 'Your turn ('+state.players[li].name+')' : state.players[state.turn].name+"'s turn";}$('placement').textContent=anchor?'Starts at '+String.fromCharCode(65+anchor.c)+(anchor.r+1)+' '+(anchor.d==='H'?'across':'down'):'';
@@ -88,7 +88,47 @@ function showCollabHeadsUp(inv, gameObj, type, inviteeName){ if(isWiped()) retur
 async function showHeadsUp(inviteId,gameObj,isInvite){ if(isWiped()) return; let url=isInvite?makeInviteUrl(inviteId):makeGameStateUrl(gameObj); let fullMsg=isInvite?"Join me in a scrabble-like game on BearTracks: "+url:url; headsupData.url=url;headsupData.msg=fullMsg;headsupData.isInvite=isInvite; $('bt-headsup-input').value=fullMsg; $('bt-headsup-help').textContent="Join me in a scrabble-like game on BearTracks:"; try{if(navigator.clipboard&&navigator.clipboard.writeText) await navigator.clipboard.writeText(fullMsg);}catch(e){} $('bt-headsup-copy-msg').disabled=true;$('bt-headsup-copy-msg').textContent="Message copied";$('bt-headsup-copy-msg').onclick=handleHeadsUpCopyMsg; $('bt-headsup-copy-link').disabled=false;$('bt-headsup-copy-link').textContent="Copy link instead";$('bt-headsup-copy-link').onclick=handleHeadsUpCopyLink; $('bt-headsup').hidden=false;pendingGameForHeadsUp=gameObj;showShare(url,isInvite?false:true); scheduleFit(); }
 function handleHeadsUpCopyMsg(){ if(isWiped()) return; $('bt-headsup-input').value=headsupData.msg; try{navigator.clipboard.writeText(headsupData.msg).catch(()=>{});}catch(e){} $('bt-headsup-copy-msg').disabled=true;$('bt-headsup-copy-msg').textContent="Message copied"; $('bt-headsup-copy-link').disabled=false; $('bt-headsup-copy-link').textContent=headsupData.isInvite?"Copy link instead":"Copy link"; }
 function handleHeadsUpCopyLink(){ if(isWiped()) return; $('bt-headsup-input').value=headsupData.url; try{navigator.clipboard.writeText(headsupData.url).catch(()=>{});}catch(e){} $('bt-headsup-copy-link').disabled=true;$('bt-headsup-copy-link').textContent="Link copied"; $('bt-headsup-copy-msg').disabled=false; $('bt-headsup-copy-msg').textContent="Copy message instead"; }
-function handleHeadsUpContinue(){ if(isWiped()) return; let gid = pendingGameForHeadsUp?.id || currentInvite?.gameId; if(!gid) return; try{ $('bt-headsup').hidden=true; }catch(e){} try{ $('setup').hidden=true; }catch(e){} if(location.protocol==='file:'){ location.href = LIVE_SITE+"?game="+encodeURIComponent(gid)+"&p=0"; return; } (async()=>{ if(isWiped()) return; try{ let freshG = await loadGame(gid); if(isWiped()) return; if(freshG) pendingGameForHeadsUp = cloneRacks(freshG); }catch(e){} if(isWiped()) return; let g=pendingGameForHeadsUp; if(!g) return; let li=getLocalIdx(); if(!new URLSearchParams(location.search).get('p')){ li = 0; let owner=(getOwner()||"").toLowerCase(); for(let i=0;i<g.players.length;i++) if((g.players[i].name||"").toLowerCase()===owner) li=i; } state=g; initBroadcastChannel(g.id); try{ $('setup').hidden=true; }catch(e){} try{ $('bt-headsup').hidden=true; }catch(e){} render(); pendingGameForHeadsUp=null; scheduleFit(); try{ let url=new URL(location.href); if(!currentInvite){ url.searchParams.set('p', String(li)); } url.searchParams.set('game', gid); url.searchParams.delete('invite'); history.replaceState(null,'',url.pathname+url.search+location.hash); }catch(e){} })(); }
+function handleHeadsUpContinue(){
+ if(isWiped()) return;
+ let gid = pendingGameForHeadsUp?.id || currentInvite?.gameId;
+ if(!gid) return;
+ try{ $('bt-headsup').hidden=true; }catch(e){}
+ try{ $('setup').hidden=true; }catch(e){}
+ if(location.protocol==='file:'){ location.href = LIVE_SITE+"?game="+encodeURIComponent(gid)+"&p=0"; return; }
+ (async()=>{
+ if(isWiped()) return;
+ try{
+  let freshG = await loadGame(gid);
+  if(isWiped()) return;
+  if(freshG) pendingGameForHeadsUp = cloneRacks(freshG);
+ }catch(e){}
+ if(isWiped()) return;
+ let g=pendingGameForHeadsUp;
+ if(!g) return;
+ let li=getLocalIdx();
+ if(!new URLSearchParams(location.search).get('p')){
+  li = 0;
+  let owner=(getOwner()||"").toLowerCase();
+  for(let i=0;i<g.players.length;i++) if((g.players[i].name||"").toLowerCase()===owner) li=i;
+ }
+ state=g;
+ initBroadcastChannel(g.id);
+ try{ $('setup').hidden=true; }catch(e){}
+ try{ $('bt-headsup').hidden=true; }catch(e){}
+ render();
+ pendingGameForHeadsUp=null;
+ scheduleFit();
+ try{
+  let url=new URL(location.href);
+  if(!new URLSearchParams(location.search).get('invite')){
+   url.searchParams.set('p', String(li));
+  }
+  url.searchParams.set('game', gid);
+  url.searchParams.delete('invite');
+  history.replaceState(null,'',url.pathname+url.search+location.hash);
+ }catch(e){}
+ })();
+}
 async function handleRegister(){if(isWiped()) return; let uEl=$('reg-user'),pEl=$('reg-pass'),p2El=$('reg-pass2'),errEl=$('reg-error');let u=uEl?uEl.value.trim():'',p=pEl?pEl.value:'',p2=p2El?p2El.value:'';if(errEl)errEl.textContent='';if(!u||!p){if(errEl)errEl.textContent='Fill username and password';return;}if(p!==p2){if(errEl)errEl.textContent='Passwords do not match';return;}let users=[];try{users=JSON.parse(localStorage.getItem("bt_users")||"[]")}catch(e){users=[]}if(users.some(x=>x.toLowerCase()===u.toLowerCase())){if(errEl)errEl.textContent='Username taken';return;}localStorage.setItem("bt_owner",u);try{localStorage.removeItem("bt_pass_"+u.toLowerCase());}catch(e){}users.push(u);localStorage.setItem("bt_users",JSON.stringify(users));let inviteParam=null;try{inviteParam=new URLSearchParams(location.search).get("invite");}catch(e){}if(inviteParam){try{let res=await linkGameViaInvite(inviteParam,u); if(isWiped()) return; if(res && res.game && res.invite){let type = res.invite.mode==="unregistered-invite"? "active" : "passive";$('setup').hidden=true;showCollabHeadsUp(res.invite, res.game, type, u);return;} }catch(e){}}renderBoxes();}
 async function handleBegin(){if(isWiped()) return; let owner=getOwner();if(!owner){renderBoxes();return;}let opp=($('nameB')?$('nameB').value.trim():'');let g=fresh(owner,opp||"Opponent");await saveGameToCF(g); if(isWiped()) return; initBroadcastChannel(g.id);if(!opp){let iid=Date.now().toString(36)+Math.random().toString(36).slice(2,7);currentInvite={id:iid,invitedBy:owner,invitedByOpponents:getOpponents(),gameId:g.id,mode:"game-invite",created:Date.now()};try{await saveInviteToCF(currentInvite); if(isWiped()) return; }catch(e){}addOpponent(opp); await showHeadsUp(iid,g,true);}else{currentInvite=null;if(opp) addOpponent(opp);await showHeadsUp(null,g,false);}}
 async function handleCreateInvitation(){if(isWiped()) return; let owner=getOwner();if(!owner){renderBoxes();return;}let id=Date.now().toString(36)+Math.random().toString(36).slice(2,7);let placeholder=fresh(owner,"Opponent");await saveGameToCF(placeholder); if(isWiped()) return; initBroadcastChannel(placeholder.id);let inv={id:id,invitedBy:owner,invitedByOpponents:getOpponents(),gameId:placeholder.id,mode:"unregistered-invite",created:Date.now()};await saveInviteToCF(inv); if(isWiped()) return; currentInvite=inv;await showHeadsUp(id,placeholder,true);}
