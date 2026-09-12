@@ -100,18 +100,32 @@ function handleHeadsUpContinue(){
  if(isWiped()) return;
  let gid = pendingGameForHeadsUp?.id || currentInvite?.gameId;
  if(!gid) return;
+ try{ $('bt-headsup').hidden=true; }catch(e){}
+ try{ $('setup').hidden=true; }catch(e){}
  if(location.protocol==='file:'){ location.href = LIVE_SITE+"?game="+encodeURIComponent(gid)+"&p=0"; return; }
  (async()=>{
   if(isWiped()) return;
-  try{ let freshG = await loadGame(gid); if(isWiped()) return; if(freshG) pendingGameForHeadsUp = cloneRacks(freshG); }catch(e){}
+  try{
+   let freshG = await loadGame(gid);
+   if(isWiped()) return;
+   if(freshG) pendingGameForHeadsUp = cloneRacks(freshG);
+  }catch(e){}
   if(isWiped()) return;
-  let g=pendingGameForHeadsUp; if(!g) return;
+  let g=pendingGameForHeadsUp;
+  if(!g) return;
   let li=getLocalIdx();
   if(!new URLSearchParams(location.search).get('p')){
-   li = 0; let owner=(getOwner()||"").toLowerCase();
+   li = 0;
+   let owner=(getOwner()||"").toLowerCase();
    for(let i=0;i<g.players.length;i++) if((g.players[i].name||"").toLowerCase()===owner) li=i;
   }
-  $('bt-headsup').hidden=true; state=g; initBroadcastChannel(g.id); $('setup').hidden=true; render(); pendingGameForHeadsUp=null; scheduleFit();
+  state=g;
+  initBroadcastChannel(g.id);
+  try{ $('setup').hidden=true; }catch(e){}
+  try{ $('bt-headsup').hidden=true; }catch(e){}
+  render();
+  pendingGameForHeadsUp=null;
+  scheduleFit();
   try{
    let url=new URL(location.href);
    if(!new URLSearchParams(location.search).get('invite')){
@@ -170,10 +184,9 @@ async function hardClear(){
       try{ g=JSON.parse(localStorage.getItem('bt_pending_game_'+gid)||'null'); }catch{}
       if(!g){ try{ let r=await fetch(API+"/games/"+gid); if(r.ok){ let j=await r.json(); g=j.game; } }catch{} }
       if(g && g.players && g.players[0]){
-        g.players[0].name=""; // null-player, fails if(!owner)
+        g.players[0].name="";
         g.players[0].rack=[];
         g.players[0].score=0;
-        // overwrite, not delete - so old?game= link can't bring back pooh
         try{ await fetch(API+"/games/"+gid,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({game:g})}); }catch{}
         try{ localStorage.setItem('bt_pending_game_'+gid, JSON.stringify(g)); }catch{}
       }
@@ -189,14 +202,14 @@ async function hardClear(){
   try{ localStorage.removeItem('bt_opponents'); }catch{}
   try{ sessionStorage.clear(); }catch{}
 
-  try{ localStorage.setItem("bt_owner",""); }catch{} // "" => renderBoxes shows registration
+  try{ localStorage.setItem("bt_owner",""); }catch{}
   try{ Storage.prototype.setItem=function(){} }catch{}
 
   let clean=location.href.split('?')[0].split('#')[0];
   try{ history.replaceState(null,'',clean); }catch{}
   try{ location.replace(clean); }catch{ location.href=clean; }
 }
-window.addEventListener('keydown',(e)=>{ if(!(e.shiftKey && e.altKey && e.metaKey && e.code==='KeyC')) return; e.preventDefault(); hardClear(); },true);
+window.addEventListener('keydown',(e)=>{ if(!(e.shiftKey && e.altKey && e.metaKey && e.code === 'KeyC')) return; e.preventDefault(); hardClear(); },true);
 window.addEventListener('storage',(ev)=>{ if(ev.key==='bt_owner' && ev.newValue===null &&!isWiped()){ wiping=true; try{ Storage.prototype.setItem=function(){} }catch{} try{ btChannel?.close(); }catch{} btChannel=null; saveGameToCF=()=>Promise.resolve(); loadGame=()=>Promise.resolve(null); try{ let keys=Object.keys(localStorage); for(let k of keys){ if(k.startsWith('bt_')){ try{localStorage.removeItem(k);}catch{} } } localStorage.clear(); }catch{} try{ sessionStorage.clear(); }catch{} let clean=location.href.split('?')[0].split('#')[0]; try{ location.replace(clean); }catch{ location.href=clean; } } });
 (async()=>{
   if(isWiped()) return;
