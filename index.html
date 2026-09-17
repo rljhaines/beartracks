@@ -823,33 +823,167 @@
   </div>
   (function () {
   'use strict';
-  var N = 15, C = 7, V = { A: 1, B: 3, C: 3, D: 2, E: 1, F: 4, G: 2, H: 4, I: 1, J: 8, K: 5, L: 1, M: 3, N: 1, O: 1, P:
-  3, Q: 10, R: 1, S: 1, T: 1, U: 1, V: 4, W: 4, X: 8, Y: 4, Z: 10, "?": 0 };
-  var D = { A: 9, B: 2, C: 2, D: 4, E: 12, F: 2, G: 3, H: 2, I: 9, J: 1, K: 1, L: 4, M: 2, N: 6, O: 8, P: 2, Q: 1, R: 6,
-  S: 4, T: 6, U: 4, V: 2, W: 2, X: 1, Y: 2, Z: 1, "?": 2 };
-  var TW = [[0, 0], [0, 7], [0, 14], [7, 0], [7, 14], [14, 0], [14, 7], [14, 14]],
-  DW = [[1, 1], [2, 2], [3, 3], [4, 4], [10, 10], [11, 11], [12, 12], [13, 13], [1, 13], [2, 12], [3, 11], [4, 10], [10,
-  4], [11, 3], [12, 2], [13, 1], [7, 7]],
-  TL = [[1, 5], [1, 9], [5, 1], [5, 5], [5, 9], [5, 13], [9, 1], [9, 5], [9, 9], [9, 13], [13, 5], [13, 9]],
-  DL = [[0, 3], [0, 11], [2, 6], [2, 8], [3, 0], [3, 7], [3, 14], [6, 2], [6, 6], [6, 8], [6, 12], [7, 3], [7, 11], [8,
-  2], [8, 6], [8, 8], [8, 12], [11, 0], [11, 7], [11, 14], [12, 6], [12, 8], [14, 3], [14, 11]];
-  var state = null, pending = [], selected = -1, anchor = null, dragItem = null, gesture = null, suppressClick = false,
-  waiting = false, waitingRack = null, waitingOpp = null, pendingWord = null;
-  const API = "https://tracker-api.beartracksgames.workers.dev";
-  const LIVE_SITE = "https://rljhaines.github.io/beartracks/";
-  let currentInvite = null; let btChannel = null;
+  var N = 15,
+  C = 7,
+  V = {
+  A: 1,
+  B: 3,
+  C: 3,
+  D: 2,
+  E: 1,
+  F: 4,
+  G: 2,
+  H: 4,
+  I: 1,
+  J: 8,
+  K: 5,
+  L: 1,
+  M: 3,
+  N: 1,
+  O: 1,
+  P: 3,
+  Q: 10,
+  R: 1,
+  S: 1,
+  T: 1,
+  U: 1,
+  V: 4,
+  W: 4,
+  X: 8,
+  Y: 4,
+  Z: 10,
+  '?': 0,
+  };
+  var D = {
+  A: 9,
+  B: 2,
+  C: 2,
+  D: 4,
+  E: 12,
+  F: 2,
+  G: 3,
+  H: 2,
+  I: 9,
+  J: 1,
+  K: 1,
+  L: 4,
+  M: 2,
+  N: 6,
+  O: 8,
+  P: 2,
+  Q: 1,
+  R: 6,
+  S: 4,
+  T: 6,
+  U: 4,
+  V: 2,
+  W: 2,
+  X: 1,
+  Y: 2,
+  Z: 1,
+  '?': 2,
+  };
+  var TW = [
+  [0, 0],
+  [0, 7],
+  [0, 14],
+  [7, 0],
+  [7, 14],
+  [14, 0],
+  [14, 7],
+  [14, 14],
+  ],
+  DW = [
+  [1, 1],
+  [2, 2],
+  [3, 3],
+  [4, 4],
+  [10, 10],
+  [11, 11],
+  [12, 12],
+  [13, 13],
+  [1, 13],
+  [2, 12],
+  [3, 11],
+  [4, 10],
+  [10, 4],
+  [11, 3],
+  [12, 2],
+  [13, 1],
+  [7, 7],
+  ],
+  TL = [
+  [1, 5],
+  [1, 9],
+  [5, 1],
+  [5, 5],
+  [5, 9],
+  [5, 13],
+  [9, 1],
+  [9, 5],
+  [9, 9],
+  [9, 13],
+  [13, 5],
+  [13, 9],
+  ],
+  DL = [
+  [0, 3],
+  [0, 11],
+  [2, 6],
+  [2, 8],
+  [3, 0],
+  [3, 7],
+  [3, 14],
+  [6, 2],
+  [6, 6],
+  [6, 8],
+  [6, 12],
+  [7, 3],
+  [7, 11],
+  [8, 2],
+  [8, 6],
+  [8, 8],
+  [8, 12],
+  [11, 0],
+  [11, 7],
+  [11, 14],
+  [12, 6],
+  [12, 8],
+  [14, 3],
+  [14, 11],
+  ];
+  var state = null,
+  pending = [],
+  selected = -1,
+  anchor = null,
+  dragItem = null,
+  gesture = null,
+  suppressClick = false,
+  waiting = false,
+  waitingRack = null,
+  waitingOpp = null,
+  pendingWord = null;
+  const API = 'https://tracker-api.beartracksgames.workers.dev';
+  const LIVE_SITE = 'https://rljhaines.github.io/beartracks/';
+  let currentInvite = null;
+  let btChannel = null;
   function applyExternalState(g) {
   if (!g || !g.id || !state || g.id !== state.id) return;
-  let curP1 = (state.players?.[1]?.name || "").toLowerCase();
-  let newP1 = (g.players?.[1]?.name || "").toLowerCase();
-  let isPlaceholder = curP1 === "" || curP1.indexOf("opponent") === 0;
-  let newIsReal = newP1 !== "" && newP1.indexOf("opponent") !== 0;
+  let curP1 = (state.players?.[1]?.name || '').toLowerCase();
+  let newP1 = (g.players?.[1]?.name || '').toLowerCase();
+  let isPlaceholder = curP1 === '' || curP1.indexOf('opponent') === 0;
+  let newIsReal = newP1 !== '' && newP1.indexOf('opponent') !== 0;
   if (isPlaceholder && newIsReal && g.moveCount === state.moveCount) {
   state.players[1].name = g.players[1].name;
-  render(); return;
+  render();
+  return;
   }
-  if (typeof g.moveCount === 'number' && typeof state.moveCount === 'number' && g.moveCount <
-    state.moveCount)
+  if (
+  typeof g.moveCount === 'number' &&
+  typeof state.moveCount === 'number' &&
+  g.moveCount <
+    state.moveCount
+    )
     return;
     state=cloneRacks(g);
     pending=[];
@@ -862,7 +996,7 @@
     initBroadcastChannel(id)
     {
     if
-    (location.protocol==="file:"
+    (location.protocol==='file:'
     )
     return;
     try
@@ -871,7 +1005,7 @@
     (btChannel)
     btChannel.close();
     btChannel=new
-    BroadcastChannel("bt_"
+    BroadcastChannel('bt_'
     +
     id);
     btChannel.onmessage=function
@@ -886,14 +1020,13 @@
     }
     catch
     (e)
-    {
-    }
+    {}
     }
     function
     broadcastGame(g)
     {
     if
-    (location.protocol==="file:"
+    (location.protocol==='file:'
     )
     return;
     try
@@ -907,17 +1040,13 @@
     }
     catch
     (e)
-    {
+    {}
     }
-    }
-    //
-    END
-    FIX
     function
     getOwner()
     {
     return
-    localStorage.getItem("bt_owner");
+    localStorage.getItem('bt_owner');
     }
     function
     getOpponents()
@@ -925,8 +1054,8 @@
     try
     {
     return
-    JSON.parse(localStorage.getItem("bt_opponents")
-    || "[]"
+    JSON.parse(localStorage.getItem('bt_opponents')
+    || '[]'
     );
     }
     catch
@@ -948,7 +1077,7 @@
     (o.indexOf(n)===-1)
     {
     o.push(n);
-    localStorage.setItem("bt_opponents",
+    localStorage.setItem('bt_opponents',
     JSON.stringify(o));
     }
     }
@@ -958,8 +1087,8 @@
     try
     {
     return
-    JSON.parse(localStorage.getItem("bt_all_game_ids")
-    || "[]"
+    JSON.parse(localStorage.getItem('bt_all_game_ids')
+    || '[]'
     );
     }
     catch
@@ -981,7 +1110,7 @@
     (a.indexOf(id)===-1)
     {
     a.push(id);
-    localStorage.setItem("bt_all_game_ids",
+    localStorage.setItem('bt_all_game_ids',
     JSON.stringify(a));
     }
     }
@@ -1002,7 +1131,7 @@
     let
     r=await
     fetch(API
-    + "/invites/"
+    + '/invites/'
     +
     id);
     if
@@ -1017,8 +1146,7 @@
     }
     catch
     (e)
-    {
-    }
+    {}
     await
     new
     Promise((r)=
@@ -1036,7 +1164,7 @@
       let
       r=await
       fetch(API
-      + "/games/"
+      + '/games/'
       +
       id);
       if
@@ -1051,8 +1179,7 @@
       }
       catch
       (e)
-      {
-      }
+      {}
       await
       new
       Promise((r)=
@@ -1061,26 +1188,26 @@
       return null;
       }
       function makeInviteUrl(id) {
-      return LIVE_SITE + "?invite=" + encodeURIComponent(id);
+      return LIVE_SITE + '?invite=' + encodeURIComponent(id);
       }
       function makeGameStateUrl(gs) {
       try {
       let json = JSON.stringify(gs);
       let bytes = new TextEncoder().encode(json);
-      let bin = "";
+      let bin = '';
       for (let i = 0; i <
         bytes.length;
         i++)
         bin
         +=String.fromCharCode(bytes[i]);
         let
-        b64=btoa(bin).replace(/\+/g, "-"
-        ).replace(/\//g, "_"
-        ).replace(/=+$/, ""
+        b64=btoa(bin).replace(/\+/g, '-'
+        ).replace(/\//g, '_'
+        ).replace(/=+$/, ''
         );
         return
         LIVE_SITE
-        + "#s="
+        + '#s='
         +
         b64;
         }
@@ -1089,15 +1216,15 @@
         {
         let
         b64=btoa(unescape(encodeURIComponent(JSON.stringify(gs))))
-        .replace(/\+/g, "-"
+        .replace(/\+/g, '-'
         )
-        .replace(/\//g, "_"
+        .replace(/\//g, '_'
         )
-        .replace(/=+$/, ""
+        .replace(/=+$/, ''
         );
         return
         LIVE_SITE
-        + "#s="
+        + '#s='
         +
         b64;
         }
@@ -1112,15 +1239,15 @@
         let
         r=await
         fetch(API
-        + "/games/"
+        + '/games/'
         +
         g.id,
         {
-        method: "PUT"
+        method: 'PUT'
         ,
         headers:
-        { "Content-Type"
-        : "application/json"
+        { 'Content-Type'
+        : 'application/json'
         },
         body:
         JSON.stringify({
@@ -1133,14 +1260,14 @@
         {
         r=await
         fetch(API
-        + "/games"
+        + '/games'
         ,
         {
-        method: "POST"
+        method: 'POST'
         ,
         headers:
-        { "Content-Type"
-        : "application/json"
+        { 'Content-Type'
+        : 'application/json'
         },
         body:
         JSON.stringify({
@@ -1153,21 +1280,20 @@
         (!r.ok)
         throw
         new
-        Error("save
+        Error('save
         game
-        failed " + r.status);
-          } catch (e) {
-            try {
-              localStorage.setItem("
-        bt_pending_game_"
+        failed ' + r.status);
+    } catch (e) {
+      try {
+        localStorage.setItem('
+        bt_pending_game_'
         +
         g.id,
         JSON.stringify(g));
         }
         catch
         (_e)
-        {
-        }
+        {}
         }
         return
         g;
@@ -1181,14 +1307,14 @@
         let
         r=await
         fetch(API
-        + "/invites"
+        + '/invites'
         ,
         {
-        method: "POST"
+        method: 'POST'
         ,
         headers:
-        { "Content-Type"
-        : "application/json"
+        { 'Content-Type'
+        : 'application/json'
         },
         body:
         JSON.stringify({
@@ -1200,21 +1326,20 @@
         (!r.ok)
         throw
         new
-        Error("save
+        Error('save
         invite
-        failed " + r.status);
-          } catch (e) {
-            try {
-              localStorage.setItem("
-        bt_pending_invite_"
+        failed ' + r.status);
+    } catch (e) {
+      try {
+        localStorage.setItem('
+        bt_pending_invite_'
         +
         inv.id,
         JSON.stringify(inv));
         }
         catch
         (_e)
-        {
-        }
+        {}
         }
         return
         inv;
@@ -1225,8 +1350,8 @@
         let
         owner=getOwner();
         let
-        br=document.getElementById("box-register"),
-        bs=document.getElementById("box-start");
+        br=document.getElementById('box-register'),
+        bs=document.getElementById('box-start');
         if
         (!br
         ||
@@ -1238,14 +1363,14 @@
         br.hidden=false;
         bs.hidden=true;
         let
-        sp=document.getElementById("share-panel");
+        sp=document.getElementById('share-panel');
         if
         (sp)
         sp.hidden=true;
         requestAnimationFrame(()=
       > {
         setTimeout(() => {
-        let f = document.getElementById("reg-user");
+        let f = document.getElementById('reg-user');
         if (f) {
         f.focus();
         f.select();
@@ -1255,10 +1380,10 @@
         } else {
         br.hidden = true;
         bs.hidden = false;
-        let on = document.getElementById("owner-name");
+        let on = document.getElementById('owner-name');
         if (on) on.textContent = owner;
         setTimeout(() => {
-        let f = document.getElementById("nameB");
+        let f = document.getElementById('nameB');
         if (f) f.focus();
         }, 0);
         }
@@ -1287,27 +1412,27 @@
           (has(TW,
           r,
           c))
-          return "TW"
+          return 'TW'
           ;
           if
           (has(DW,
           r,
           c))
-          return "DW"
+          return 'DW'
           ;
           if
           (has(TL,
           r,
           c))
-          return "TL"
+          return 'TL'
           ;
           if
           (has(DL,
           r,
           c))
-          return "DL"
+          return 'DL'
           ;
-          return ""
+          return ''
           ;
           }
           function
@@ -1315,14 +1440,14 @@
           {
           return
           String(t).replace(/[&<
-        >"']/g, function (x) {
-          return { "&": "&amp;", "<": "&lt;"
-            , ">"
-            : "&gt;"
+        > "']/g, function (x) {
+          return { '&': '&amp;', '<': '&lt;'
+            , '>'
+            : '&gt;'
             , '"'
-            : "&quot;"
+            : '&quot;'
             , "'"
-            : "&#39;"
+            : '&#39;'
             }[x];
             });
             }
@@ -1344,7 +1469,7 @@
             return a;
             }
             function tile(l) {
-            return { l: l, blank: l === "?" };
+            return { l: l, blank: l === '?' };
             }
             function draw(s, p) {
             while (p.rack.length <
@@ -1490,21 +1615,21 @@
               isPrompt)
               {
               var
-              el=$("status");
+              el=$('status');
               el.textContent=t;
-              el.classList.remove("prompt");
+              el.classList.remove('prompt');
               void
               el.offsetWidth;
               if
               (isPrompt)
-              el.classList.add("prompt");
+              el.classList.add('prompt');
               }
               function
               clearPrompt()
               {
               var
-              el=$("status");
-              el.classList.remove("prompt");
+              el=$('status');
+              el.classList.remove('prompt');
               }
               function
               getLocalIdx()
@@ -1524,15 +1649,15 @@
               ()=
             > null };
               }
-              if (q.get("p") === "0" || q.get("p") === "1") return Number(q.get("p"));
-              let owner = (getOwner() || "").toLowerCase();
+              if (q.get('p') === '0' || q.get('p') === '1') return Number(q.get('p'));
+              let owner = (getOwner() || '').toLowerCase();
               if (!state) return 0;
               for (let i = 0; i <
                 state.players.length;
                 i++)
                 if
                 ((state.players[i].name
-                || ""
+                || ''
                 ).toLowerCase()===owner)
                 return
                 i;
@@ -1565,7 +1690,7 @@
                 rack=waitingRack;
                 }
                 var
-                rh=""
+                rh=''
                 ;
                 for
                 (var
@@ -1579,8 +1704,8 @@
                 +='<button draggable="true" class="rack-tile '
                 +
                 (i===selected
-                ? "selected"
-                : ""
+                ? 'selected'
+                : ''
                 )
                 + '" data-i="'
                 +
@@ -1588,15 +1713,15 @@
                 + '">'
                 +
                 rack[i].l
-                + "<small>"
+                + '<small>'
                 +
                 V[rack[i].l]
-                + "</small></button>"
+                + '</small></button>'
                 ;
                 }
-                $("rack").innerHTML=rh;
+                $('rack').innerHTML=rh;
                 var
-                rs=$("rack").getElementsByTagName("button");
+                rs=$('rack').getElementsByTagName('button');
                 for
                 (i=0;
                 i
@@ -1617,11 +1742,11 @@
                 let
                 li=getLocalIdx();
                 let
-                isMyTurn=(state.moveCount===0)
+                isMyTurn=state.moveCount===0
                 ?
                 true
                 :
-                (state.turn===li);
+                state.turn===li;
                 waiting=!isMyTurn;
                 if
                 (!waiting)
@@ -1735,26 +1860,31 @@
                 if
                 (state.moveCount===0)
                 {
-                $('scores').innerHTML=state.players.map(function
+                $('scores').innerHTML=state.players
+                .map(function
                 (x)
                 {
-                return '<div class="score"><span>'
+                return
+                ( '<div class="score"><span>'
                 +
                 esc(x.name)
                 + '</span><strong>'
                 +
                 x.score
                 + '</strong></div>'
-                ;
-                }).join('');
+                );
+                })
+                .join('');
                 }
                 else
                 {
-                $('scores').innerHTML=state.players.map(function
+                $('scores').innerHTML=state.players
+                .map(function
                 (x,
                 i)
                 {
-                return '<div class="score '
+                return
+                ( '<div class="score '
                 +
                 (i===state.turn
                 ? 'active'
@@ -1772,10 +1902,14 @@
                 +
                 x.score
                 + '</strong></div>'
-                ;
-                }).join('');
+                );
+                })
+                .join('');
                 }
-                $('history').innerHTML=state.history.slice().reverse().map(function
+                $('history').innerHTML=state.history
+                .slice()
+                .reverse()
+                .map(function
                 (x)
                 {
                 return '<li>'
@@ -1783,7 +1917,8 @@
                 esc(x)
                 + '</li>'
                 ;
-                }).join('');
+                })
+                .join('');
                 $('bag').textContent=state.bag.length
                 + ' tiles remain.'
                 ;
@@ -1844,16 +1979,19 @@
                 other=state.players[1
                 -
                 li].name;
-                message(state.players[li].name
+                message(
+                state.players[li].name
                 + ': first move - type word then click board. Pass to let '
                 +
                 other
                 + ' start.'
+                ,
                 );
                 }
                 else
                 {
-                message(isMyTurn
+                message(
+                isMyTurn
                 ?
                 state.players[li].name
                 + ': type word + Enter, add 8,8,0 for coords (1-15), or word alone then click board.'
@@ -1861,6 +1999,7 @@
                 +
                 state.players[state.turn].name
                 + ' to play.'
+                ,
                 );
                 }
                 }
@@ -1970,17 +2109,17 @@
                 let
                 li=getLocalIdx();
                 let
-                isMyTurn=(state.moveCount===0)
+                isMyTurn=state.moveCount===0
                 ?
                 true
                 :
-                (state.turn===li);
+                state.turn===li;
                 if
                 (!isMyTurn)
                 return;
                 var
                 n=Number(e.currentTarget.getAttribute('data-i'));
-                selected=(selected===n)
+                selected=selected===n
                 ?
                 -1
                 :
@@ -1996,11 +2135,11 @@
                 let
                 li=getLocalIdx();
                 let
-                isMyTurn=(state.moveCount===0)
+                isMyTurn=state.moveCount===0
                 ?
                 true
                 :
-                (state.turn===li);
+                state.turn===li;
                 if
                 (!isMyTurn)
                 return;
@@ -2087,11 +2226,11 @@
                 let
                 li=getLocalIdx();
                 let
-                isMyTurn=(state.moveCount===0)
+                isMyTurn=state.moveCount===0
                 ?
                 true
                 :
-                (state.turn===li);
+                state.turn===li;
                 if
                 (!isMyTurn)
                 return;
@@ -2173,11 +2312,11 @@
                 let
                 li=getLocalIdx();
                 let
-                isMyTurn=(state.moveCount===0)
+                isMyTurn=state.moveCount===0
                 ?
                 true
                 :
-                (state.turn===li);
+                state.turn===li;
                 if
                 (!isMyTurn)
                 return;
@@ -2192,7 +2331,9 @@
                 a
                 click
                 or
-                double-click',
+                double
+                -
+                click',
                 true);
                 return;
                 }
@@ -2243,8 +2384,12 @@
                   if
                   (!cands.length)
                   {
-                  message('Anchor ' + (anchor.r + 1) + '
-                  ,'
+                  message( 'Anchor '
+                  +
+                  (anchor.r
+                  +
+                  1)
+                  + ', '
                   +
                   (anchor.c
                   +
@@ -2254,7 +2399,8 @@
                   bl
                   + ' not in '
                   +
-                  word);
+                  word,
+                  );
                   return;
                   }
                   }
@@ -2326,12 +2472,21 @@
                     if (state.board[r][c]) {
                     if (state.board[r][c].l !== word.charAt(i)) {
                     ok = false;
-                    last = 'Conflict at ' + (r + 1) + ',' + (c + 1) + ' has ' + state.board[r][c].l + ' vs ' +
+                    last =
+                    'Conflict at ' +
+                    (r + 1) +
+                    ',' +
+                    (c + 1) +
+                    ' has ' +
+                    state.board[r][c].l +
+                    ' vs ' +
                     word.charAt(i);
                     break;
                     }
                     } else {
-                    var at = copy.findIndex(function (x) { return x.l === word.charAt(i); });
+                    var at = copy.findIndex(function (x) {
+                    return x.l === word.charAt(i);
+                    });
                     if (at <
                       0)
                       at=copy.findIndex(function
@@ -2352,12 +2507,14 @@
                       word.charAt(i)
                       + ' have ['
                       +
-                      getLocalRack().map(function
+                      getLocalRack()
+                      .map(function
                       (x)
                       {
                       return
                       x.l;
-                      }).join('')
+                      })
+                      .join('')
                       + ']'
                       ;
                       break;
@@ -2485,11 +2642,11 @@
                       let
                       li=getLocalIdx();
                       let
-                      isMyTurn=(state.moveCount===0)
+                      isMyTurn=state.moveCount===0
                       ?
                       true
                       :
-                      (state.turn===li);
+                      state.turn===li;
                       if
                       (!isMyTurn)
                       return;
@@ -2522,7 +2679,9 @@
                       if
                       (nums.length
                     >= 2) {
-                      var rr = nums[0], cc = nums[1], dir = nums.length >= 3 ? nums[2] : 0;
+                      var rr = nums[0],
+                      cc = nums[1],
+                      dir = nums.length >= 3 ? nums[2] : 0;
                       if (rr <
                         1
                         ||
@@ -2551,43 +2710,39 @@
                           }
                           }
                           }
-
                           function allowDrop(e) {
                           if (waiting) return;
                           e.preventDefault();
                           }
-
                           function dragRack(e) {
                           if (waiting) return;
                           let li = getLocalIdx();
-                          let isMyTurn = (state.moveCount === 0) ? true : (state.turn === li);
+                          let isMyTurn = state.moveCount === 0 ? true : state.turn === li;
                           if (!isMyTurn) return;
                           dragItem = { kind: 'rack', i: Number(e.currentTarget.getAttribute('data-i')) };
                           }
-
                           function dragBoard(e) {
                           if (waiting) return;
                           let li = getLocalIdx();
-                          let isMyTurn = (state.moveCount === 0) ? true : (state.turn === li);
+                          let isMyTurn = state.moveCount === 0 ? true : state.turn === li;
                           if (!isMyTurn) return;
-                          var r = Number(e.currentTarget.getAttribute('data-r')), c =
-                          Number(e.currentTarget.getAttribute('data-c'));
+                          var r = Number(e.currentTarget.getAttribute('data-r')),
+                          c = Number(e.currentTarget.getAttribute('data-c'));
                           if (!isNew(r, c)) {
                           e.preventDefault();
                           return;
                           }
                           dragItem = { kind: 'board', r: r, c: c };
                           }
-
                           function dropCell(e) {
                           if (waiting) return;
                           let li = getLocalIdx();
-                          let isMyTurn = (state.moveCount === 0) ? true : (state.turn === li);
+                          let isMyTurn = state.moveCount === 0 ? true : state.turn === li;
                           if (!isMyTurn) return;
                           e.preventDefault();
                           if (!dragItem) return;
-                          var r = Number(e.currentTarget.getAttribute('data-r')), c =
-                          Number(e.currentTarget.getAttribute('data-c'));
+                          var r = Number(e.currentTarget.getAttribute('data-r')),
+                          c = Number(e.currentTarget.getAttribute('data-c'));
                           if (state.board[r][c] && !(dragItem.kind === 'board' && dragItem.r === r && dragItem.c === c))
                           return;
                           if (dragItem.kind === 'rack') {
@@ -2671,27 +2826,32 @@
                             let
                             li=getLocalIdx();
                             let
-                            isMyTurn=(state.moveCount===0)
+                            isMyTurn=state.moveCount===0
                             ?
                             true
                             :
-                            (state.turn===li);
+                            state.turn===li;
                             if
                             (!isMyTurn)
                             return;
                             if
-                            (selected
+                            (
+                            selected
                           >= 0 ||
-                            state.board[Number(e.currentTarget.getAttribute('data-r'))][Number(e.currentTarget.getAttribute('data-c'))])
+                            state.board[Number(e.currentTarget.getAttribute('data-r'))][
+                            Number(e.currentTarget.getAttribute('data-c'))
+                            ]
+                            )
                             return;
-                            gesture = { r: Number(e.currentTarget.getAttribute('data-r')), c:
-                            Number(e.currentTarget.getAttribute('data-c')) };
+                            gesture = {
+                            r: Number(e.currentTarget.getAttribute('data-r')),
+                            c: Number(e.currentTarget.getAttribute('data-c')),
+                            };
                             }
-
                             function endGesture(e) {
                             if (waiting || !gesture) return;
-                            var r = Number(e.currentTarget.getAttribute('data-r')), c =
-                            Number(e.currentTarget.getAttribute('data-c'));
+                            var r = Number(e.currentTarget.getAttribute('data-r')),
+                            c = Number(e.currentTarget.getAttribute('data-c'));
                             if (r === gesture.r && c !== gesture.c) {
                             anchor = { r: gesture.r, c: gesture.c, d: 'H' };
                             suppressClick = true;
@@ -2702,11 +2862,10 @@
                             gesture = null;
                             if (suppressClick) render();
                             }
-
                             function undo() {
                             if (waiting) return;
                             let li = getLocalIdx();
-                            let isMyTurn = (state.moveCount === 0) ? true : (state.turn === li);
+                            let isMyTurn = state.moveCount === 0 ? true : state.turn === li;
                             if (!isMyTurn) return;
                             var lr = getLocalRack();
                             for (var i = 0; i <
@@ -2840,8 +2999,8 @@
                                       }
                                       if
                                       (Object.keys(rows).length
-                                    > 1 && Object.keys(cols).length > 1) throw Error('New tiles must be in one row or
-                                      column.');
+                                    > 1 && Object.keys(cols).length > 1)
+                                      throw Error('New tiles must be in one row or column.');
                                       var hasExisting = false;
                                       for (var rr = 0; rr <
                                         N;
@@ -2890,7 +3049,8 @@
                                         {
                                         x=pending[i];
                                         if
-                                        ((state.board[x.r
+                                        (
+                                        (state.board[x.r
                                         -
                                         1]
                                         &&
@@ -2932,7 +3092,8 @@
                                         !isNew(x.r,
                                         x.c
                                         +
-                                        1)))
+                                        1))
+                                        )
                                         touches=true;
                                         }
                                         if
@@ -2956,10 +3117,12 @@
                                         i++)
                                         {
                                         x=pending[i];
-                                        [[0,
+                                        [
+                                        [0,
                                         1],
                                         [1,
-                                        0]].forEach(function
+                                        0],
+                                        ].forEach(function
                                         (d)
                                         {
                                         var
@@ -2968,7 +3131,8 @@
                                         d[0],
                                         d[1]);
                                         var
-                                        key=w.map(function
+                                        key=w
+                                        .map(function
                                         (y)
                                         {
                                         return
@@ -2976,7 +3140,8 @@
                                         + ','
                                         +
                                         y.c;
-                                        }).join('|');
+                                        })
+                                        .join('|');
                                         if
                                         (w.length
                                       > 1 && !seen[key]) {
@@ -2988,9 +3153,9 @@
                                         if (!words.length) throw Error('Must form at least two letters.');
                                         return words;
                                         }
-
                                         function score(w) {
-                                        var total = 0, mult = 1;
+                                        var total = 0,
+                                        mult = 1;
                                         for (var i = 0; i <
                                           w.length;
                                           i++)
@@ -3053,7 +3218,7 @@
                                           moveCount:
                                           state.moveCount,
                                           turn:
-                                          state.turn
+                                          state.turn,
                                           };
                                           }
                                           function
@@ -3099,14 +3264,13 @@
                                           bin=atob(b64);
                                           const
                                           bytes=Uint8Array.from(bin,
-                                          c=
+                                          (c)=
                                         > c.charCodeAt(0));
                                           return new TextDecoder().decode(bytes);
                                           } catch (e) {
                                           return null;
                                           }
                                           }
-
                                           function tryLoadFromHash() {
                                           var h = location.hash || '';
                                           if (h.indexOf('#s=') === 0) {
@@ -3116,7 +3280,7 @@
                                           if (!txt) return null;
                                           var gs = JSON.parse(txt);
                                           if (gs) return cloneRacks(gs);
-                                          } catch (e) { }
+                                          } catch (e) {}
                                           }
                                           try {
                                           var q = new URLSearchParams(location.search);
@@ -3127,19 +3291,20 @@
                                           var gs2 = JSON.parse(txt2);
                                           if (gs2) return cloneRacks(gs2);
                                           }
-                                          } catch (e) { }
+                                          } catch (e) {}
                                           return null;
                                           }
-
                                           async function commit() {
                                           try {
                                           let li = getLocalIdx();
-                                          let isMyTurn = (state.moveCount === 0) ? true : (state.turn === li);
-                                          if (!isMyTurn) throw Error("Not your turn");
+                                          let isMyTurn = state.moveCount === 0 ? true : state.turn === li;
+                                          if (!isMyTurn) throw Error('Not your turn');
                                           let server = null;
-                                          try { server = await loadGame(state.id); } catch (e) { }
+                                          try {
+                                          server = await loadGame(state.id);
+                                          } catch (e) {}
                                           if (server?.players?.[1]?.name && server.players[1].name.toLowerCase() !==
-                                          "opponent") {
+                                          'opponent') {
                                           state.players[1].name = server.players[1].name;
                                           }
                                           if (server && server.moveCount !== state.moveCount) {
@@ -3152,19 +3317,25 @@
                                           throw Error('Game updated elsewhere - reloaded bag/board. Try again.');
                                           }
                                           if (server && server.bag) state.bag = server.bag.slice();
-                                          var words = validate(), pts = 0, nms = [];
+                                          var words = validate(),
+                                          pts = 0,
+                                          nms = [];
                                           for (var i = 0; i <
                                             words.length;
                                             i++)
                                             {
                                             pts
                                             +=score(words[i]);
-                                            nms.push(words[i].map(function
+                                            nms.push(
+                                            words[i]
+                                            .map(function
                                             (x)
                                             {
                                             return
                                             x.t.l;
-                                            }).join(''));
+                                            })
+                                            .join(''),
+                                            );
                                             }
                                             if
                                             (pending.length===7)
@@ -3195,32 +3366,45 @@
                                             broadcastGame(gameToSave);
                                             let gsUrl = makeGameStateUrl(gameToSave);
                                             try {
-                                            if (navigator.clipboard && navigator.clipboard.writeText) await
-                                            navigator.clipboard.writeText(gsUrl);
-                                            } catch (e) { }
+                                            if (navigator.clipboard && navigator.clipboard.writeText)
+                                            await navigator.clipboard.writeText(gsUrl);
+                                            } catch (e) {}
                                             showShare(gsUrl, true);
-                                            $('scores').innerHTML = state.players.map(function (x, i) {
-                                            return '<div class="score ' + (i === state.turn ? 'active' : '') + '">
-                                              <span>' + esc(x.name) + '</span><strong>' + x.score + '</strong>
-                                            </div>';
-                                            }).join('');
-                                            $('history').innerHTML = state.history.slice().reverse().map(function (x) {
+                                            $('scores').innerHTML = state.players
+                                            .map(function (x, i) {
+                                            return (
+                                            '<div class="score ' +
+            (i === state.turn ? 'active' : '') +
+            '"><span>' +
+                                                esc(x.name) +
+                                                '</span><strong>' +
+                                                x.score +
+                                                '</strong></div>'
+                                            );
+                                            })
+                                            .join('');
+                                            $('history').innerHTML = state.history
+                                            .slice()
+                                            .reverse()
+                                            .map(function (x) {
                                             return '<li>' + esc(x) + '</li>';
-                                            }).join('');
+                                            })
+                                            .join('');
                                             $('bag').textContent = state.bag.length + ' tiles remain.';
                                             enterWaitingMode(myRack, oppName, false);
                                             } catch (e) {
                                             message(e.message);
                                             }
                                             }
-
                                             async function pass() {
                                             let li = getLocalIdx();
                                             if (state.moveCount !== 0 && state.turn !== li) return message('Not your
                                             turn');
                                             if (pending.length) return message('Undo unplayed tiles before passing.');
                                             let server = null;
-                                            try { server = await loadGame(state.id); } catch (e) { }
+                                            try {
+                                            server = await loadGame(state.id);
+                                            } catch (e) {}
                                             if (server && server.moveCount !== state.moveCount) {
                                             state = cloneRacks(server);
                                             pending = [];
@@ -3228,8 +3412,10 @@
                                             pendingWord = null;
                                             selected = -1;
                                             render();
-                                            return message('Game updated elsewhere - reloaded. Try again. Turn: ' +
-                                            (state.turn === getLocalIdx() ? 'yours' : state.players[state.turn].name));
+                                            return message(
+                                            'Game updated elsewhere - reloaded. Try again. Turn: ' +
+                                            (state.turn === getLocalIdx() ? 'yours' : state.players[state.turn].name),
+                                            );
                                             }
                                             if (server && server.bag) state.bag = server.bag.slice();
                                             var myIdx = getLocalIdx();
@@ -3246,20 +3432,36 @@
                                             state.moveCount = 1;
                                             state.turn = oppIdx;
                                             let gameToSavePass0 = JSON.parse(JSON.stringify(state));
-                                            saveGameToCF(gameToSavePass0).then(() => {
+                                            saveGameToCF(gameToSavePass0)
+                                            .then(() => {
                                             broadcastGame(gameToSavePass0);
                                             let gsUrl = makeGameStateUrl(gameToSavePass0);
-                                            try { navigator.clipboard.writeText(gsUrl); } catch (e) { }
+                                            try {
+                                            navigator.clipboard.writeText(gsUrl);
+                                            } catch (e) {}
                                             showShare(gsUrl, true);
-                                            }).catch(() => { });
-                                            $('scores').innerHTML = state.players.map(function (x, i) {
-                                            return '<div class="score ' + (i === state.turn ? 'active' : '') + '">
-                                              <span>' + esc(x.name) + '</span><strong>' + x.score + '</strong>
-                                            </div>';
-                                            }).join('');
-                                            $('history').innerHTML = state.history.slice().reverse().map(function (x) {
+                                            })
+                                            .catch(() => {});
+                                            $('scores').innerHTML = state.players
+                                            .map(function (x, i) {
+                                            return (
+                                            '<div class="score ' +
+              (i === state.turn ? 'active' : '') +
+              '"><span>' +
+                                                esc(x.name) +
+                                                '</span><strong>' +
+                                                x.score +
+                                                '</strong></div>'
+                                            );
+                                            })
+                                            .join('');
+                                            $('history').innerHTML = state.history
+                                            .slice()
+                                            .reverse()
+                                            .map(function (x) {
                                             return '<li>' + esc(x) + '</li>';
-                                            }).join('');
+                                            })
+                                            .join('');
                                             $('bag').textContent = state.bag.length + ' tiles remain.';
                                             enterWaitingMode(myRackPass, oppName, true);
                                             }
@@ -3271,25 +3473,39 @@
                                             state.turn = 1 - state.turn;
                                             anchor = null;
                                             let gameToSavePass = JSON.parse(JSON.stringify(state));
-                                            saveGameToCF(gameToSavePass).then(() => {
+                                            saveGameToCF(gameToSavePass)
+                                            .then(() => {
                                             broadcastGame(gameToSavePass);
                                             let gsUrl = makeGameStateUrl(gameToSavePass);
-                                            try { navigator.clipboard.writeText(gsUrl); } catch (e) { }
+                                            try {
+                                            navigator.clipboard.writeText(gsUrl);
+                                            } catch (e) {}
                                             showShare(gsUrl, true);
-                                            }).catch(() => { });
-                                            $('scores').innerHTML = state.players.map(function (x, i) {
-                                            return '<div class="score ' + (i === state.turn ? 'active' : '') + '">
-                                              <span>' + esc(x.name) + '</span><strong>' + x.score + '</strong>
-                                            </div>';
-                                            }).join('');
-                                            $('history').innerHTML = state.history.slice().reverse().map(function (x) {
+                                            })
+                                            .catch(() => {});
+                                            $('scores').innerHTML = state.players
+                                            .map(function (x, i) {
+                                            return (
+                                            '<div class="score ' +
+          (i === state.turn ? 'active' : '') +
+          '"><span>' +
+                                                esc(x.name) +
+                                                '</span><strong>' +
+                                                x.score +
+                                                '</strong></div>'
+                                            );
+                                            })
+                                            .join('');
+                                            $('history').innerHTML = state.history
+                                            .slice()
+                                            .reverse()
+                                            .map(function (x) {
                                             return '<li>' + esc(x) + '</li>';
-                                            }).join('');
+                                            })
+                                            .join('');
                                             $('bag').textContent = state.bag.length + ' tiles remain.';
                                             enterWaitingMode(myRackPass, oppName, true);
                                             }
-
-                                            // BEGIN FIX opponent-name
                                             async function linkGameViaInvite(inviteId, newUsername) {
                                             let inv = null;
                                             for (let a = 0; a <
@@ -3303,7 +3519,7 @@
                                               break;
                                               await
                                               new
-                                              Promise(r=
+                                              Promise((r)=
                                             > setTimeout(r, 500));
                                               }
                                               if (!inv) return null;
@@ -3321,14 +3537,14 @@
                                                 g=cloneRacks(g);
                                                 let
                                                 p1=(g.players[1].name
-                                                || ""
+                                                || ''
                                                 ).toLowerCase();
                                                 let
-                                                isPlaceholder=p1==="opponent"
+                                                isPlaceholder=p1==='opponent'
                                                 ||
-                                                p1===""
+                                                p1===''
                                                 ||
-                                                p1.indexOf("opponent")===0;
+                                                p1.indexOf('opponent')===0;
                                                 if
                                                 (isPlaceholder
                                                 ||
@@ -3339,27 +3555,26 @@
                                                 {
                                                 await
                                                 fetch(API
-                                                + "/games/"
+                                                + '/games/'
                                                 +
                                                 g.id,
                                                 {
-                                                method: "PUT"
+                                                method: 'PUT'
                                                 ,
                                                 headers:
-                                                { "Content-Type"
-                                                : "application/json"
+                                                { 'Content-Type'
+                                                : 'application/json'
                                                 },
                                                 body:
                                                 JSON.stringify({
                                                 game:
                                                 g
-                                                })
+                                                }),
                                                 });
                                                 }
                                                 catch
                                                 (e)
-                                                {
-                                                }
+                                                {}
                                                 try
                                                 {
                                                 initBroadcastChannel(g.id);
@@ -3367,8 +3582,7 @@
                                                 }
                                                 catch
                                                 (e)
-                                                {
-                                                }
+                                                {}
                                                 }
                                                 addOpponent(g.players[0].name);
                                                 addOpponent(g.players[1].name);
@@ -3383,67 +3597,81 @@
                                                 }
                                                 await
                                                 new
-                                                Promise(r=
+                                                Promise((r)=
                                               > setTimeout(r, 400));
                                                 }
                                                 }
-                                                let host = inv.invitedBy || getOwner() || "Player 1";
+                                                let host = inv.invitedBy || getOwner() || 'Player 1';
                                                 let fb = fresh(host, newUsername);
                                                 try {
                                                 await saveGameToCF(fb);
                                                 inv.gameId = fb.id;
-                                                inv.mode = "game-invite";
+                                                inv.mode = 'game-invite';
                                                 await saveInviteToCF(inv);
-                                                } catch (e) { }
+                                                } catch (e) {}
                                                 addOpponent(host);
                                                 addGameId(fb.id);
                                                 return { game: fb, invite: inv };
                                                 }
-                                                // END FIX
-
                                                 let pendingGameForHeadsUp = null;
-                                                let headsupData = { url: "", msg: "", isInvite: true };
-
+                                                let headsupData = { url: '', msg: '', isInvite: true };
                                                 function getCollabMessage(inv, inviteeName, type) {
-                                                var base = "Hello, " + inviteeName + "!! " + inv.invitedBy + " thanks
-                                                you for joining in on this word-building collaboration.";
-                                                if (type === "passive") {
-                                                return base + " " + inv.invitedBy + " has made preparations for the
-                                                journey. Join in by clicking Continue To Game to the right of this
-                                                message. If " + inv.invitedBy + " is on BearTracks, you're welcome to
-                                                message or call that person using the buttons to the right of this
-                                                box.";
+                                                var base =
+                                                'Hello, ' +
+                                                inviteeName +
+                                                '!! ' +
+                                                inv.invitedBy +
+                                                ' thanks you for joining in on this word - building collaboration.';
+                                                if (type === 'passive') {
+                                                return (
+                                                base +
+                                                ' ' +
+                                                inv.invitedBy +
+                                                ' has made preparations for the journey.Join in by clicking Continue To
+                                                Game to the right of this message.If ' +
+                                                inv.invitedBy +
+                                                " is on BearTracks, you're welcome to message or call that person using
+                                                the buttons to the right of this box."
+                                                );
                                                 } else {
-                                                return base + " If you know " + inv.invitedBy + " to currently be in
-                                                BearTracks, feel free to coordinate the start of the game with " +
-                                                inv.invitedBy + " using either in-game communication option, Message " +
-                                                inv.invitedBy + " or Call " + inv.invitedBy + ". If unknown, either
-                                                coordinate with " + inv.invitedBy + " through your own means or simply
-                                                begin the game using the Continue to Game button to your right.";
+                                                return (
+                                                base +
+                                                ' If you know ' +
+                                                inv.invitedBy +
+                                                ' to currently be in BearTracks, feel free to coordinate the start of
+                                                the
+                                                game with ' +
+                                                inv.invitedBy +
+                                                ' using either in-game communication option, Message ' +
+                                                inv.invitedBy +
+                                                ' or Call ' +
+                                                inv.invitedBy +
+                                                '. If unknown, either coordinate with ' +
+                                                inv.invitedBy +
+                                                ' through your own means or simply begin the game using the Continue to
+                                                Game button to your right.'
+                                                );
                                                 }
                                                 }
-                                                const WS_URL = "wss://tracker-api.beartracksgames.workers.dev/ws";
+                                                const WS_URL = 'wss://tracker-api.beartracksgames.workers.dev/ws';
                                                 let ws = null,
                                                 pc = null,
                                                 localStream = null,
                                                 commChannel = null,
                                                 commGameId = null;
-
                                                 function addCommLine(t) {
-                                                let l = document.getElementById("comm-log");
+                                                let l = document.getElementById('comm-log');
                                                 if (!l) return;
-                                                let d = document.createElement("div");
+                                                let d = document.createElement('div');
                                                 d.textContent = t;
-                                                d.style.margin = "3px 0";
+                                                d.style.margin = '3px 0';
                                                 l.appendChild(d);
                                                 l.scrollTop = l.scrollHeight;
                                                 }
-
                                                 function setCommStatus(t) {
-                                                let s = document.getElementById("comm-status");
+                                                let s = document.getElementById('comm-status');
                                                 if (s) s.textContent = t;
                                                 }
-
                                                 function initComm(gid) {
                                                 if (!gid) gid = state?.id || pendingGameForHeadsUp?.id ||
                                                 currentInvite?.gameId;
@@ -3453,120 +3681,118 @@
                                                 commGameId = gid;
                                                 try {
                                                 if (commChannel) commChannel.close();
-                                                commChannel = new BroadcastChannel("bt_comm_" + gid);
+                                                commChannel = new BroadcastChannel('bt_comm_' + gid);
                                                 commChannel.onmessage = (e) => {
                                                 let m = e.data;
                                                 if (!m) return;
-                                                if (m.type === "chat") addCommLine(m.from + ": " + m.text);
-                                                if (m.type === "rtc-offer") handleOffer(m);
-                                                if (m.type === "rtc-answer" && pc)
-                                                pc.setRemoteDescription(new RTCSessionDescription(m.sdp)).catch(() => {
-                                                });
-                                                if (m.type === "rtc-ice" && pc) pc.addIceCandidate(m.candidate).catch(()
-                                                => { });
+                                                if (m.type === 'chat') addCommLine(m.from + ': ' + m.text);
+                                                if (m.type === 'rtc-offer') handleOffer(m);
+                                                if (m.type === 'rtc-answer' && pc)
+                                                pc.setRemoteDescription(new RTCSessionDescription(m.sdp)).catch(() =>
+                                                {});
+                                                if (m.type === 'rtc-ice' && pc) pc.addIceCandidate(m.candidate).catch(()
+                                                => {});
                                                 };
-                                                } catch (e) { }
-                                                if (location.protocol === "file:") return;
+                                                } catch (e) {}
+                                                if (location.protocol === 'file:') return;
                                                 try {
                                                 if (ws)
                                                 try {
                                                 ws.close();
-                                                } catch (_) { }
+                                                } catch (_) {}
                                                 ws = new WebSocket(
                                                 WS_URL +
-                                                "?game=" +
+                                                '?game=' +
                                                 encodeURIComponent(gid) +
-                                                "&user=" +
-                                                encodeURIComponent(getOwner() || "anon")
+                                                '&user=' +
+                                                encodeURIComponent(getOwner() || 'anon'),
                                                 );
-                                                ws.onopen = () => setCommStatus("Connected");
+                                                ws.onopen = () => setCommStatus('Connected');
                                                 ws.onmessage = async (e) => {
                                                 try {
                                                 let m = JSON.parse(e.data);
-                                                if (m.type === "chat") addCommLine(m.from + ": " + m.text);
-                                                if (m.type === "rtc-offer") handleOffer(m);
-                                                if (m.type === "rtc-answer" && pc) await pc.setRemoteDescription(m.sdp);
-                                                if (m.type === "rtc-ice" && pc)
+                                                if (m.type === 'chat') addCommLine(m.from + ': ' + m.text);
+                                                if (m.type === 'rtc-offer') handleOffer(m);
+                                                if (m.type === 'rtc-answer' && pc) await pc.setRemoteDescription(m.sdp);
+                                                if (m.type === 'rtc-ice' && pc)
                                                 try {
                                                 await pc.addIceCandidate(m.candidate);
-                                                } catch (_) { }
-                                                } catch (_) { }
+                                                } catch (_) {}
+                                                } catch (_) {}
                                                 };
-                                                ws.onclose = () => setCommStatus("Offline (same-device works)");
-                                                } catch (e) { }
+                                                ws.onclose = () => setCommStatus('Offline (same-device works)');
+                                                } catch (e) {}
                                                 }
-
                                                 function sendComm(o) {
                                                 if (commChannel)
                                                 try {
                                                 commChannel.postMessage(o);
-                                                } catch (_) { }
+                                                } catch (_) {}
                                                 if (ws && ws.readyState === 1)
                                                 try {
                                                 ws.send(JSON.stringify(o));
-                                                } catch (_) { }
+                                                } catch (_) {}
                                                 }
-
                                                 function tryMessageOpponent(id) {
                                                 let gid = pendingGameForHeadsUp?.id || state?.id ||
                                                 currentInvite?.gameId;
                                                 initComm(gid);
-                                                let who = id || currentInvite?.invitedBy || "opponent";
-                                                let t = prompt("Message " + who + ":");
+                                                let who = id || currentInvite?.invitedBy || 'opponent';
+                                                let t = prompt('Message ' + who + ':');
                                                 if (!t || !t.trim()) {
-                                                setCommStatus("Table Talk ready");
+                                                setCommStatus('Table Talk ready');
                                                 return;
                                                 }
-                                                let p = { type: "chat", from: getOwner() || "You", text: t.trim() };
+                                                let p = { type: 'chat', from: getOwner() || 'You', text: t.trim() };
                                                 sendComm(p);
-                                                addCommLine((getOwner() || "You") + ": " + t.trim());
+                                                addCommLine((getOwner() || 'You') + ': ' + t.trim());
                                                 }
-
                                                 async function tryCallOpponent(id) {
                                                 let gid = pendingGameForHeadsUp?.id || state?.id ||
                                                 currentInvite?.gameId;
                                                 initComm(gid);
-                                                let who = id || currentInvite?.invitedBy || "opponent";
-                                                let btn = document.getElementById("comm-call");
+                                                let who = id || currentInvite?.invitedBy || 'opponent';
+                                                let btn = document.getElementById('comm-call');
                                                 if (pc) {
                                                 try {
                                                 pc.close();
-                                                } catch (_) { }
+                                                } catch (_) {}
                                                 pc = null;
                                                 if (localStream) localStream.getTracks().forEach((tr) => tr.stop());
                                                 localStream = null;
-                                                if (btn) btn.textContent = "Call";
-                                                addCommLine("Call ended");
+                                                if (btn) btn.textContent = 'Call';
+                                                addCommLine('Call ended');
                                                 return;
                                                 }
                                                 try {
                                                 localStream = await navigator.mediaDevices.getUserMedia({ audio: true
                                                 });
                                                 } catch (e) {
-                                                alert("Mic needed: " + e.message);
+                                                alert('Mic needed: ' + e.message);
                                                 return;
                                                 }
                                                 pc = new RTCPeerConnection({ iceServers: [{ urls:
-                                                "stun:stun.l.google.com:19302" }] });
+                                                'stun:stun.l.google.com:19302' }] });
                                                 localStream.getTracks().forEach((tr) => pc.addTrack(tr, localStream));
                                                 pc.onicecandidate = (e) => {
                                                 if (e.candidate)
-                                                sendComm({ type: "rtc-ice", candidate: e.candidate, from: getOwner(),
-                                                to: who });
+                                                sendComm({ type: 'rtc-ice', candidate: e.candidate, from: getOwner(),
+                                                to:
+                                                who });
                                                 };
                                                 pc.ontrack = (e) => {
-                                                let a = document.getElementById("remote-audio");
+                                                let a = document.getElementById('remote-audio');
                                                 a.srcObject = e.streams[0];
-                                                if (btn) btn.textContent = "Hang up";
-                                                addCommLine("In call with " + who);
+                                                if (btn) btn.textContent = 'Hang up';
+                                                addCommLine('In call with ' + who);
                                                 };
                                                 let off = await pc.createOffer();
                                                 await pc.setLocalDescription(off);
-                                                sendComm({ type: "rtc-offer", sdp: off, from: getOwner() || "You", to:
-                                                who });
-                                                addCommLine("Calling " + who + "...");
+                                                sendComm({ type: 'rtc-offer', sdp: off, from: getOwner() || 'You', to:
+                                                who
+                                                });
+                                                addCommLine('Calling ' + who + '...');
                                                 }
-
                                                 async function handleOffer(m) {
                                                 let gid = pendingGameForHeadsUp?.id || state?.id ||
                                                 currentInvite?.gameId;
@@ -3575,44 +3801,45 @@
                                                 if (!localStream) localStream = await
                                                 navigator.mediaDevices.getUserMedia({ audio: true });
                                                 } catch (e) {
-                                                addCommLine("Incoming call but mic blocked");
+                                                addCommLine('Incoming call but mic blocked');
                                                 return;
                                                 }
                                                 if (pc)
                                                 try {
                                                 pc.close();
-                                                } catch (_) { }
+                                                } catch (_) {}
                                                 pc = new RTCPeerConnection({ iceServers: [{ urls:
-                                                "stun:stun.l.google.com:19302" }] });
+                                                'stun:stun.l.google.com:19302' }] });
                                                 localStream.getTracks().forEach((tr) => pc.addTrack(tr, localStream));
                                                 pc.onicecandidate = (e) => {
                                                 if (e.candidate)
-                                                sendComm({ type: "rtc-ice", candidate: e.candidate, from: getOwner(),
-                                                to: m.from });
+                                                sendComm({ type: 'rtc-ice', candidate: e.candidate, from: getOwner(),
+                                                to:
+                                                m.from });
                                                 };
                                                 pc.ontrack = (e) => {
-                                                let a = document.getElementById("remote-audio");
+                                                let a = document.getElementById('remote-audio');
                                                 a.srcObject = e.streams[0];
-                                                let b = document.getElementById("comm-call");
-                                                if (b) b.textContent = "Hang up";
-                                                addCommLine("Joined call with " + m.from);
+                                                let b = document.getElementById('comm-call');
+                                                if (b) b.textContent = 'Hang up';
+                                                addCommLine('Joined call with ' + m.from);
                                                 };
                                                 await pc.setRemoteDescription(new RTCSessionDescription(m.sdp));
                                                 let ans = await pc.createAnswer();
                                                 await pc.setLocalDescription(ans);
-                                                sendComm({ type: "rtc-answer", sdp: ans, from: getOwner() || "You", to:
+                                                sendComm({ type: 'rtc-answer', sdp: ans, from: getOwner() || 'You', to:
                                                 m.from });
                                                 }
-
                                                 const TableTalk = {
                                                 element: null,
                                                 opponent: null,
                                                 create(name) {
                                                 this.opponent = name;
-                                                let c = document.createElement("section");
-                                                c.className = "card";
-                                                c.id = "comm-panel";
-                                                c.innerHTML = '<h2>Table Talk</h2>
+                                                let c = document.createElement('section');
+                                                c.className = 'card';
+                                                c.id = 'comm-panel';
+                                                c.innerHTML =
+                                                '<h2>Table Talk</h2>
                                                 <div
                                                   id="comm-log"
                                                   style="max-height:140px;overflow:auto;font-size:12px;line-height:1.35;margin-bottom:8px;border:1px solid var(--line);border-radius:8px;padding:6px;background:#fff"
@@ -3643,21 +3870,21 @@
                                                 ></div>';
                                                 this.element = c;
                                                 setTimeout(() => {
-                                                let s = c.querySelector("#comm-send");
-                                                let inp = c.querySelector("#comm-input");
-                                                let call = c.querySelector("#comm-call");
+                                                let s = c.querySelector('#comm-send');
+                                                let inp = c.querySelector('#comm-input');
+                                                let call = c.querySelector('#comm-call');
                                                 if (s)
                                                 s.onclick = () => {
                                                 let t = inp.value.trim();
                                                 if (!t) return;
-                                                let p = { type: "chat", from: getOwner() || "You", text: t };
+                                                let p = { type: 'chat', from: getOwner() || 'You', text: t };
                                                 sendComm(p);
-                                                addCommLine((getOwner() || "You") + ": " + t);
-                                                inp.value = "";
+                                                addCommLine((getOwner() || 'You') + ': ' + t);
+                                                inp.value = '';
                                                 };
                                                 if (inp)
                                                 inp.onkeydown = (e) => {
-                                                if (e.key === "Enter") {
+                                                if (e.key === 'Enter') {
                                                 e.preventDefault();
                                                 s.click();
                                                 }
@@ -3669,58 +3896,57 @@
                                                 activate(m) {
                                                 if (!this.element) return;
                                                 this.element.hidden = false;
-                                                if (m === "message") tryMessageOpponent(this.opponent);
-                                                if (m === "call") tryCallOpponent(this.opponent);
+                                                if (m === 'message') tryMessageOpponent(this.opponent);
+                                                if (m === 'call') tryCallOpponent(this.opponent);
                                                 },
                                                 };
-
                                                 function showCollabHeadsUp(inv, gameObj, type, inviteeName) {
                                                 var url = makeInviteUrl(inv.id);
-                                                var msg = getCollabMessage(inv, inviteeName || "there", type);
+                                                var msg = getCollabMessage(inv, inviteeName || 'there', type);
                                                 headsupData.url = url;
                                                 headsupData.msg = msg;
                                                 headsupData.isInvite = true;
-                                                $("bt-headsup-help").textContent = msg;
-                                                $("bt-headsup-input").value = url;
-                                                $("bt-headsup").hidden = false;
+                                                $('bt-headsup-help').textContent = msg;
+                                                $('bt-headsup-input').value = url;
+                                                $('bt-headsup').hidden = false;
                                                 pendingGameForHeadsUp = gameObj;
                                                 currentInvite = inv;
                                                 showShare(url, false);
                                                 initComm(gameObj?.id || inv.gameId);
-                                                const holder = document.getElementById("bt-headsup-comm-holder");
-                                                holder.innerHTML = "";
+                                                const holder = document.getElementById('bt-headsup-comm-holder');
+                                                holder.innerHTML = '';
                                                 TableTalk.create(inv.invitedBy);
                                                 TableTalk.element.hidden = true;
                                                 holder.appendChild(TableTalk.element);
-                                                $("bt-headsup-copy-msg").disabled = false;
-                                                $("bt-headsup-copy-msg").textContent = "Message " + inv.invitedBy;
-                                                $("bt-headsup-copy-msg").onclick = () => TableTalk.activate("message");
-                                                $("bt-headsup-copy-link").disabled = false;
-                                                $("bt-headsup-copy-link").textContent = "Call " + inv.invitedBy;
-                                                $("bt-headsup-copy-link").onclick = () => TableTalk.activate("call");
+                                                $('bt-headsup-copy-msg').disabled = false;
+                                                $('bt-headsup-copy-msg').textContent = 'Message ' + inv.invitedBy;
+                                                $('bt-headsup-copy-msg').onclick = () => TableTalk.activate('message');
+                                                $('bt-headsup-copy-link').disabled = false;
+                                                $('bt-headsup-copy-link').textContent = 'Call ' + inv.invitedBy;
+                                                $('bt-headsup-copy-link').onclick = () => TableTalk.activate('call');
                                                 scheduleFit();
                                                 }
-
                                                 async function showHeadsUp(inviteId, gameObj, isInvite) {
                                                 let url = isInvite ? makeInviteUrl(inviteId) :
                                                 makeGameStateUrl(gameObj);
-                                                let fullMsg = isInvite ? "Join me in a scrabble-like game on BearTracks:
-                                                " + url : url;
+                                                let fullMsg = isInvite ? 'Join me in a scrabble-like game on BearTracks:
+                                                '
+                                                + url : url;
                                                 headsupData.url = url;
                                                 headsupData.msg = fullMsg;
                                                 headsupData.isInvite = isInvite;
                                                 $('bt-headsup-input').value = fullMsg;
-                                                $('bt-headsup-help').textContent = "Join me in a scrabble-like game on
-                                                BearTracks:";
+                                                $('bt-headsup-help').textContent = 'Join me in a scrabble-like game on
+                                                BearTracks: ';
                                                 try {
-                                                if (navigator.clipboard && navigator.clipboard.writeText) await
-                                                navigator.clipboard.writeText(fullMsg);
-                                                } catch (e) { }
+                                                if (navigator.clipboard && navigator.clipboard.writeText)
+                                                await navigator.clipboard.writeText(fullMsg);
+                                                } catch (e) {}
                                                 $('bt-headsup-copy-msg').disabled = true;
-                                                $('bt-headsup-copy-msg').textContent = "Message copied";
+                                                $('bt-headsup-copy-msg').textContent = 'Message copied';
                                                 $('bt-headsup-copy-msg').onclick = handleHeadsUpCopyMsg;
                                                 $('bt-headsup-copy-link').disabled = false;
-                                                $('bt-headsup-copy-link').textContent = "Copy link instead";
+                                                $('bt-headsup-copy-link').textContent = 'Copy link instead';
                                                 $('bt-headsup-copy-link').onclick = handleHeadsUpCopyLink;
                                                 $('bt-headsup').hidden = false;
                                                 pendingGameForHeadsUp = gameObj;
@@ -3729,60 +3955,58 @@
                                                 const holder = document.getElementById('bt-headsup-comm-holder');
                                                 if (holder) {
                                                 holder.innerHTML = '';
-                                                TableTalk.create(gameObj?.players?.[1]?.name || "Opponent");
+                                                TableTalk.create(gameObj?.players?.[1]?.name || 'Opponent');
                                                 TableTalk.element.hidden = true;
                                                 holder.appendChild(TableTalk.element);
                                                 }
                                                 scheduleFit();
                                                 }
-
                                                 function handleHeadsUpCopyMsg() {
                                                 $('bt-headsup-input').value = headsupData.msg;
                                                 try {
-                                                navigator.clipboard.writeText(headsupData.msg).catch(() => { });
-                                                } catch (e) { }
+                                                navigator.clipboard.writeText(headsupData.msg).catch(() => {});
+                                                } catch (e) {}
                                                 $('bt-headsup-copy-msg').disabled = true;
-                                                $('bt-headsup-copy-msg').textContent = "Message copied";
+                                                $('bt-headsup-copy-msg').textContent = 'Message copied';
                                                 $('bt-headsup-copy-link').disabled = false;
-                                                $('bt-headsup-copy-link').textContent = headsupData.isInvite ? "Copy
-                                                link instead" : "Copy link";
+                                                $('bt-headsup-copy-link').textContent = headsupData.isInvite
+                                                ? 'Copy link instead'
+                                                : 'Copy link';
                                                 }
-
                                                 function handleHeadsUpCopyLink() {
                                                 $('bt-headsup-input').value = headsupData.url;
                                                 try {
-                                                navigator.clipboard.writeText(headsupData.url).catch(() => { });
-                                                } catch (e) { }
+                                                navigator.clipboard.writeText(headsupData.url).catch(() => {});
+                                                } catch (e) {}
                                                 $('bt-headsup-copy-link').disabled = true;
-                                                $('bt-headsup-copy-link').textContent = "Link copied";
+                                                $('bt-headsup-copy-link').textContent = 'Link copied';
                                                 $('bt-headsup-copy-msg').disabled = false;
-                                                $('bt-headsup-copy-msg').textContent = "Copy message instead";
+                                                $('bt-headsup-copy-msg').textContent = 'Copy message instead';
                                                 }
-
                                                 function handleHeadsUpContinue() {
                                                 let gid = pendingGameForHeadsUp?.id || currentInvite?.gameId;
                                                 if (!gid) return;
                                                 if (location.protocol === 'file:') {
-                                                location.href = LIVE_SITE + "?game=" + encodeURIComponent(gid) + "&p=0";
+                                                location.href = LIVE_SITE + '?game=' + encodeURIComponent(gid) + '&p=0';
                                                 return;
                                                 }
                                                 (async () => {
                                                 try {
                                                 let freshG = await loadGame(gid);
                                                 if (freshG) pendingGameForHeadsUp = cloneRacks(freshG);
-                                                } catch (e) { }
+                                                } catch (e) {}
                                                 let g = pendingGameForHeadsUp;
                                                 if (!g) return;
                                                 let li = getLocalIdx();
                                                 if (!new URLSearchParams(location.search).get('p')) {
                                                 li = 0;
-                                                let owner = (getOwner() || "").toLowerCase();
+                                                let owner = (getOwner() || '').toLowerCase();
                                                 for (let i = 0; i <
                                                   g.players.length;
                                                   i++)
                                                   if
                                                   ((g.players[i].name
-                                                  || ""
+                                                  || ''
                                                   ).toLowerCase()===owner)
                                                   li=i;
                                                   }
@@ -3793,12 +4017,14 @@
                                                   let
                                                   comm=TableTalk.element
                                                   ||
-                                                  TableTalk.create(g.players[1
+                                                  TableTalk.create(
+                                                  g.players[1
                                                   -
                                                   getLocalIdx()]?.name
                                                   ||
                                                   currentInvite?.invitedBy
-                                                  || "Opponent"
+                                                  || 'Opponent'
+                                                  ,
                                                   );
                                                   let
                                                   share=document.getElementById('share-panel');
@@ -3834,8 +4060,7 @@
                                                   }
                                                   catch
                                                   (e)
-                                                  {
-                                                  }
+                                                  {}
                                                   })();
                                                   }
                                                   async
@@ -3892,8 +4117,8 @@
                                                   users=[];
                                                   try
                                                   {
-                                                  users=JSON.parse(localStorage.getItem("bt_users")
-                                                  || "[]"
+                                                  users=JSON.parse(localStorage.getItem('bt_users')
+                                                  || '[]'
                                                   );
                                                   }
                                                   catch
@@ -3902,61 +4127,61 @@
                                                   users=[];
                                                   }
                                                   if
-                                                  (users.some(x=
+                                                  (users.some((x)=
                                                 > x.toLowerCase() === u.toLowerCase())) {
                                                   if (errEl) errEl.textContent = 'Username taken';
                                                   return;
                                                   }
-                                                  localStorage.setItem("bt_owner", u);
+                                                  localStorage.setItem('bt_owner', u);
                                                   try {
-                                                  localStorage.removeItem("bt_pass_" + u.toLowerCase());
-                                                  } catch (e) { }
+                                                  localStorage.removeItem('bt_pass_' + u.toLowerCase());
+                                                  } catch (e) {}
                                                   users.push(u);
-                                                  localStorage.setItem("bt_users", JSON.stringify(users));
+                                                  localStorage.setItem('bt_users', JSON.stringify(users));
                                                   let inviteParam = null;
                                                   try {
-                                                  inviteParam = new URLSearchParams(location.search).get("invite");
-                                                  } catch (e) { }
+                                                  inviteParam = new URLSearchParams(location.search).get('invite');
+                                                  } catch (e) {}
                                                   if (inviteParam) {
                                                   try {
                                                   let res = await linkGameViaInvite(inviteParam, u);
                                                   if (res && res.game && res.invite) {
-                                                  let type = res.invite.mode === "unregistered-invite" ? "active" :
-                                                  "passive";
+                                                  let type = res.invite.mode === 'unregistered-invite' ? 'active' :
+                                                  'passive';
                                                   $('setup').hidden = true;
                                                   showCollabHeadsUp(res.invite, res.game, type, u);
                                                   return;
                                                   }
-                                                  } catch (e) { }
+                                                  } catch (e) {}
                                                   }
                                                   renderBoxes();
                                                   }
-
                                                   async function handleBegin() {
                                                   let owner = getOwner();
                                                   if (!owner) {
                                                   renderBoxes();
                                                   return;
                                                   }
-                                                  let opp = ($('nameB') ? $('nameB').value.trim() : '');
-                                                  let g = fresh(owner, opp || "Opponent");
+                                                  let opp = $('nameB') ? $('nameB').value.trim() : '';
+                                                  let g = fresh(owner, opp || 'Opponent');
                                                   await saveGameToCF(g);
                                                   initBroadcastChannel(g.id);
                                                   initComm(g.id);
                                                   if (!opp) {
                                                   let iid = Date.now().toString(36) +
-                                                  Math.random().toString(36).slice(2, 7);
+                                                  Math.random().toString(36).slice(2,
+                                                  7);
                                                   currentInvite = {
                                                   id: iid,
                                                   invitedBy: owner,
                                                   invitedByOpponents: getOpponents(),
                                                   gameId: g.id,
-                                                  mode: "game-invite",
-                                                  created: Date.now()
+                                                  mode: 'game-invite',
+                                                  created: Date.now(),
                                                   };
                                                   try {
                                                   await saveInviteToCF(currentInvite);
-                                                  } catch (e) { }
+                                                  } catch (e) {}
                                                   addOpponent(opp);
                                                   await showHeadsUp(iid, g, true);
                                                   } else {
@@ -3965,7 +4190,6 @@
                                                   await showHeadsUp(null, g, false);
                                                   }
                                                   }
-
                                                   async function handleCreateInvitation() {
                                                   let owner = getOwner();
                                                   if (!owner) {
@@ -3974,7 +4198,7 @@
                                                   }
                                                   let id = Date.now().toString(36) + Math.random().toString(36).slice(2,
                                                   7);
-                                                  let placeholder = fresh(owner, "Opponent");
+                                                  let placeholder = fresh(owner, 'Opponent');
                                                   await saveGameToCF(placeholder);
                                                   initBroadcastChannel(placeholder.id);
                                                   initComm(placeholder.id);
@@ -3983,15 +4207,16 @@
                                                   invitedBy: owner,
                                                   invitedByOpponents: getOpponents(),
                                                   gameId: placeholder.id,
-                                                  mode: "unregistered-invite",
-                                                  created: Date.now()
+                                                  mode: 'unregistered-invite',
+                                                  created: Date.now(),
                                                   };
                                                   await saveInviteToCF(inv);
                                                   currentInvite = inv;
                                                   await showHeadsUp(id, placeholder, true);
                                                   }
                                                   function fit() {
-                                                  var boardEl = document.getElementById('board'); if (!boardEl) return;
+                                                  var boardEl = document.getElementById('board');
+                                                  if (!boardEl) return;
                                                   var mastH = document.querySelector('.mast')?.offsetHeight || 56;
                                                   var belowH = document.querySelector('.below-board')?.offsetHeight ||
                                                   112;
@@ -3999,7 +4224,8 @@
                                                   window.innerHeight;
                                                   var leftW = document.querySelector('.left-col')?.clientWidth ||
                                                   window.innerWidth;
-                                                  var availH = h - mastH - belowH - 36; if (window.innerWidth <=
+                                                  var availH = h - mastH - belowH - 36;
+                                                  if (window.innerWidth <=
                                                     900)
                                                     availH
                                                     -=20;
@@ -4016,81 +4242,145 @@
                                                     if
                                                     (size
                                                   > 820) size = 820;
-                                                    boardEl.style.width = size + 'px'; boardEl.style.height = size +
-                                                    'px';
+                                                    boardEl.style.width = size + 'px';
+                                                    boardEl.style.height = size + 'px';
                                                     }
-                                                    function scheduleFit() { requestAnimationFrame(() =>
-                                                    requestAnimationFrame(() => { fit(); setTimeout(fit, 80);
-                                                    setTimeout(fit, 300); })); }
+                                                    function scheduleFit() {
+                                                    requestAnimationFrame(() =>
+                                                    requestAnimationFrame(() => {
+                                                    fit();
+                                                    setTimeout(fit, 80);
+                                                    setTimeout(fit, 300);
+                                                    }),
+                                                    );
+                                                    }
                                                     window.addEventListener('resize', scheduleFit);
                                                     if (window.visualViewport) {
                                                     window.visualViewport.addEventListener('resize', scheduleFit);
-                                                    window.visualViewport.addEventListener('scroll', scheduleFit); }
-                                                    $('submitWord').onclick = commit; $('undo').onclick = undo;
-                                                    $('pass').onclick = pass; $('playWord').onclick = playTyped;
+                                                    window.visualViewport.addEventListener('scroll', scheduleFit);
+                                                    }
+                                                    $('submitWord').onclick = commit;
+                                                    $('undo').onclick = undo;
+                                                    $('pass').onclick = pass;
+                                                    $('playWord').onclick = playTyped;
                                                     $('shuffle').onclick = shuffleRack;
-                                                    $('wordInput').onkeydown = function (e) { if (e.key === 'Enter') {
-                                                    if (waiting) return; e.preventDefault(); playTyped(); } };
-                                                    $('wordInput').addEventListener('input', function () { if (waiting)
-                                                    return; if (!anchor) return; let raw = this.value; if (!raw) { if
-                                                    (pending.length) { let lr = getLocalRack(); for (let i =
-                                                    pending.length - 1; i >= 0; i--) { let x = pending[i];
-                                                    state.board[x.r][x.c] = null; lr.push(x.tile.blank ? tile('?') :
-                                                    x.tile); } pending = []; render(); } return; } let parsed =
-                                                    parseEntry(raw); let word = parsed.word; if (!word) return; if
-                                                    (word.length >= 1) placeWordAtAnchor(word); });
-                                                    $('help').onclick = function () { alert('Type word + Enter. Add
-                                                    8,8,0 across / 8,8,1 down in any order (1-15). Or word alone then
-                                                    click board. Contestants decide first move by longest word.') };
-                                                    $('btn-register').onclick = handleRegister; $('btn-begin').onclick =
-                                                    handleBegin; $('btn-invite').onclick = handleCreateInvitation;
-                                                    let _sc = document.getElementById('share-copy'); if (_sc) {
-                                                    _sc.onclick = function () { let u =
-                                                    document.getElementById('share-url').value; try {
-                                                    navigator.clipboard.writeText(u).catch(() => { }) } catch (e) {
-                                                    prompt("Copy:", u) } }; }
+                                                    $('wordInput').onkeydown = function (e) {
+                                                    if (e.key === 'Enter') {
+                                                    if (waiting) return;
+                                                    e.preventDefault();
+                                                    playTyped();
+                                                    }
+                                                    };
+                                                    $('wordInput').addEventListener('input', function () {
+                                                    if (waiting) return;
+                                                    if (!anchor) return;
+                                                    let raw = this.value;
+                                                    if (!raw) {
+                                                    if (pending.length) {
+                                                    let lr = getLocalRack();
+                                                    for (let i = pending.length - 1; i >= 0; i--) {
+                                                    let x = pending[i];
+                                                    state.board[x.r][x.c] = null;
+                                                    lr.push(x.tile.blank ? tile('?') : x.tile);
+                                                    }
+                                                    pending = [];
+                                                    render();
+                                                    }
+                                                    return;
+                                                    }
+                                                    let parsed = parseEntry(raw);
+                                                    let word = parsed.word;
+                                                    if (!word) return;
+                                                    if (word.length >= 1) placeWordAtAnchor(word);
+                                                    });
+                                                    $('help').onclick = function () {
+                                                    alert(
+                                                    'Type word + Enter. Add 8, 8, 0 across / 8, 8, 1 down in any order(1
+                                                    -
+                                                    15).Or word alone then click board.Contestants decide first move by
+                                                    longest word.',
+                                                    );
+                                                    };
+                                                    $('btn-register').onclick = handleRegister;
+                                                    $('btn-begin').onclick = handleBegin;
+                                                    $('btn-invite').onclick = handleCreateInvitation;
+                                                    let _sc = document.getElementById('share-copy');
+                                                    if (_sc) {
+                                                    _sc.onclick = function () {
+                                                    let u = document.getElementById('share-url').value;
+                                                    try {
+                                                    navigator.clipboard.writeText(u).catch(() => {});
+                                                    } catch (e) {
+                                                    prompt('Copy:', u);
+                                                    }
+                                                    };
+                                                    }
                                                     $('btn-logout').onclick = function () {
-                                                    localStorage.removeItem("bt_owner"); $('setup').hidden = false;
-                                                    renderBoxes(); $('reg-user').value = ''; $('reg-pass').value = '';
-                                                    $('reg-pass2').value = ''; $('nameB').value = ''; let sp =
-                                                    $('share-panel'); if (sp) sp.hidden = true; currentInvite = null;
-                                                    $('bt-headsup').hidden = true; pendingGameForHeadsUp = null; };
-                                                    $('reg-user').onkeydown = function (e) { if (e.key === 'Enter')
-                                                    handleRegister() }; $('reg-pass2').onkeydown = function (e) { if
-                                                    (e.key === 'Enter') handleRegister() }; $('nameB').onkeydown =
-                                                    function (e) { if (e.key === 'Enter') handleBegin() };
+                                                    localStorage.removeItem('bt_owner');
+                                                    $('setup').hidden = false;
+                                                    renderBoxes();
+                                                    $('reg-user').value = '';
+                                                    $('reg-pass').value = '';
+                                                    $('reg-pass2').value = '';
+                                                    $('nameB').value = '';
+                                                    let sp = $('share-panel');
+                                                    if (sp) sp.hidden = true;
+                                                    currentInvite = null;
+                                                    $('bt-headsup').hidden = true;
+                                                    pendingGameForHeadsUp = null;
+                                                    };
+                                                    $('reg-user').onkeydown = function (e) {
+                                                    if (e.key === 'Enter') handleRegister();
+                                                    };
+                                                    $('reg-pass2').onkeydown = function (e) {
+                                                    if (e.key === 'Enter') handleRegister();
+                                                    };
+                                                    $('nameB').onkeydown = function (e) {
+                                                    if (e.key === 'Enter') handleBegin();
+                                                    };
                                                     $('bt-headsup-copy-msg').onclick = handleHeadsUpCopyMsg;
                                                     $('bt-headsup-copy-link').onclick = handleHeadsUpCopyLink;
                                                     $('bt-headsup-continue').onclick = handleHeadsUpContinue;
-                                                    // BEGIN FIX opponent-name
                                                     setInterval(async () => {
                                                     try {
                                                     if (!state || !state.id) return;
-                                                    let p1 = (state.players?.[1]?.name || "").toLowerCase();
-                                                    let isPlaceholder = p1 === "" || p1.indexOf("opponent") === 0;
+                                                    let p1 = (state.players?.[1]?.name || '').toLowerCase();
+                                                    let isPlaceholder = p1 === '' || p1.indexOf('opponent') === 0;
                                                     if (!isPlaceholder && !waiting) return;
                                                     let g = await loadGame(state.id);
                                                     if (g) applyExternalState(g);
-                                                    } catch (e) { }
+                                                    } catch (e) {}
                                                     }, 1000);
-                                                    // END FIX
                                                     (async () => {
-                                                    let params = null; try { params = new
-                                                    URLSearchParams(location.search); } catch (e) { params = { get: ()
-                                                    => null } }
-                                                    let iid = params.get("invite"); let gid = params.get("game"); let
-                                                    pParam = params.get("p");
-                                                    let owner = getOwner(); let hasState = false;
-                                                    let sState = tryLoadFromHash(); if (sState) { state = sState;
-                                                    hasState = true; if (state) initBroadcastChannel(state.id); }
+                                                    let params = null;
+                                                    try {
+                                                    params = new URLSearchParams(location.search);
+                                                    } catch (e) {
+                                                    params = { get: () => null };
+                                                    }
+                                                    let iid = params.get('invite');
+                                                    let gid = params.get('game');
+                                                    let pParam = params.get('p');
+                                                    let owner = getOwner();
+                                                    let hasState = false;
+                                                    let sState = tryLoadFromHash();
+                                                    if (sState) {
+                                                    state = sState;
+                                                    hasState = true;
+                                                    if (state) initBroadcastChannel(state.id);
+                                                    }
                                                     if (!hasState && gid) {
                                                     let g = await loadGame(gid);
                                                     if (g) {
-                                                    state = cloneRacks(g); hasState = true;
+                                                    state = cloneRacks(g);
+                                                    hasState = true;
                                                     initBroadcastChannel(state.id);
-                                                    try { if (pParam === "0") { localStorage.setItem("bt_owner",
-                                                    state.players[0].name); owner = state.players[0].name; } } catch (e)
-                                                    { }
+                                                    try {
+                                                    if (pParam === '0') {
+                                                    localStorage.setItem('bt_owner', state.players[0].name);
+                                                    owner = state.players[0].name;
+                                                    }
+                                                    } catch (e) {}
                                                     }
                                                     }
                                                     if (!hasState && iid) {
@@ -4098,24 +4388,43 @@
                                                     if (inv) {
                                                     currentInvite = inv;
                                                     if (owner) {
-                                                    let g = null; if (inv.gameId) g = await loadGame(inv.gameId);
-                                                    if (g) { g = cloneRacks(g); let type = inv.mode ===
-                                                    "unregistered-invite" ? "active" : "passive"; $('setup').hidden =
-                                                    true; showCollabHeadsUp(inv, g, type, owner); hasState = false;
-                                                    scheduleFit(); }
-                                                    } else { $('setup').hidden = false; renderBoxes(); }
+                                                    let g = null;
+                                                    if (inv.gameId) g = await loadGame(inv.gameId);
+                                                    if (g) {
+                                                    g = cloneRacks(g);
+                                                    let type = inv.mode === 'unregistered-invite' ? 'active' :
+                                                    'passive';
+                                                    $('setup').hidden = true;
+                                                    showCollabHeadsUp(inv, g, type, owner);
+                                                    hasState = false;
+                                                    scheduleFit();
+                                                    }
+                                                    } else {
+                                                    $('setup').hidden = false;
+                                                    renderBoxes();
                                                     }
                                                     }
-                                                    try { if (!state) { let gsTxt = $('game-state').textContent; if
-                                                    (gsTxt && gsTxt.trim() !== 'null' && gsTxt.trim() !== '') { state =
-                                                    cloneRacks(JSON.parse(gsTxt)); hasState = !!state; if (state)
-                                                    initBroadcastChannel(state.id); } } } catch (e) { }
+                                                    }
+                                                    try {
+                                                    if (!state) {
+                                                    let gsTxt = $('game-state').textContent;
+                                                    if (gsTxt && gsTxt.trim() !== 'null' && gsTxt.trim() !== '') {
+                                                    state = cloneRacks(JSON.parse(gsTxt));
+                                                    hasState = !!state;
+                                                    if (state) initBroadcastChannel(state.id);
+                                                    }
+                                                    }
+                                                    } catch (e) {}
                                                     if (state && hasState) {
-                                                    try { if (!owner) owner = localStorage.getItem("bt_owner"); } catch
-                                                    (e) { }
+                                                    try {
+                                                    if (!owner) owner = localStorage.getItem('bt_owner');
+                                                    } catch (e) {}
                                                     if (owner) {
-                                                    $('setup').hidden = true; $('bt-headsup').hidden = true;
-                                                    initBroadcastChannel(state.id); render(); scheduleFit();
+                                                    $('setup').hidden = true;
+                                                    $('bt-headsup').hidden = true;
+                                                    initBroadcastChannel(state.id);
+                                                    render();
+                                                    scheduleFit();
                                                     try {
                                                     let url = new URL(location.href);
                                                     if (!url.searchParams.get('p')) {
@@ -4126,17 +4435,23 @@
                                                     state.id);
                                                     history.replaceState(null, '', url.pathname + url.search +
                                                     location.hash);
-                                                    } catch (e) { }
-                                                    } else { $('setup').hidden = false; renderBoxes(); }
-                                                    } else if (!iid && !gid && !hasState) { $('setup').hidden = false;
-                                                    renderBoxes(); scheduleFit(); }
-                                                    scheduleFit(); try { new
+                                                    } catch (e) {}
+                                                    } else {
+                                                    $('setup').hidden = false;
+                                                    renderBoxes();
+                                                    }
+                                                    } else if (!iid && !gid && !hasState) {
+                                                    $('setup').hidden = false;
+                                                    renderBoxes();
+                                                    scheduleFit();
+                                                    }
+                                                    scheduleFit();
+                                                    try {
+                                                    new
                                                     ResizeObserver(scheduleFit).observe(document.getElementById('game'));
-                                                    } catch (e) { }
+                                                    } catch (e) {}
                                                     })();
-                                                    }());
-                                                    </script>
-                                                    // </script>
+                                                    })();
 </body>
 
 </html>
