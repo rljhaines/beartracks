@@ -2257,8 +2257,6 @@
             TableTalk.create(gameObj?.players?.[1]?.name || "Opponent");
             TableTalk.element.hidden = true;
             holder.appendChild(TableTalk.element);
-            $('bt-headsup-copy-msg').onclick = () => TableTalk.activate('message');
-            $('bt-headsup-copy-link').onclick = () => TableTalk.activate('call');
           }
           scheduleFit();
         }
