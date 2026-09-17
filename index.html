@@ -1236,8 +1236,16 @@
             for (let i = 0; i < g.players.length; i++) if ((g.players[i].name || "").toLowerCase() === owner) li = i;
           }
           $('bt-headsup').hidden = true;
-          state = g; initBroadcastChannel(g.id);
-          $('setup').hidden = true; render(); pendingGameForHeadsUp = null; scheduleFit();
+          state = g;
+          initBroadcastChannel(g.id);
+          initComm(g.id);
+          $('setup').hidden = true;
+          render();
+          let comm = TableTalk.element || TableTalk.create(g.players[1 - li]?.name || currentInvite?.invitedBy || 'Opponent');
+          let share = document.getElementById('share-panel');
+          if (comm && share) { share.after(comm); comm.hidden = false; }
+          pendingGameForHeadsUp = null;
+          scheduleFit();
           try {
             let url = new URL(location.href);
             url.searchParams.set('game', gid);
@@ -1310,7 +1318,13 @@
         if (state && hasState) {
           try { if (!owner) owner = localStorage.getItem("bt_owner"); } catch (e) { }
           if (owner) {
-            $('setup').hidden = true; $('bt-headsup').hidden = true; initBroadcastChannel(state.id); render(); scheduleFit();
+            $('setup').hidden = true; $('bt-headsup').hidden = true; initBroadcastChannel(state.id);
+            initComm(state.id);
+            render();
+            let comm2 = TableTalk.element || TableTalk.create(state.players[1 - getLocalIdx()]?.name || 'Opponent');
+            let share2 = document.getElementById('share-panel');
+            if (comm2 && share2) { share2.after(comm2); comm2.hidden = false; }
+            scheduleFit();
             try {
               let url = new URL(location.href);
               if (!url.searchParams.get('p')) {
