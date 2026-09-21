@@ -1178,18 +1178,44 @@
         pendingGameForHeadsUp = gameObj;
         currentInvite = inv;
         showShare(url, false);
-        initComm(gameObj?.id || inv.gameId);
+
         const holder = document.getElementById("bt-headsup-comm-holder");
-        holder.innerHTML = "";
-        TableTalk.create(inv.invitedBy);
-        TableTalk.element.hidden = true;
-        holder.appendChild(TableTalk.element);
+        if (holder) {
+          holder.innerHTML = "";
+          TableTalk.create(inv.invitedBy);
+          TableTalk.element.hidden = true;
+          holder.appendChild(TableTalk.element);
+        }
+
         $("bt-headsup-copy-msg").disabled = false;
         $("bt-headsup-copy-msg").textContent = "Message " + inv.invitedBy;
-        $("bt-headsup-copy-msg").onclick = () => TableTalk.activate("message");
+        $("bt-headsup-copy-msg").onclick = () => {
+          initBroadcastChannel(gameObj?.id || inv.gameId);
+          initComm(gameObj?.id || inv.gameId);
+          TableTalk.element.hidden = false;
+          TableTalk.activate("message");
+        };
+
         $("bt-headsup-copy-link").disabled = false;
         $("bt-headsup-copy-link").textContent = "Call " + inv.invitedBy;
-        $("bt-headsup-copy-link").onclick = () => TableTalk.activate("call");
+        $("bt-headsup-copy-link").onclick = () => {
+          initBroadcastChannel(gameObj?.id || inv.gameId);
+          initComm(gameObj?.id || inv.gameId);
+          TableTalk.element.hidden = false;
+          TableTalk.activate("call");
+        };
+
+        let btnContinue = $("bt-headsup-continue");
+        if (btnContinue) {
+          btnContinue.onclick = () => {
+            if (!commGameId) {
+              initBroadcastChannel(gameObj?.id || inv.gameId);
+              initComm(gameObj?.id || inv.gameId);
+            }
+            showGame(gameObj);
+          };
+        }
+
         scheduleFit();
       }
       async function showHeadsUp(inviteId, gameObj, isInvite) {
@@ -1211,6 +1237,15 @@
         pendingGameForHeadsUp = gameObj;
         showShare(url, isInvite ? false : true);
         scheduleFit();
+
+        let btnContinue = $('bt-headsup-continue');
+        if (btnContinue) {
+          btnContinue.onclick = () => {
+            initBroadcastChannel(gameObj.id);
+            initComm(gameObj.id);
+            showGame(gameObj);
+          };
+        }
       }
 
       function handleHeadsUpCopyMsg() {
@@ -1307,8 +1342,6 @@
         let g = fresh(owner, opp || "Opponent");
         state = g;
         await saveGameToCF(g);
-        initBroadcastChannel(g.id);
-        initComm(g.id);
         if (!opp) {
           let iid = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
           currentInvite = { id: iid, invitedBy: owner, invitedByOpponents: getOpponents(), gameId: g.id, mode: "game-invite", created: Date.now() };
