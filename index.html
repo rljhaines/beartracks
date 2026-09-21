@@ -862,8 +862,25 @@
       const API = "https://beartracks-cfdurable-tt.beartracksgames.workers.dev";
       const TALK_WS = "wss://beartracks-cfdurable-tt.beartracksgames.workers.dev/ws";
       const LIVE_SITE = "https://rljhaines.github.io/beartracks/";
+
       let btChannel = null;
-      // BEGIN FIX opponent-name
+      let currentInvite = null;
+      let pendingGameForHeadsUp = null;
+      let broadcastChannel = null;
+      let commGameId = null;
+      let commChannel = null;
+      let commPollTimer = null;
+      let ws = null;
+      let pc = null;
+      const WS_URL = TALK_WS;
+      function setCommStatus() { }
+      function addCommLine() { }
+      function sendComm() { }
+      function handleOffer() { }
+      function tryCallOpponent() { }
+      function tryMessageOpponent() { }
+
+      // Begin fix opponent-name
       function applyExternalState(g) {
         if (!g || !g.id || !state || g.id !== state.id) return;
         let curP1 = (state.players?.[1]?.name || "").toLowerCase();
@@ -1142,13 +1159,7 @@
       }
       // END FIX
 
-      let currentInvite = null;
-      let pendingGameForHeadsUp = null;
       let headsupData = { url: "", msg: "", isInvite: true };
-      let broadcastChannel = null;
-      let commGameId = null;
-      let commChannel = null;
-      let commPollTimer = null;
 
       function getCollabMessage(inv, inviteeName, type) {
         var base = "Hello, " + inviteeName + "!! " + inv.invitedBy + " thanks you for joining in on this word-building collaboration.";
