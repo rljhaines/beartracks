@@ -1208,6 +1208,7 @@
         let btnContinue = $("bt-headsup-continue");
         if (btnContinue) {
           btnContinue.onclick = () => {
+            state = gameObj; // <-- ADD THIS - gameObj or pendingGameForHeadsUp depending on scope
             if (!commGameId) {
               initBroadcastChannel(gameObj?.id || inv.gameId);
               initComm(gameObj?.id || inv.gameId);
@@ -1215,7 +1216,6 @@
             showGame(gameObj);
           };
         }
-
         scheduleFit();
       }
       async function showHeadsUp(inviteId, gameObj, isInvite) {
@@ -1248,6 +1248,7 @@
           btnContinue.onclick = () => {
             $('bt-headsup').hidden = true;
             if ($('bt-setup')) $('bt-setup').hidden = true;
+            state = gameObj; // <-- ADD THIS
             initBroadcastChannel(gameObj.id);
             initComm(gameObj.id);
             showGame(gameObj);
