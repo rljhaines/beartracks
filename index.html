@@ -1224,6 +1224,11 @@
         headsupData.url = url;
         headsupData.msg = fullMsg;
         headsupData.isInvite = isInvite;
+
+        // FIX: hide ONLY the game, keep setup/start as background
+        if ($('bt-game')) $('bt-game').hidden = true;
+        if ($('bt-setup')) $('bt-setup').hidden = false;
+
         $('bt-headsup-input').value = fullMsg;
         $('bt-headsup-help').textContent = "Join me in a scrabble-like game on BearTracks:";
         try { if (navigator.clipboard && navigator.clipboard.writeText) await navigator.clipboard.writeText(fullMsg); } catch (e) { }
@@ -1241,6 +1246,8 @@
         let btnContinue = $('bt-headsup-continue');
         if (btnContinue) {
           btnContinue.onclick = () => {
+            $('bt-headsup').hidden = true;
+            if ($('bt-setup')) $('bt-setup').hidden = true;
             initBroadcastChannel(gameObj.id);
             initComm(gameObj.id);
             showGame(gameObj);
