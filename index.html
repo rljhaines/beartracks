@@ -1210,14 +1210,6 @@
         $('bt-headsup').hidden = false;
         pendingGameForHeadsUp = gameObj;
         showShare(url, isInvite ? false : true);
-        initComm(gameObj?.id);
-        const holder = document.getElementById('bt-headsup-comm-holder');
-        if (holder) {
-          holder.innerHTML = '';
-          let tt = TableTalk.create(gameObj?.players?.[1]?.name || "Opponent");
-          tt.hidden = false;
-          holder.appendChild(tt);
-        }
         scheduleFit();
       }
 
@@ -1288,6 +1280,23 @@
         let inviteParam = null; try { inviteParam = new URLSearchParams(location.search).get("invite"); } catch (e) { }
         if (inviteParam) {
           try { let res = await linkGameViaInvite(inviteParam, u); if (res && res.game && res.invite) { let type = res.invite.mode === "unregistered-invite" ? "active" : "passive"; $('setup').hidden = true; showCollabHeadsUp(res.invite, res.game, type, u); return; } } catch (e) { }
+        }
+        let gameParam = null; try { gameParam = new URLSearchParams(location.search).get("game"); } catch (e) { }
+        if (gameParam) {
+          try {
+            let g = await loadGameFromCF(gameParam);
+            if (g) {
+              state = g;
+              $('setup').hidden = true;
+              showCollabHeadsUp(
+                { invitedBy: g.players?.[0]?.name || "Opponent", gameId: g.id },
+                g,
+                "passive",
+                u
+              );
+              return;
+            }
+          } catch (e) { }
         }
         renderBoxes();
       }
