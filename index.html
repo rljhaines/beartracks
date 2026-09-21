@@ -902,7 +902,7 @@
       let talkSocket = null;
       let peer = null, localStream = null;
       function initComm(gid) {
-        commGameId = gameId;
+        commGameId = gid;
         if (!gid) gid = state?.id || pendingGameForHeadsUp?.id || currentInvite?.gameId;
         if (!gid) return;
         if (commGameId === gid && (commChannel || (ws && ws.readyState === 1))) return;
@@ -1296,6 +1296,7 @@
         let owner = getOwner(); if (!owner) { renderBoxes(); return; }
         let opp = ($('nameB') ? $('nameB').value.trim() : '');
         let g = fresh(owner, opp || "Opponent");
+        state = g;
         await saveGameToCF(g);
         initBroadcastChannel(g.id);
         initComm(g.id);
