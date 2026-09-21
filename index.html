@@ -1418,7 +1418,10 @@
         if (!hasState && gid) {
           let g = await loadGame(gid);
           if (g) {
-            state = cloneRacks(g); hasState = true; initBroadcastChannel(state.id);
+            state = cloneRacks(g);
+            hasState = true;
+            initBroadcastChannel(state.id);
+            $('bt-setup').hidden = true;
             try { if (pParam === "0") { localStorage.setItem("bt_owner", state.players[0].name); owner = state.players[0].name; } } catch (e) { }
           }
         }
