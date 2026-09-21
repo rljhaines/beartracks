@@ -1347,7 +1347,6 @@
         let owner = getOwner(); if (!owner) { renderBoxes(); return; }
         let opp = ($('nameB') ? $('nameB').value.trim() : '');
         let g = fresh(owner, opp || "Opponent");
-        state = g;
         await saveGameToCF(g);
         if (!opp) {
           let iid = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
