@@ -1458,6 +1458,95 @@
       }, 1000);
 
       (async () => {
+        try { fit(); } catch (e) { }
+
+        let params = null;
+        try { params = new URLSearchParams(location.search); }
+        catch (e) { params = { get: () => null } }
+        let iid = params.get("invite");
+        let gid = params.get("game");
+        let pParam = params.get("p");
+        let owner = getOwner();
+        let hasState = false;
+
+        let sState = tryLoadFromHash();
+        if (sState) {
+          state = sState; hasState = true;
+          if (state) initBroadcastChannel(state.id);
+        }
+
+        if (!hasState && gid) {
+          let g = await loadGame(gid);
+          if (g) {
+            state = cloneRacks(g); hasState = true;
+            initBroadcastChannel(state.id);
+            let se = $('bt-setup') || $('setup'); if (se) se.hidden = true;
+            try { if (pParam === "0") { localStorage.setItem("bt_owner", state.players[0].name); owner = state.players[0].name; } } catch (e) { }
+          }
+        }
+
+        if (!hasState && iid) {
+          let inv = await loadInvite(iid);
+          if (inv) {
+            currentInvite = inv;
+            if (owner) {
+              let g = null;
+              if (inv.gameId) {
+                try { await linkGameViaInvite(iid, owner); } catch (e) { }
+                g = await loadGame(inv.gameId);
+              }
+              if (g) {
+                g = cloneRacks(g);
+                let type = inv.mode === "unregistered-invite" ? "active" : "passive";
+                let se = $('setup') || $('bt-setup'); if (se) se.hidden = true;
+                showCollabHeadsUp(inv, g, type, owner);
+                hasState = false;
+              }
+            } else {
+              let se = $('setup') || $('bt-setup'); if (se) se.hidden = false;
+              renderBoxes();
+            }
+          }
+        }
+
+        try {
+          if (!state) {
+            let gsTxt = $('game-state').textContent;
+            if (gsTxt && gsTxt.trim() !== 'null' && gsTxt.trim() !== '') {
+              state = cloneRacks(JSON.parse(gsTxt)); hasState = !!state;
+              if (state) initBroadcastChannel(state.id);
+            }
+          }
+        } catch (e) { }
+        if (state && hasState) {
+          try { if (!owner) owner = localStorage.getItem("bt_owner"); } catch (e) { }
+          if (owner) {
+            let se = $('setup') || $('bt-setup'); if (se) se.hidden = true;
+            let hu = $('bt-headsup'); if (hu) hu.hidden = true;
+            initBroadcastChannel(state.id);
+            render();
+            try {
+              let url = new URL(location.href);
+              if (!url.searchParams.get('p')) { let li = getLocalIdx(); url.searchParams.set('p', String(li)); }
+              if (!url.searchParams.get('game')) url.searchParams.set('game', state.id);
+              history.replaceState(null, '', url.pathname + url.search + location.hash);
+            } catch (e) { }
+          } else {
+            let se = $('setup') || $('bt-setup'); if (se) se.hidden = false;
+            renderBoxes();
+          }
+        } else if (!iid && !gid && !hasState) {
+          let se = $('setup') || $('bt-setup'); if (se) se.hidden = false;
+          renderBoxes();
+        }
+        try { fit(); } catch (e) { }
+        requestAnimationFrame(() => {
+          try { fit(); } catch (e) { }
+          try { new ResizeObserver(scheduleFit).observe(document.getElementById('game')); } catch (e) { }
+        });
+      })();
+
+      /* (async () => {
         let params = null; try { params = new URLSearchParams(location.search); } catch (e) { params = { get: () => null } }
         let iid = params.get("invite"); let gid = params.get("game"); let pParam = params.get("p");
         let owner = getOwner(); let hasState = false;
@@ -1500,8 +1589,9 @@
           } else { $('setup').hidden = false; renderBoxes(); }
         } else if (!iid && !gid && !hasState) { $('setup').hidden = false; renderBoxes(); scheduleFit(); }
         scheduleFit(); try { new ResizeObserver(scheduleFit).observe(document.getElementById('game')); } catch (e) { }
-      })();
-    }());
+      })(); */
+    }
+      ());
   </script>
 </body>
 
