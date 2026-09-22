@@ -918,7 +918,12 @@
             "&user=" +
             encodeURIComponent(getOwner() || "anon")
           );
-          ws.onopen = () => setCommStatus("Connected");
+          ws.onopen = () => {
+            setCommStatus("Connected");
+            let li = getLocalIdx();
+            let myName = state.players[li]?.name || localStorage.getItem('username') || ('P' + li);
+            ws.send(JSON.stringify({ t: 'presence', p: li, name: myName, game: gid }));
+          };
           ws.onmessage = async (e) => {
             try {
               let m = JSON.parse(e.data);
@@ -1046,7 +1051,7 @@
           return;
         }
         let li = typeof getLocalIdx === 'function' ? getLocalIdx() : 0;
-        let opp = state.players?.[1 - li]?.name || currentInvite?.invitedBy || 'Opponent';
+        let opp = state.players?.[1 - li]?.name || TableTalk.opponent || 'Opponent';
         if (!TableTalk.element) TableTalk.create(opp);
         else TableTalk.opponent = opp; // update name for P2
 
