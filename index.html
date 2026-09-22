@@ -1208,7 +1208,10 @@
         let btnContinue = $("bt-headsup-continue");
         if (btnContinue) {
           btnContinue.onclick = () => {
-            state = gameObj; // <-- ADD THIS - gameObj or pendingGameForHeadsUp depending on scope
+            $('bt-headsup').hidden = true;
+            $('setup').hidden = true;
+            if ($('bt-game')) $('bt-game').hidden = false;
+            state = gameObj;
             if (!commGameId) {
               initBroadcastChannel(gameObj?.id || inv.gameId);
               initComm(gameObj?.id || inv.gameId);
@@ -1218,7 +1221,6 @@
         }
         scheduleFit();
       }
-
 
       async function showHeadsUp(inviteId, gameObj, isInvite) {
         let url = isInvite ? makeInviteUrl(inviteId) : makeGameStateUrl(gameObj);
