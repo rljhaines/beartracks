@@ -889,7 +889,7 @@
       function initComm(gid) {
         if (!gid) gid = state?.id || pendingGameForHeadsUp?.id || currentInvite?.gameId;
         if (!gid) return;
-        if (commGameId === gid && (commChannel || (ws && ws.readyState === 1))) return;
+        if (commGameId === gid && ws && ws.readyState === 1) return;
         commGameId = gid;
         try {
           if (commChannel) commChannel.close();
