@@ -873,36 +873,19 @@
       let ws = null;
       let pc = null;
       const WS_URL = TALK_WS;
-      function setCommStatus() { }
-      function addCommLine() { }
-      function sendComm() { }
-      function handleOffer() { }
-      function tryCallOpponent() { }
-      function tryMessageOpponent() { }
-
-      // Begin fix opponent-name
-      function applyExternalState(g) {
-        if (!g || !g.id || !state || g.id !== state.id) return;
-        let curP1 = (state.players?.[1]?.name || "").toLowerCase();
-        let newP1 = (g.players?.[1]?.name || "").toLowerCase();
-        let isPlaceholder = curP1 === "" || curP1.indexOf("opponent") === 0;
-        let newIsReal = newP1 !== "" && newP1.indexOf("opponent") !== 0;
-        if (isPlaceholder && newIsReal && g.moveCount === state.moveCount) {
-          state.players[1].name = g.players[1].name;
-          render(); return;
-        }
-        if (typeof g.moveCount === 'number' && typeof state.moveCount === 'number' && g.moveCount < state.moveCount) return;
-        state = cloneRacks(g); pending = []; anchor = null; pendingWord = null; selected = -1; render();
+      function addCommLine(t) {
+        let l = document.getElementById("comm-log");
+        if (!l) return;
+        let d = document.createElement("div");
+        d.textContent = t; d.style.margin = "3px 0";
+        l.appendChild(d);
+        l.scrollTop = l.scrollHeight;
       }
-      function initBroadcastChannel(id) { if (location.protocol === 'file:') return; try { if (btChannel) btChannel.close(); btChannel = new BroadcastChannel('bt_' + id); btChannel.onmessage = function (e) { if (e.data && e.data.game) applyExternalState(e.data.game); }; } catch (e) { } }
-      function broadcastGame(g) { if (location.protocol === 'file:') return; try { if (btChannel) btChannel.postMessage({ game: g }); } catch (e) { } }
-      // END FIX
-      function getOwner() { return localStorage.getItem("bt_owner") }
-
-      let talkSocket = null;
-      let peer = null, localStream = null;
+      function setCommStatus(t) {
+        let s = document.getElementById("comm-status");
+        if (s) s.textContent = t;
+      }
       function initComm(gid) {
-        commGameId = gid;
         if (!gid) gid = state?.id || pendingGameForHeadsUp?.id || currentInvite?.gameId;
         if (!gid) return;
         if (commGameId === gid && (commChannel || (ws && ws.readyState === 1))) return;
@@ -917,7 +900,8 @@
             if (m.type === "rtc-offer") handleOffer(m);
             if (m.type === "rtc-answer" && pc)
               pc.setRemoteDescription(new RTCSessionDescription(m.sdp)).catch(() => { });
-            if (m.type === "rtc-ice" && pc) pc.addIceCandidate(m.candidate).catch(() => { });
+            if (m.type === "rtc-ice" && pc)
+              pc.addIceCandidate(m.candidate).catch(() => { });
           };
         } catch (e) { }
         if (location.protocol === "file:") return;
@@ -949,6 +933,60 @@
           ws.onclose = () => setCommStatus("Offline (same-device works)");
         } catch (e) { }
       }
+      function sendComm(o) {
+        if (commChannel) try {
+          commChannel.postMessage(o);
+        }
+          catch (_) { } if (ws && ws.readyState === 1) try {
+            ws.send(JSON.stringify(o));
+
+          } catch (_) { }
+      }
+      function tryMessageOpponent(id) {
+        let gid = pendingGameForHeadsUp?.id || state?.id || currentInvite?.gameId; initComm(gid);
+        let who = id || currentInvite?.invitedBy || "opponent";
+        let t = prompt("Message " + who + ":"); if (!t || !t.trim()) { setCommStatus("Table Talk ready"); return; }
+        let p = { type: "chat", from: getOwner() || "You", text: t.trim() }; sendComm(p); addCommLine((getOwner() || "You") + ": " + t.trim());
+      }
+      async function tryCallOpponent(id) {
+        let gid = pendingGameForHeadsUp?.id || state?.id || currentInvite?.gameId; initComm(gid);
+        let who = id || currentInvite?.invitedBy || "opponent";
+        let btn = document.getElementById("comm-call");
+        if (pc) { try { pc.close(); } catch (_) { } pc = null; if (localStream) localStream.getTracks().forEach(tr => tr.stop()); localStream = null; if (btn) btn.textContent = "Call"; addCommLine("Call ended"); return; }
+        try { localStream = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch (e) { alert("Mic needed: " + e.message); return; }
+        pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] }); localStream.getTracks().forEach(tr => pc.addTrack(tr, localStream));
+        pc.onicecandidate = (e) => { if (e.candidate) sendComm({ type: "rtc-ice", candidate: e.candidate, from: getOwner(), to: who }); };
+        pc.ontrack = (e) => { let a = document.getElementById("remote-audio"); a.srcObject = e.streams[0]; if (btn) btn.textContent = "Hang up"; addCommLine("In call with " + who); };
+        let off = await pc.createOffer(); await pc.setLocalDescription(off); sendComm({ type: "rtc-offer", sdp: off, from: getOwner() || "You", to: who }); addCommLine("Calling " + who + "...");
+      }
+      async function handleOffer(m) {
+        let gid = pendingGameForHeadsUp?.id || state?.id || currentInvite?.gameId; initComm(gid);
+        try { if (!localStream) localStream = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch (e) { addCommLine("Incoming call but mic blocked"); return; }
+        if (pc) try { pc.close(); } catch (_) { }
+        pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] }); localStream.getTracks().forEach(tr => pc.addTrack(tr, localStream));
+        pc.onicecandidate = (e) => { if (e.candidate) sendComm({ type: "rtc-ice", candidate: e.candidate, from: getOwner(), to: m.from }); };
+        pc.ontrack = (e) => { let a = document.getElementById("remote-audio"); a.srcObject = e.streams[0]; let b = document.getElementById("comm-call"); if (b) b.textContent = "Hang up"; addCommLine("Joined call with " + m.from); };
+        await pc.setRemoteDescription(new RTCSessionDescription(m.sdp)); let ans = await pc.createAnswer(); await pc.setLocalDescription(ans); sendComm({ type: "rtc-answer", sdp: ans, from: getOwner() || "You", to: m.from });
+      }
+
+      function applyExternalState(g) {
+        if (!g || !g.id || !state || g.id !== state.id) return;
+        let curP1 = (state.players?.[1]?.name || "").toLowerCase();
+        let newP1 = (g.players?.[1]?.name || "").toLowerCase();
+        let isPlaceholder = curP1 === "" || curP1.indexOf("opponent") === 0;
+        let newIsReal = newP1 !== "" && newP1.indexOf("opponent") !== 0;
+        if (isPlaceholder && newIsReal && g.moveCount === state.moveCount) {
+          state.players[1].name = g.players[1].name;
+          render(); return;
+        }
+        if (typeof g.moveCount === 'number' && typeof state.moveCount === 'number' && g.moveCount < state.moveCount) return;
+        state = cloneRacks(g); pending = []; anchor = null; pendingWord = null; selected = -1; render();
+      }
+      function initBroadcastChannel(id) { if (location.protocol === 'file:') return; try { if (btChannel) btChannel.close(); btChannel = new BroadcastChannel('bt_' + id); btChannel.onmessage = function (e) { if (e.data && e.data.game) applyExternalState(e.data.game); }; } catch (e) { } }
+      function broadcastGame(g) { if (location.protocol === 'file:') return; try { if (btChannel) btChannel.postMessage({ game: g }); } catch (e) { } }
+
+      function getOwner() { return localStorage.getItem("bt_owner") }
+
       const TableTalk = {
         element: null,
         opponent: null,
@@ -1151,13 +1189,11 @@
         $('history').innerHTML = state.history.slice().reverse().map(function (x) { return '<li>' + esc(x) + '</li>' }).join('');
         $('bag').textContent = state.bag.length + ' tiles remain.'; enterWaitingMode(myRackPass, oppName, true);
       }
-      // BEGIN FIX opponent-name
       async function linkGameViaInvite(inviteId, newUsername) {
         let inv = null; for (let a = 0; a < 5; a++) { inv = await loadInvite(inviteId); if (inv) break; await new Promise(r => setTimeout(r, 500)); }
         if (!inv) return null; if (inv.gameId) { for (let a = 0; a < 5; a++) { let g = await loadGame(inv.gameId); if (g) { g = cloneRacks(g); let p1 = (g.players[1].name || "").toLowerCase(); let isPlaceholder = p1 === "opponent" || p1 === "" || p1.indexOf("opponent") === 0; if (isPlaceholder || p1 === newUsername.toLowerCase()) { g.players[1].name = newUsername; try { await fetch(API + "/games/" + g.id, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ game: g }) }); } catch (e) { } try { initBroadcastChannel(g.id); broadcastGame(g); } catch (e) { } } addOpponent(g.players[0].name); addOpponent(g.players[1].name); addGameId(g.id); return { game: g, invite: inv }; } await new Promise(r => setTimeout(r, 400)); } }
         let host = inv.invitedBy || getOwner() || "Player 1"; let fb = fresh(host, newUsername); try { await saveGameToCF(fb); inv.gameId = fb.id; inv.mode = "game-invite"; await saveInviteToCF(inv); } catch (e) { } addOpponent(host); addGameId(fb.id); return { game: fb, invite: inv };
       }
-      // END FIX
 
       let headsupData = { url: "", msg: "", isInvite: true };
 
