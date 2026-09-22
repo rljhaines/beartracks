@@ -1172,13 +1172,15 @@
         headsupData.url = url;
         headsupData.msg = msg;
         headsupData.isInvite = true;
+        if ($('bt-game')) $('bt-game').hidden = true;
+        $('setup').hidden = true;
+
         $("bt-headsup-help").textContent = msg;
         $("bt-headsup-input").value = url;
         $("bt-headsup").hidden = false;
         pendingGameForHeadsUp = gameObj;
         currentInvite = inv;
         showShare(url, false);
-        scheduleFit();
 
         const holder = document.getElementById("bt-headsup-comm-holder");
         if (holder) {
@@ -1218,8 +1220,10 @@
               initComm(gameObj?.id || inv.gameId);
             }
             showGame(gameObj);
+            $('setup').hidden = true;
           };
         }
+        scheduleFit();
       }
 
       async function showHeadsUp(inviteId, gameObj, isInvite) {
@@ -1244,7 +1248,6 @@
         $('bt-headsup').hidden = false;
         pendingGameForHeadsUp = gameObj;
         showShare(url, isInvite ? false : true);
-        scheduleFit();
 
         let btnContinue = $('bt-headsup-continue');
         if (btnContinue) {
@@ -1259,6 +1262,7 @@
             $('setup').hidden = true;
           };
         }
+        scheduleFit();
       }
 
       function handleHeadsUpCopyMsg() {
