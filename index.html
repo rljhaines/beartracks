@@ -1218,6 +1218,8 @@
         }
         scheduleFit();
       }
+
+
       async function showHeadsUp(inviteId, gameObj, isInvite) {
         let url = isInvite ? makeInviteUrl(inviteId) : makeGameStateUrl(gameObj);
         let fullMsg = isInvite ? "Join me in a scrabble-like game on BearTracks: " + url : url;
@@ -1226,7 +1228,7 @@
         headsupData.isInvite = isInvite;
 
         if ($('bt-game')) $('bt-game').hidden = true;
-        if ($('bt-setup')) $('bt-setup').hidden = false;
+        $('setup').hidden = true;
 
         $('bt-headsup-input').value = fullMsg;
         $('bt-headsup-help').textContent = "Join me in a scrabble-like game on BearTracks:";
@@ -1246,12 +1248,13 @@
         if (btnContinue) {
           btnContinue.onclick = () => {
             $('bt-headsup').hidden = true;
-            if ($('bt-setup')) $('bt-setup').hidden = true;
+            $('setup').hidden = true;
             if ($('bt-game')) $('bt-game').hidden = false;
             state = gameObj;
             initBroadcastChannel(gameObj.id);
             initComm(gameObj.id);
             showGame(gameObj);
+            $('setup').hidden = true;
           };
         }
       }
