@@ -1178,6 +1178,7 @@
         pendingGameForHeadsUp = gameObj;
         currentInvite = inv;
         showShare(url, false);
+        scheduleFit();
 
         const holder = document.getElementById("bt-headsup-comm-holder");
         if (holder) {
@@ -1219,7 +1220,6 @@
             showGame(gameObj);
           };
         }
-        scheduleFit();
       }
 
       async function showHeadsUp(inviteId, gameObj, isInvite) {
