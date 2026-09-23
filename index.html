@@ -827,31 +827,23 @@
   >
     <div id="bt-headsup-box">
       <div id="bt-headsup-left">
-        <div id="bt-headsup-help">Join me in a scrabble-like game on BearTracks:</div>
-        <textarea
+        <div id="bt-headsup-help">Join me in a scrabble-like game on BearTracks:</div><textarea
           id="bt-headsup-input"
           readonly
         ></textarea>
       </div>
-      <div id="bt-headsup-right">
-        <button
+      <div id="bt-headsup-right"><button
           id="bt-headsup-copy-msg"
           disabled
-        >Message copied</button>
-        <button id="bt-headsup-copy-link">Copy link instead</button>
-        <button id="bt-headsup-continue">Continue to game</button>
-      </div>
+        >Message copied</button><button id="bt-headsup-copy-link">Copy link instead</button><button
+          id="bt-headsup-continue"
+        >Continue to game</button></div>
     </div>
-    <div
-      id="bt-headsup-comm-holder"
-      style="margin-top:12px"
-    ></div>
   </div>
   <script
     id="game-state"
     type="application/json"
   >null</script>
-
   <script>
     (function () {
       'use strict';
@@ -859,121 +851,8 @@
       var D = { A: 9, B: 2, C: 2, D: 4, E: 12, F: 2, G: 3, H: 2, I: 9, J: 1, K: 1, L: 4, M: 2, N: 6, O: 8, P: 2, Q: 1, R: 6, S: 4, T: 6, U: 4, V: 2, W: 2, X: 1, Y: 2, Z: 1, "?": 2 };
       var TW = [[0, 0], [0, 7], [0, 14], [7, 0], [7, 14], [14, 0], [14, 7], [14, 14]], DW = [[1, 1], [2, 2], [3, 3], [4, 4], [10, 10], [11, 11], [12, 12], [13, 13], [1, 13], [2, 12], [3, 11], [4, 10], [10, 4], [11, 3], [12, 2], [13, 1], [7, 7]], TL = [[1, 5], [1, 9], [5, 1], [5, 5], [5, 9], [5, 13], [9, 1], [9, 5], [9, 9], [9, 13], [13, 5], [13, 9]], DL = [[0, 3], [0, 11], [2, 6], [2, 8], [3, 0], [3, 7], [3, 14], [6, 2], [6, 6], [6, 8], [6, 12], [7, 3], [7, 11], [8, 2], [8, 6], [8, 8], [8, 12], [11, 0], [11, 7], [11, 14], [12, 6], [12, 8], [14, 3], [14, 11]];
       var state = null, pending = [], selected = -1, anchor = null, dragItem = null, gesture = null, suppressClick = false, waiting = false, waitingRack = null, waitingOpp = null, pendingWord = null;
-      const API = "https://beartracks-cfdurable-tt.beartracksgames.workers.dev";
-      const TALK_WS = "wss://beartracks-cfdurable-tt.beartracksgames.workers.dev/ws";
-      const LIVE_SITE = "https://rljhaines.github.io/beartracks/";
-
-      let btChannel = null;
-      let currentInvite = null;
-      let pendingGameForHeadsUp = null;
-      let broadcastChannel = null;
-      let commGameId = null;
-      let commChannel = null;
-      let commPollTimer = null;
-      let ws = null;
-      let pc = null;
-      let localStream = null;
-      const WS_URL = TALK_WS;
-      function addCommLine(t) {
-        let l = document.getElementById("comm-log");
-        if (!l) return;
-        let d = document.createElement("div");
-        d.textContent = t; d.style.margin = "3px 0";
-        l.appendChild(d);
-        l.scrollTop = l.scrollHeight;
-      }
-      function setCommStatus(t) {
-        let s = document.getElementById("comm-status");
-        if (s) s.textContent = t;
-      }
-      function initComm(gid) {
-        if (!gid) gid = state?.id || pendingGameForHeadsUp?.id || currentInvite?.gameId;
-        if (!gid) return;
-        if (commGameId === gid && ws && ws.readyState === 1) return;
-        commGameId = gid;
-        try {
-          if (commChannel) commChannel.close();
-          commChannel = new BroadcastChannel("bt_comm_" + gid);
-          commChannel.onmessage = (e) => {
-            let m = e.data;
-            if (!m) return;
-            if (m.type === "chat") addCommLine(m.from + ": " + m.text);
-            if (m.type === "rtc-offer") handleOffer(m);
-            if (m.type === "rtc-answer" && pc)
-              pc.setRemoteDescription(new RTCSessionDescription(m.sdp)).catch(() => { });
-            if (m.type === "rtc-ice" && pc)
-              pc.addIceCandidate(m.candidate).catch(() => { });
-          };
-        } catch (e) { }
-        if (location.protocol === "file:") return;
-        try {
-          if (ws)
-            try {
-              ws.close();
-            } catch (_) { }
-          ws = new WebSocket(
-            WS_URL +
-            "?game=" +
-            encodeURIComponent(gid) +
-            "&user=" +
-            encodeURIComponent(getOwner() || "anon")
-          );
-          ws.onopen = () => {
-            setCommStatus("Connected");
-            let li = getLocalIdx();
-            let myName = state.players[li]?.name || localStorage.getItem('username') || ('P' + li);
-            ws.send(JSON.stringify({ t: 'presence', p: li, name: myName, game: gid }));
-          };
-          ws.onmessage = async (e) => {
-            try {
-              let m = JSON.parse(e.data);
-              if (m.type === "chat") addCommLine(m.from + ": " + m.text);
-              if (m.type === "rtc-offer") handleOffer(m);
-              if (m.type === "rtc-answer" && pc) await pc.setRemoteDescription(m.sdp);
-              if (m.type === "rtc-ice" && pc)
-                try {
-                  await pc.addIceCandidate(m.candidate);
-                } catch (_) { }
-            } catch (_) { }
-          };
-          ws.onclose = () => setCommStatus("Offline (same-device works)");
-        } catch (e) { }
-      }
-      function sendComm(o) {
-        if (commChannel) try {
-          commChannel.postMessage(o);
-        }
-          catch (_) { } if (ws && ws.readyState === 1) try {
-            ws.send(JSON.stringify(o));
-
-          } catch (_) { }
-      }
-      function tryMessageOpponent(id) {
-        let gid = pendingGameForHeadsUp?.id || state?.id || currentInvite?.gameId; initComm(gid);
-        let who = id || currentInvite?.invitedBy || "opponent";
-        let t = prompt("Message " + who + ":"); if (!t || !t.trim()) { setCommStatus("Table Talk ready"); return; }
-        let p = { type: "chat", from: getOwner() || "You", text: t.trim() }; sendComm(p); addCommLine((getOwner() || "You") + ": " + t.trim());
-      }
-      async function tryCallOpponent(id) {
-        let gid = pendingGameForHeadsUp?.id || state?.id || currentInvite?.gameId; initComm(gid);
-        let who = id || currentInvite?.invitedBy || "opponent";
-        let btn = document.getElementById("comm-call");
-        if (pc) { try { pc.close(); } catch (_) { } pc = null; if (localStream) localStream.getTracks().forEach(tr => tr.stop()); localStream = null; if (btn) btn.textContent = "Call"; addCommLine("Call ended"); return; }
-        try { localStream = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch (e) { alert("Mic needed: " + e.message); return; }
-        pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] }); localStream.getTracks().forEach(tr => pc.addTrack(tr, localStream));
-        pc.onicecandidate = (e) => { if (e.candidate) sendComm({ type: "rtc-ice", candidate: e.candidate, from: getOwner(), to: who }); };
-        pc.ontrack = (e) => { let a = document.getElementById("remote-audio"); a.srcObject = e.streams[0]; if (btn) btn.textContent = "Hang up"; addCommLine("In call with " + who); };
-        let off = await pc.createOffer(); await pc.setLocalDescription(off); sendComm({ type: "rtc-offer", sdp: off, from: getOwner() || "You", to: who }); addCommLine("Calling " + who + "...");
-      }
-      async function handleOffer(m) {
-        let gid = pendingGameForHeadsUp?.id || state?.id || currentInvite?.gameId; initComm(gid);
-        try { if (!localStream) localStream = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch (e) { addCommLine("Incoming call but mic blocked"); return; }
-        if (pc) try { pc.close(); } catch (_) { }
-        pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] }); localStream.getTracks().forEach(tr => pc.addTrack(tr, localStream));
-        pc.onicecandidate = (e) => { if (e.candidate) sendComm({ type: "rtc-ice", candidate: e.candidate, from: getOwner(), to: m.from }); };
-        pc.ontrack = (e) => { let a = document.getElementById("remote-audio"); a.srcObject = e.streams[0]; let b = document.getElementById("comm-call"); if (b) b.textContent = "Hang up"; addCommLine("Joined call with " + m.from); };
-        await pc.setRemoteDescription(new RTCSessionDescription(m.sdp)); let ans = await pc.createAnswer(); await pc.setLocalDescription(ans); sendComm({ type: "rtc-answer", sdp: ans, from: getOwner() || "You", to: m.from });
-      }
+      const API = "https://workers.dev"; const LIVE_SITE = "https://github.io";
+      let currentInvite = null; let btChannel = null;
 
       function applyExternalState(g) {
         if (!g || !g.id || !state || g.id !== state.id) return;
@@ -992,108 +871,6 @@
       function broadcastGame(g) { if (location.protocol === 'file:') return; try { if (btChannel) btChannel.postMessage({ game: g }); } catch (e) { } }
 
       function getOwner() { return localStorage.getItem("bt_owner") }
-
-      const TableTalk = {
-        element: null,
-        opponent: null,
-        create(name) {
-          this.opponent = name;
-          let c = document.createElement("section");
-          c.className = "card";
-          c.id = "comm-panel";
-          c.innerHTML =
-            '<h2>Table Talk</h2><div id="comm-log" style="max-height:140px;overflow:auto;font-size:12px;line-height:1.35;margin-bottom:8px;border:1px solid var(--line);border-radius:8px;padding:6px;background:#"></div><div style="display:flex;gap:6px"><input id="comm-input" placeholder="Message..." maxlength="200" style="flex:1;border:1px solid #;border-radius:8px;padding:8px;font:inherit"><button id="comm-send" class="action alt" style="padding:8px 10px">Send</button><button id="comm-call" class="action" style="padding:8px 10px">Call</button></div><audio id="remote-audio" autoplay playsinline style="display:none"></audio><div id="comm-status" class="help" style="margin-top:6px"></div>';
-          this.element = c;
-          setTimeout(() => {
-            let s = c.querySelector("#comm-send");
-            let inp = c.querySelector("#comm-input");
-            let call = c.querySelector("#comm-call");
-            if (s)
-              s.onclick = () => {
-                let t = inp.value.trim();
-                if (!t) return;
-                let p = { type: "chat", from: getOwner() || "You", text: t };
-                sendComm(p);
-                addCommLine((getOwner() || "You") + ": " + t);
-                inp.value = "";
-              };
-            if (inp)
-              inp.onkeydown = (e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  s.click();
-                }
-              };
-            if (call) call.onclick = () => tryCallOpponent(this.opponent);
-          }, 0);
-          return c;
-        },
-        activate(m) {
-          if (!this.element) return;
-          this.element.hidden = false;
-          if (m === "message") tryMessageOpponent(this.opponent);
-          if (m === "call") tryCallOpponent(this.opponent);
-        },
-      };
-
-      function ensureCommPanel() {
-        if (!state || !state.id) return;
-        let share = document.getElementById('share-panel');
-        if (!share) return;
-
-        let existing = document.getElementById('comm-panel');
-        if (existing) {
-          // move it out of heads-up holder if it's stuck there
-          if (existing.parentElement?.id === 'bt-headsup-comm-holder') {
-            share.after(existing);
-          }
-          existing.hidden = false;
-          return;
-        }
-        let li = typeof getLocalIdx === 'function' ? getLocalIdx() : 0;
-        let opp = state.players?.[1 - li]?.name || TableTalk.opponent || 'Opponent';
-        if (!TableTalk.element) TableTalk.create(opp);
-        else TableTalk.opponent = opp; // update name for P2
-
-        if (TableTalk.element && share) {
-          share.after(TableTalk.element);
-          TableTalk.element.hidden = false;
-        }
-      }
-
-      function getOpponents() { try { return JSON.parse(localStorage.getItem("bt_opponents") || "[]") } catch (e) { return [] } }
-      function addOpponent(n) { if (!n) return; let o = getOpponents(); if (o.indexOf(n) === -1) { o.push(n); localStorage.setItem("bt_opponents", JSON.stringify(o)) } }
-      function getAllGameIds() { try { return JSON.parse(localStorage.getItem("bt_all_game_ids") || "[]") } catch (e) { return [] } }
-      function addGameId(id) { if (!id) return; let a = getAllGameIds(); if (a.indexOf(id) === -1) { a.push(id); localStorage.setItem("bt_all_game_ids", JSON.stringify(a)) } }
-      async function loadInvite(id) { for (let k = 0; k < 3; k++) { try { let r = await fetch(API + "/invites/" + id); if (r.ok) { let j = await r.json(); return j.invite } } catch (e) { } await new Promise(r => setTimeout(r, 400)); } return null }
-      async function loadGame(id) { for (let k = 0; k < 3; k++) { try { let r = await fetch(API + "/games/" + id); if (r.ok) { let j = await r.json(); return j.game } } catch (e) { } await new Promise(r => setTimeout(r, 400)); } return null }
-      function makeInviteUrl(id) { return LIVE_SITE + "?invite=" + encodeURIComponent(id); }
-      function makeGameStateUrl(gs) { try { let json = JSON.stringify(gs); let bytes = new TextEncoder().encode(json); let bin = ''; for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]); let b64 = btoa(bin).replace(/\+/g, '-').replace(/\//g, '').replace(/=+$/, ''); return LIVE_SITE + "#s=" + b64; } catch (e) { let b64 = btoa(unescape(encodeURIComponent(JSON.stringify(gs)))).replace(/\+/g, '-').replace(/\//g, '').replace(/=+$/, ''); return LIVE_SITE + "#s=" + b64; } }
-      async function saveGameToCF(g) { addGameId(g.id); try { let r = await fetch(API + "/games/" + g.id, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ game: g }) }); if (r.status === 404) { r = await fetch(API + "/games", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ game: g }) }); } if (!r.ok) throw new Error("save game failed " + r.status); } catch (e) { try { localStorage.setItem("bt_pending_game_" + g.id, JSON.stringify(g)); } catch (_e) { } } return g; }
-      async function saveInviteToCF(inv) { try { let r = await fetch(API + "/invites", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ invite: inv }) }); if (!r.ok) throw new Error("save invite failed " + r.status); } catch (e) { try { localStorage.setItem("bt_pending_invite_" + inv.id, JSON.stringify(inv)); } catch (_e) { } } return inv; }
-      function renderBoxes() { let owner = getOwner(); let br = document.getElementById("box-register"), bs = document.getElementById("box-start"); if (!br || !bs) return; if (!owner) { br.hidden = false; bs.hidden = true; let sp = document.getElementById("share-panel"); if (sp) sp.hidden = true; requestAnimationFrame(() => { setTimeout(() => { let f = document.getElementById("reg-user"); if (f) { f.focus(); f.select(); } }, 50); }); } else { br.hidden = true; bs.hidden = false; let on = document.getElementById("owner-name"); if (on) on.textContent = owner; setTimeout(() => { let f = document.getElementById("nameB"); if (f) f.focus(); }, 0); } }
-      function $(id) { return document.getElementById(id) }
-      function has(a, r, c) { for (var i = 0; i < a.length; i++)if (a[i][0] === r && a[i][1] === c) return true; return false }
-      function premium(r, c) { if (has(TW, r, c)) return 'TW'; if (has(DW, r, c)) return 'DW'; if (has(TL, r, c)) return 'TL'; if (has(DL, r, c)) return 'DL'; return '' }
-      function esc(t) { return String(t).replace(/[&<>"']/g, function (x) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[x] }) }
-      function shuffle(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t } return a }
-      function tile(l) { return { l: l, blank: l === '?' } }
-      function draw(s, p) { while (p.rack.length < 7 && s.bag.length) p.rack.push(tile(s.bag.pop())) }
-      function fresh(a, b) { var bag = [], k, i; for (k in D) for (i = 0; i < D[k]; i++)bag.push(k); shuffle(bag); var s = { version: 4, id: (Date.now().toString(36) + Math.random().toString(36).slice(2, 7)), players: [{ name: a, score: 0, rack: [] }, { name: b, score: 0, rack: [] }], board: [], bag: bag, turn: 0, history: [], moveCount: 0, undoStack: [] }; for (i = 0; i < N; i++)s.board.push(Array(N).fill(null)); draw(s, s.players[0]); draw(s, s.players[1]); s.players[0].rack = s.players[0].rack.map(function (t) { return { l: t.l, blank: !!t.blank } }); s.players[1].rack = s.players[1].rack.map(function (t) { return { l: t.l, blank: !!t.blank } }); return s; }
-      function cloneRacks(g) { if (!g || !g.players) return g; g.players = g.players.map(function (pl) { return { name: pl.name, score: pl.score, rack: pl.rack.map(function (t) { return { l: t.l, blank: !!t.blank } }) } }); return g; }
-      function message(t, isPrompt) { var el = $('status'); el.textContent = t; el.classList.remove('prompt'); void el.offsetWidth; if (isPrompt) el.classList.add('prompt') }
-      function clearPrompt() { var el = $('status'); el.classList.remove('prompt'); }
-      function getLocalIdx() {
-        let q; try { q = new URLSearchParams(location.search) } catch (e) { q = { get: () => null } }
-        if (q.get('p') === '0' || q.get('p') === '1') return Number(q.get('p'))
-        let owner = (getOwner() || "").toLowerCase()
-        if (!state) return 0
-        for (let i = 0; i < state.players.length; i++) if ((state.players[i].name || "").toLowerCase() === owner) return i
-        return state.turn
-      }
-      function getLocalRack() { if (!state) return []; return state.players[getLocalIdx()].rack; }
-      function renderRack() { if (!state) return; var rack = getLocalRack(); if (waiting && waitingRack) { rack = waitingRack; } var rh = ''; for (var i = 0; i < rack.length; i++) { rh += '<button draggable="true" class="rack-tile ' + (i === selected ? 'selected' : '') + '" data-i="' + i + '">' + rack[i].l + '<small>' + V[rack[i].l] + '</small></button>'; } $('rack').innerHTML = rh; var rs = $('rack').getElementsByTagName('button'); for (i = 0; i < rs.length; i++) { rs[i].onclick = pick; rs[i].ondragstart = dragRack; } }
-
       function getOpponents() { try { return JSON.parse(localStorage.getItem("bt_opponents") || "[]") } catch (e) { return [] } }
       function addOpponent(n) { if (!n) return; let o = getOpponents(); if (o.indexOf(n) === -1) { o.push(n); localStorage.setItem("bt_opponents", JSON.stringify(o)) } }
       function getAllGameIds() { try { return JSON.parse(localStorage.getItem("bt_all_game_ids") || "[]") } catch (e) { return [] } }
@@ -1109,6 +886,7 @@
       function has(a, r, c) { for (var i = 0; i < a.length; i++)if (a[i][0] === r && a[i][1] === c) return true; return false }
       function premium(r, c) { if (has(TW, r, c)) return 'TW'; if (has(DW, r, c)) return 'DW'; if (has(TL, r, c)) return 'TL'; if (has(DL, r, c)) return 'DL'; return '' }
       function esc(t) { return String(t).replace(/[&<>"']/g, function (x) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[x] }) }
+
       function shuffle(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t } return a }
       function tile(l) { return { l: l, blank: l === '?' } }
       function draw(s, p) { while (p.rack.length < 7 && s.bag.length) p.rack.push(tile(s.bag.pop())) }
@@ -1127,15 +905,11 @@
       function getLocalRack() { if (!state) return []; return state.players[getLocalIdx()].rack; }
       function renderRack() { if (!state) return; var rack = getLocalRack(); if (waiting && waitingRack) { rack = waitingRack; } var rh = ''; for (var i = 0; i < rack.length; i++) { rh += '<button draggable="true" class="rack-tile ' + (i === selected ? 'selected' : '') + '" data-i="' + i + '">' + rack[i].l + '<small>' + V[rack[i].l] + '</small></button>'; } $('rack').innerHTML = rh; var rs = $('rack').getElementsByTagName('button'); for (i = 0; i < rs.length; i++) { rs[i].onclick = pick; rs[i].ondragstart = dragRack; } }
       function render() {
-        fit();
         if (!state) return;
         let li = getLocalIdx(); let isMyTurn = (state.moveCount === 0) ? true : (state.turn === li); waiting = !isMyTurn; if (!waiting) { waitingRack = null; waitingOpp = null; }
         var b = $('board'); b.innerHTML = ''; for (var r = 0; r < N; r++)for (var c = 0; c < N; c++) { var btn = document.createElement('button'); btn.className = 'cell ' + premium(r, c).toLowerCase() + (anchor && anchor.r === r && anchor.c === c ? ' anchor' : ''); btn.dataset.r = r; btn.dataset.c = c; if (state.board[r][c] && isNew(r, c)) btn.draggable = true; var t2 = state.board[r][c]; var pr = premium(r, c); if (t2) { var sp = document.createElement('span'); sp.className = 'tile ' + (t2.blank ? 'blank' : ''); sp.textContent = t2.l; var b2 = document.createElement('b'); b2.textContent = t2.blank ? 0 : V[t2.l]; sp.appendChild(b2); btn.appendChild(sp); } else if (pr) { var prs = document.createElement('span'); prs.className = 'premium'; prs.textContent = pr; btn.appendChild(prs); } b.appendChild(btn); } var cells = b.getElementsByTagName('button'); for (var i = 0; i < cells.length; i++) { cells[i].onclick = place; cells[i].ondblclick = vertical; cells[i].ondragover = allowDrop; cells[i].ondrop = dropCell; cells[i].ondragstart = dragBoard; cells[i].onmousedown = startGesture; cells[i].onmouseup = endGesture } renderRack(); if (state.moveCount === 0) { $('scores').innerHTML = state.players.map(function (x) { return '<div class="score"><span>' + esc(x.name) + '</span><strong>' + x.score + '</strong></div>' }).join(''); } else { $('scores').innerHTML = state.players.map(function (x, i) { return '<div class="score ' + (i === state.turn ? 'active' : '') + '"><span>' + esc(x.name) + (i === state.turn ? ' - turn' : '') + '</span><strong>' + x.score + '</strong></div>' }).join(''); } $('history').innerHTML = state.history.slice().reverse().map(function (x) { return '<li>' + esc(x) + '</li>' }).join(''); $('bag').textContent = state.bag.length + ' tiles remain.'; if (state.moveCount === 0) { $('turnPill').textContent = 'Decide first move - longest word'; } else { $('turnPill').textContent = isMyTurn ? 'Your turn (' + state.players[li].name + ')' : state.players[state.turn].name + "'s turn"; } $('placement').textContent = anchor ? 'Starts at ' + String.fromCharCode(65 + anchor.c) + (anchor.r + 1) + ' ' + (anchor.d === 'H' ? 'across' : 'down') : '';
         $('wordInput').disabled = !isMyTurn; $('wordInput').placeholder = isMyTurn ? 'Type word or word 8,8,0 (1-15)' : 'Waiting'; $('playWord').disabled = !isMyTurn; $('submitWord').disabled = !isMyTurn; $('pass').disabled = false; $('undo').disabled = !isMyTurn;
         if (!pending.length && !pendingWord) { if (state.moveCount === 0) { let other = state.players[1 - li].name; message(state.players[li].name + ': first move - type word then click board. Pass to let ' + other + ' start.'); } else { message(isMyTurn ? state.players[li].name + ': type word + Enter, add 8,8,0 for coords (1-15), or word alone then click board.' : 'Waiting for ' + state.players[state.turn].name + ' to play.'); } } setTimeout(function () { var inp = $('wordInput'); if (inp && isMyTurn) inp.focus(); }, 0);
-        initComm(state.id);
-        ensureCommPanel();
-        scheduleFit();
       }
       function renderWaitingRack() { var rh = ''; for (var i = 0; i < waitingRack.length; i++)rh += '<button class="rack-tile" disabled>' + waitingRack[i].l + '<small>' + V[waitingRack[i].l] + '</small></button>'; $('rack').innerHTML = rh; }
       function enterWaitingMode(myRack, opponentName, isPass) { waitingRack = myRack.slice(); waitingOpp = opponentName; render(); if (waitingRack) renderWaitingRack(); $('wordInput').value = ''; $('wordInput').disabled = true; $('wordInput').placeholder = 'Waiting'; $('playWord').disabled = true; $('submitWord').disabled = true; $('pass').disabled = true; $('undo').disabled = true; $('turnPill').textContent = 'Waiting for ' + opponentName; if (isPass) { $('placement').textContent = ''; $('status').textContent = ''; $('status').classList.remove('prompt'); } else { $('placement').textContent = 'Game saved to cloud. Backup link copied.'; $('status').textContent = "The Bear's tracks have been captured. Backup game-state link in clipboard."; $('status').classList.remove('prompt'); } }
@@ -1146,6 +920,7 @@
       function putTile(r, c, q) { if (q.l === '?') { var z = prompt('Blank = a-z'); z = (z || '').trim().toUpperCase(); if (!/^[A-Z]$/.test(z)) { getLocalRack().push(q); message('Blank cancelled.'); return false; } q = { l: z, blank: true } } state.board[r][c] = q; pending.push({ r: r, c: c, tile: q }); return true }
       function placeWordAtAnchor(word) { if (!state) return; let li = getLocalIdx(); let isMyTurn = (state.moveCount === 0) ? true : (state.turn === li); if (!isMyTurn) return; if (!anchor) { message('select a starting square with a click or double-click', true); return; } if (pending.length) { let lr = getLocalRack(); for (let i = pending.length - 1; i >= 0; i--) { let x = pending[i]; state.board[x.r][x.c] = null; lr.push(x.tile.blank ? tile('?') : x.tile); } pending = []; } var dr = anchor.d === 'V' ? 1 : 0, dc = anchor.d === 'H' ? 1 : 0; var cands = []; if (state.board[anchor.r][anchor.c]) { var bl = state.board[anchor.r][anchor.c].l; for (var k = 0; k < word.length; k++)if (word[k] === bl) cands.push({ r0: anchor.r - k * dr, c0: anchor.c - k * dc }); if (!cands.length) { message('Anchor ' + (anchor.r + 1) + ',' + (anchor.c + 1) + ' is ' + bl + ' not in ' + word); return; } } else { cands.push({ r0: anchor.r, c0: anchor.c }); } var last = ''; for (var ci = 0; ci < cands.length; ci++) { var r0 = cands[ci].r0, c0 = cands[ci].c0, copy = getLocalRack().slice(), planned = [], ok = true; for (var i = 0; i < word.length; i++) { var r = r0 + i * dr, c = c0 + i * dc; if (r < 0 || r >= N || c < 0 || c >= N) { ok = false; last = 'Off board at ' + (r + 1) + ',' + (c + 1); break; } if (state.board[r][c]) { if (state.board[r][c].l !== word.charAt(i)) { ok = false; last = 'Conflict at ' + (r + 1) + ',' + (c + 1) + ' has ' + state.board[r][c].l + ' vs ' + word.charAt(i); break; } } else { var at = copy.findIndex(function (x) { return x.l === word.charAt(i) }); if (at < 0) at = copy.findIndex(function (x) { return x.l === '?' }); if (at < 0) { ok = false; last = 'Need ' + word.charAt(i) + ' have [' + getLocalRack().map(function (x) { return x.l }).join('') + ']'; break; } planned.push({ r: r, c: c, q: copy.splice(at, 1)[0], idx: i }); } } if (!ok) continue; var lr = getLocalRack(); for (var j = 0; j < planned.length; j++) { var actual = lr.findIndex(function (x) { return x.l === planned[j].q.l }); if (actual < 0) actual = lr.findIndex(function (x) { return x.l === '?' }); var q = lr.splice(actual, 1)[0]; if (q.l === '?') q = { l: word.charAt(planned[j].idx), blank: true }; state.board[planned[j].r][planned[j].c] = q; pending.push({ r: planned[j].r, c: planned[j].c, tile: q }); } pendingWord = null; clearPrompt(); render(); return; } message(last || 'Cannot place ' + word); }
       function parseEntry(raw) { if (!raw) return { word: '', nums: [] }; var letters = (raw.match(/[A-Za-z]+/g) || []).join(''); var word = letters.toUpperCase(); var numMatches = raw.match(/\d+/g) || []; var nums = numMatches.map(function (n) { return parseInt(n, 10); }); return { word: word, nums: nums }; }
+
       function playTyped() { if (waiting) return; let li = getLocalIdx(); let isMyTurn = (state.moveCount === 0) ? true : (state.turn === li); if (!isMyTurn) return; var raw = $('wordInput').value.trim(); if (!raw) { message('Type a word first.'); return; } var parsed = parseEntry(raw); var word = parsed.word; var nums = parsed.nums; if (!word) { message('Type a word first.'); return; } if (nums.length >= 2) { var rr = nums[0], cc = nums[1], dir = nums.length >= 3 ? nums[2] : 0; if (rr < 1 || rr > 15 || cc < 1 || cc > 15) { message('Rows and cols 1-15. 1,1 is top-left.'); return; } if (dir !== 0 && dir !== 1) { message('Direction 0=across, 1=down.'); return; } anchor = { r: rr - 1, c: cc - 1, d: dir === 1 ? 'V' : 'H' }; placeWordAtAnchor(word); } else { if (anchor) { placeWordAtAnchor(word); } else { pendingWord = word; message('select a starting square with a click or double-click', true); $('placement').textContent = 'Word: ' + word + ' — click for across, double-click for down'; } } }
       function allowDrop(e) { if (waiting) return; e.preventDefault(); }
       function dragRack(e) { if (waiting) return; let li = getLocalIdx(); let isMyTurn = (state.moveCount === 0) ? true : (state.turn === li); if (!isMyTurn) return; dragItem = { kind: 'rack', i: Number(e.currentTarget.getAttribute('data-i')) }; }
@@ -1183,8 +958,8 @@
             state.moveCount = 1;
             state.turn = oppIdx;
             let gameToSavePass0 = JSON.parse(JSON.stringify(state));
-            saveGameToCF(gameToSavePass0).then(() => { broadcastGame(gameToSavePass0); let gsUrl = makeGameStateUrl(gameToSavePass0); try { navigator.clipboard.writeText(gsUrl) } catch (e) { } showShare(gsUrl, true); }).catch(() => { });
-            $('scores').innerHTML = state.players.map(function (x, i) { return '<div class="score ' + (i === state.turn ? 'active' : '') + '"><span>' + esc(x.name) + '</span><strong>' + x.score + '</strong></div>' }).join('');
+
+            saveGameToCF(gameToSavePass0).then(() => { broadcastGame(gameToSavePass0); let gsUrl = makeGameStateUrl(gameToSavePass0); try { navigator.clipboard.writeText(gsUrl) } catch (e) { } showShare(gsUrl, true); }).catch(() => { }); $('scores').innerHTML = state.players.map(function (x, i) { return '<div class="score ' + (i === state.turn ? 'active' : '') + '"><span>' + esc(x.name) + '</span><strong>' + x.score + '</strong></div>' }).join('');
             $('history').innerHTML = state.history.slice().reverse().map(function (x) { return '<li>' + esc(x) + '</li>' }).join('');
             $('bag').textContent = state.bag.length + ' tiles remain.';
             enterWaitingMode(myRackPass, oppName, true);
@@ -1198,135 +973,70 @@
         $('history').innerHTML = state.history.slice().reverse().map(function (x) { return '<li>' + esc(x) + '</li>' }).join('');
         $('bag').textContent = state.bag.length + ' tiles remain.'; enterWaitingMode(myRackPass, oppName, true);
       }
+
       async function linkGameViaInvite(inviteId, newUsername) {
         let inv = null; for (let a = 0; a < 5; a++) { inv = await loadInvite(inviteId); if (inv) break; await new Promise(r => setTimeout(r, 500)); }
-        if (!inv) return null; if (inv.gameId) { for (let a = 0; a < 5; a++) { let g = await loadGame(inv.gameId); if (g) { g = cloneRacks(g); let p1 = (g.players[1].name || "").toLowerCase(); let isPlaceholder = p1 === "opponent" || p1 === "" || p1.indexOf("opponent") === 0; if (isPlaceholder || p1 === newUsername.toLowerCase()) { g.players[1].name = newUsername; try { await fetch(API + "/games/" + g.id, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ game: g }) }); } catch (e) { } try { initBroadcastChannel(g.id); broadcastGame(g); } catch (e) { } } addOpponent(g.players[0].name); addOpponent(g.players[1].name); addGameId(g.id); return { game: g, invite: inv }; } await new Promise(r => setTimeout(r, 400)); } }
+        if (!inv) return null;
+        if (inv.gameId) {
+          for (let a = 0; a < 5; a++) {
+            let g = await loadGame(inv.gameId);
+            if (g) {
+              g = cloneRacks(g);
+              let p0 = (g.players[0].name || "").toLowerCase();
+              if (newUsername.toLowerCase() === p0) return null;
+              let p1 = (g.players[1].name || "").toLowerCase();
+              let isPlaceholder = p1 === "opponent" || p1 === "" || p1.indexOf("opponent") === 0;
+              if (isPlaceholder || p1 === newUsername.toLowerCase()) {
+                g.players[1].name = newUsername;
+                try { await fetch(API + "/games/" + g.id, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ game: g }) }); } catch (e) { }
+                try { initBroadcastChannel(g.id); broadcastGame(g); } catch (e) { }
+              }
+              addOpponent(g.players[0].name); addOpponent(g.players[1].name); addGameId(g.id);
+              return { game: g, invite: inv };
+            }
+            await new Promise(r => setTimeout(r, 500));
+          }
+        }
         let host = inv.invitedBy || getOwner() || "Player 1"; let fb = fresh(host, newUsername); try { await saveGameToCF(fb); inv.gameId = fb.id; inv.mode = "game-invite"; await saveInviteToCF(inv); } catch (e) { } addOpponent(host); addGameId(fb.id); return { game: fb, invite: inv };
       }
 
-      let headsupData = { url: "", msg: "", isInvite: true };
-
+      let pendingGameForHeadsUp = null; let headsupData = { url: "", msg: "", isInvite: true };
       function getCollabMessage(inv, inviteeName, type) {
         var base = "Hello, " + inviteeName + "!! " + inv.invitedBy + " thanks you for joining in on this word-building collaboration.";
         if (type === "passive") { return base + " " + inv.invitedBy + " has made preparations for the journey. Join in by clicking Continue To Game to the right of this message. If " + inv.invitedBy + " is on BearTracks, you're welcome to message or call that person using the buttons to the right of this box."; }
         else { return base + " If you know " + inv.invitedBy + " to currently be in BearTracks, feel free to coordinate the start of the game with " + inv.invitedBy + " using either in-game communication option, Message " + inv.invitedBy + " or Call " + inv.invitedBy + ". If unknown, either coordinate with " + inv.invitedBy + " through your own means or simply begin the game using the Continue to Game button to your right."; }
       }
+      function tryMessageOpponent(id) { alert("Message " + id + " - WebRTC/Socket to be wired"); }
+      function tryCallOpponent(id) { alert("Call " + id + " - WebRTC/Socket to be wired"); }
+
       function showCollabHeadsUp(inv, gameObj, type, inviteeName) {
-        var url = makeInviteUrl(inv.id);
-        var msg = getCollabMessage(inv, inviteeName || "there", type);
-        headsupData.url = url;
-        headsupData.msg = msg;
-        headsupData.isInvite = true;
-        if ($('bt-game')) $('bt-game').hidden = true;
-        $('setup').hidden = true;
-
-        $("bt-headsup-help").textContent = msg;
-        $("bt-headsup-input").value = url;
-        $("bt-headsup").hidden = false;
-        pendingGameForHeadsUp = gameObj;
-        currentInvite = inv;
-        showShare(url, false);
-
-        const holder = document.getElementById("bt-headsup-comm-holder");
-        if (holder) {
-          holder.innerHTML = "";
-          TableTalk.create(inv.invitedBy);
-          TableTalk.element.hidden = true;
-          holder.appendChild(TableTalk.element);
-        }
-
-        $("bt-headsup-copy-msg").disabled = false;
-        $("bt-headsup-copy-msg").textContent = "Message " + inv.invitedBy;
-        $("bt-headsup-copy-msg").onclick = () => {
-          initBroadcastChannel(gameObj?.id || inv.gameId);
-          initComm(gameObj?.id || inv.gameId);
-          TableTalk.element.hidden = false;
-          TableTalk.activate("message");
-        };
-
-        $("bt-headsup-copy-link").disabled = false;
-        $("bt-headsup-copy-link").textContent = "Call " + inv.invitedBy;
-        $("bt-headsup-copy-link").onclick = () => {
-          initBroadcastChannel(gameObj?.id || inv.gameId);
-          initComm(gameObj?.id || inv.gameId);
-          TableTalk.element.hidden = false;
-          TableTalk.activate("call");
-        };
-
-        /* let btnContinue = $("bt-headsup-continue");
-        if (btnContinue) {
-          btnContinue.onclick = () => {
-            $('bt-headsup').hidden = true;
-            $('setup').hidden = true;
-            if ($('bt-game')) $('bt-game').hidden = false;
-            state = gameObj;
-            if (!commGameId) {
-              initBroadcastChannel(gameObj?.id || inv.gameId);
-              initComm(gameObj?.id || inv.gameId);
-            }
-            showGame(gameObj);
-            $('setup').hidden = true;
-          };
-        }
-        scheduleFit(); */
+        var url = makeInviteUrl(inv.id); var msg = getCollabMessage(inv, inviteeName || "there", type);
+        headsupData.url = url; headsupData.msg = msg; headsupData.isInvite = true;
+        $('bt-headsup-help').textContent = msg; $('bt-headsup-input').value = url;
+        $('bt-headsup-copy-msg').disabled = false; $('bt-headsup-copy-msg').textContent = "Message " + inv.invitedBy; $('bt-headsup-copy-msg').onclick = function () { tryMessageOpponent(inv.invitedBy); };
+        $('bt-headsup-copy-link').disabled = false; $('bt-headsup-copy-link').textContent = "Call " + inv.invitedBy; $('bt-headsup-copy-link').onclick = function () { tryCallOpponent(inv.invitedBy); };
+        $('bt-headsup').hidden = false; pendingGameForHeadsUp = gameObj; currentInvite = inv; showShare(url, false);
+        try {
+          let cur = new URLSearchParams(location.search);
+          if (!cur.get('p')) {
+            history.replaceState(null, '', `?game=${gameObj.id}&p=0`);
+          }
+        } catch (e) { }
+        scheduleFit();
       }
 
       async function showHeadsUp(inviteId, gameObj, isInvite) {
         let url = isInvite ? makeInviteUrl(inviteId) : makeGameStateUrl(gameObj);
         let fullMsg = isInvite ? "Join me in a scrabble-like game on BearTracks: " + url : url;
-        headsupData.url = url;
-        headsupData.msg = fullMsg;
-        headsupData.isInvite = isInvite;
-
-        if ($('bt-game')) $('bt-game').hidden = true;
-        $('setup').hidden = true;
-
-        $('bt-headsup-input').value = fullMsg;
-        $('bt-headsup-help').textContent = "Join me in a scrabble-like game on BearTracks:";
+        headsupData.url = url; headsupData.msg = fullMsg; headsupData.isInvite = isInvite;
+        $('bt-headsup-input').value = fullMsg; $('bt-headsup-help').textContent = "Join me in a scrabble-like game on BearTracks:";
         try { if (navigator.clipboard && navigator.clipboard.writeText) await navigator.clipboard.writeText(fullMsg); } catch (e) { }
-        $('bt-headsup-copy-msg').disabled = true;
-        $('bt-headsup-copy-msg').textContent = "Message copied";
-        $('bt-headsup-copy-msg').onclick = handleHeadsUpCopyMsg;
-        $('bt-headsup-copy-link').disabled = false;
-        $('bt-headsup-copy-link').textContent = "Copy link instead";
-        $('bt-headsup-copy-link').onclick = handleHeadsUpCopyLink;
-        $('bt-headsup').hidden = false;
-        pendingGameForHeadsUp = gameObj;
-        showShare(url, isInvite ? false : true);
-
-        /* let btnContinue = $('bt-headsup-continue');
-        if (btnContinue) {
-          btnContinue.onclick = () => {
-            $('bt-headsup').hidden = true;
-            $('setup').hidden = true;
-            if ($('bt-game')) $('bt-game').hidden = false;
-            state = gameObj;
-            initBroadcastChannel(gameObj.id);
-            initComm(gameObj.id);
-            showGame(gameObj);
-            $('setup').hidden = true;
-          };
-        }
-        scheduleFit(); */
+        $('bt-headsup-copy-msg').disabled = true; $('bt-headsup-copy-msg').textContent = "Message copied"; $('bt-headsup-copy-msg').onclick = handleHeadsUpCopyMsg;
+        $('bt-headsup-copy-link').disabled = false; $('bt-headsup-copy-link').textContent = "Copy link instead"; $('bt-headsup-copy-link').onclick = handleHeadsUpCopyLink;
+        $('bt-headsup').hidden = false; pendingGameForHeadsUp = gameObj; showShare(url, isInvite ? false : true); scheduleFit();
       }
-
-      function handleHeadsUpCopyMsg() {
-        $('bt-headsup-input').value = headsupData.msg;
-        try { navigator.clipboard.writeText(headsupData.msg).catch(() => { }); } catch (e) { }
-        $('bt-headsup-copy-msg').disabled = true;
-        $('bt-headsup-copy-msg').textContent = "Message copied";
-        $('bt-headsup-copy-link').disabled = false;
-        $('bt-headsup-copy-link').textContent = headsupData.isInvite ? "Copy link instead" : "Copy link";
-      }
-
-      function handleHeadsUpCopyLink() {
-        $('bt-headsup-input').value = headsupData.url;
-        try { navigator.clipboard.writeText(headsupData.url).catch(() => { }); } catch (e) { }
-        $('bt-headsup-copy-link').disabled = true;
-        $('bt-headsup-copy-link').textContent = "Link copied";
-        $('bt-headsup-copy-msg').disabled = false;
-        $('bt-headsup-copy-msg').textContent = "Copy message instead";
-      }
+      function handleHeadsUpCopyMsg() { $('bt-headsup-input').value = headsupData.msg; try { navigator.clipboard.writeText(headsupData.msg).catch(() => { }); } catch (e) { } $('bt-headsup-copy-msg').disabled = true; $('bt-headsup-copy-msg').textContent = "Message copied"; $('bt-headsup-copy-link').disabled = false; $('bt-headsup-copy-link').textContent = headsupData.isInvite ? "Copy link instead" : "Copy link"; }
+      function handleHeadsUpCopyLink() { $('bt-headsup-input').value = headsupData.url; try { navigator.clipboard.writeText(headsupData.url).catch(() => { }); } catch (e) { } $('bt-headsup-copy-link').disabled = true; $('bt-headsup-copy-link').textContent = "Link copied"; $('bt-headsup-copy-msg').disabled = false; $('bt-headsup-copy-msg').textContent = "Copy message instead"; }
 
       function handleHeadsUpContinue() {
         let gid = pendingGameForHeadsUp?.id || currentInvite?.gameId;
@@ -1336,23 +1046,25 @@
           return;
         }
         (async () => {
-          try { let freshG = await loadGame(gid); if (freshG) pendingGameForHeadsUp = cloneRacks(freshG); } catch (e) { }
+          try {
+            let freshG = await loadGame(gid);
+            if (freshG) pendingGameForHeadsUp = cloneRacks(freshG);
+          } catch (e) { }
           let g = pendingGameForHeadsUp;
           if (!g) return;
-          let li = getLocalIdx();
-          if (!new URLSearchParams(location.search).get('p')) {
-            li = 0;
-            let owner = (getOwner() || "").toLowerCase();
-            for (let i = 0; i < g.players.length; i++) if ((g.players[i].name || "").toLowerCase() === owner) li = i;
+          let li = 0;
+          let qp = new URLSearchParams(location.search).get('p');
+          if (qp === '0' || qp === '1') {
+            li = Number(qp);
+          } else {
+            let registeredUser = ($('reg-user') ? $('reg-user').value.trim() : '').toLowerCase();
+            let activeOwner = (getOwner() || "").toLowerCase();
+            let matchTarget = registeredUser || activeOwner;
+            for (var i = 0; i < g.players.length; i++) if ((g.players[i].name || "").toLowerCase() === matchTarget) li = i;
           }
           $('bt-headsup').hidden = true;
-          state = g;
-          /* initBroadcastChannel(g.id); */
-          initComm(g.id);
-          $('setup').hidden = true;
-          render();
-          pendingGameForHeadsUp = null;
-          scheduleFit();
+          state = g; initBroadcastChannel(g.id);
+          $('setup').hidden = true; render(); pendingGameForHeadsUp = null; scheduleFit();
           try {
             let url = new URL(location.href);
             url.searchParams.set('game', gid);
@@ -1362,73 +1074,10 @@
           } catch (e) { }
         })();
       }
+      async function handleRegister() { let uEl = $('reg-user'), pEl = $('reg-pass'), p2El = $('reg-pass2'), errEl = $('reg-error'); let u = uEl ? uEl.value.trim() : '', p = pEl ? pEl.value : '', p2 = p2El ? p2El.value : ''; if (errEl) errEl.textContent = ''; if (!u || !p) { if (errEl) errEl.textContent = 'Fill username and password'; return; } if (p !== p2) { if (errEl) errEl.textContent = 'Passwords do not match'; return; } let users = []; try { users = JSON.parse(localStorage.getItem("bt_users") || "[]") } catch (e) { users = [] } if (users.some(x => x.toLowerCase() === u.toLowerCase())) { if (errEl) errEl.textContent = 'Username taken'; return; } localStorage.setItem("bt_owner", u); try { localStorage.removeItem("bt_pass_" + u.toLowerCase()); } catch (e) { } users.push(u); localStorage.setItem("bt_users", JSON.stringify(users)); let inviteParam = null; try { inviteParam = new URLSearchParams(location.search).get("invite"); } catch (e) { } if (inviteParam) { try { let res = await linkGameViaInvite(inviteParam, u); if (res && res.game && res.invite) { let type = res.invite.mode === "unregistered-invite" ? "active" : "passive"; $('setup').hidden = true; showCollabHeadsUp(res.invite, res.game, type, u); return; } } catch (e) { } } renderBoxes(); }
+      async function handleBegin() { let owner = getOwner(); if (!owner) { renderBoxes(); return; } let opp = ($('nameB') ? $('nameB').value.trim() : ''); let g = fresh(owner, opp || "Opponent"); await saveGameToCF(g); initBroadcastChannel(g.id); if (!opp) { let iid = Date.now().toString(36) + Math.random().toString(36).slice(2, 7); currentInvite = { id: iid, invitedBy: owner, invitedByOpponents: getOpponents(), gameId: g.id, mode: "game-invite", created: Date.now() }; try { await saveInviteToCF(currentInvite); } catch (e) { } addOpponent(opp); await showHeadsUp(iid, g, true); } else { currentInvite = null; if (opp) addOpponent(opp); await showHeadsUp(null, g, false); } }
 
-      async function handleRegister() {
-        let uEl = $('reg-user'), pEl = $('reg-pass'), p2El = $('reg-pass2'), errEl = $('reg-error');
-        let u = uEl ? uEl.value.trim() : '', p = pEl ? pEl.value : '', p2 = p2El ? p2El.value : '';
-        if (errEl) errEl.textContent = '';
-        if (!u || !p) { if (errEl) errEl.textContent = 'Fill username and password'; return; }
-        if (p !== p2) { if (errEl) errEl.textContent = 'Passwords do not match'; return; }
-        let users = []; try { users = JSON.parse(localStorage.getItem("bt_users") || "[]"); } catch (e) { users = []; }
-        if (users.some(x => x.toLowerCase() === u.toLowerCase())) { if (errEl) errEl.textContent = 'Username taken'; return; }
-        localStorage.setItem("bt_owner", u);
-        try { localStorage.removeItem("bt_pass_" + u.toLowerCase()); } catch (e) { }
-        users.push(u); localStorage.setItem("bt_users", JSON.stringify(users));
-        let inviteParam = null; try { inviteParam = new URLSearchParams(location.search).get("invite"); } catch (e) { }
-        if (inviteParam) {
-          try { let res = await linkGameViaInvite(inviteParam, u); if (res && res.game && res.invite) { let type = res.invite.mode === "unregistered-invite" ? "active" : "passive"; $('setup').hidden = true; showCollabHeadsUp(res.invite, res.game, type, u); return; } } catch (e) { }
-        }
-        let gameParam = null; try { gameParam = new URLSearchParams(location.search).get("game"); } catch (e) { }
-        if (gameParam) {
-          try {
-            let g = await loadGameFromCF(gameParam);
-            if (g) {
-              state = g;
-              $('setup').hidden = true;
-              showCollabHeadsUp(
-                { invitedBy: g.players?.[0]?.name || "Opponent", gameId: g.id },
-                g,
-                "passive",
-                u
-              );
-              return;
-            }
-          } catch (e) { }
-        }
-        renderBoxes();
-      }
-
-      async function handleBegin() {
-        let owner = getOwner(); if (!owner) { renderBoxes(); return; }
-        let opp = ($('nameB') ? $('nameB').value.trim() : '');
-        let g = fresh(owner, opp || "Opponent");
-        await saveGameToCF(g);
-        if (!opp) {
-          let iid = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-          currentInvite = { id: iid, invitedBy: owner, invitedByOpponents: getOpponents(), gameId: g.id, mode: "game-invite", created: Date.now() };
-          try { await saveInviteToCF(currentInvite); } catch (e) { }
-          addOpponent(opp);
-          await showHeadsUp(iid, g, true);
-        } else {
-          currentInvite = null;
-          if (opp) addOpponent(opp);
-          await showHeadsUp(null, g, false);
-        }
-      }
-
-      async function handleCreateInvitation() {
-        let owner = getOwner(); if (!owner) { renderBoxes(); return; }
-        let id = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-        let placeholder = fresh(owner, "Opponent");
-        await saveGameToCF(placeholder);
-        initBroadcastChannel(placeholder.id);
-        initComm(placeholder.id);
-        let inv = { id: id, invitedBy: owner, invitedByOpponents: getOpponents(), gameId: placeholder.id, mode: "unregistered-invite", created: Date.now() };
-        await saveInviteToCF(inv);
-        currentInvite = inv;
-        await showHeadsUp(id, placeholder, true);
-      }
-
+      async function handleCreateInvitation() { let owner = getOwner(); if (!owner) { renderBoxes(); return; } let id = Date.now().toString(36) + Math.random().toString(36).slice(2, 7); let placeholder = fresh(owner, "Opponent"); await saveGameToCF(placeholder); initBroadcastChannel(placeholder.id); let inv = { id: id, invitedBy: owner, invitedByOpponents: getOpponents(), gameId: placeholder.id, mode: "unregistered-invite", created: Date.now() }; await saveInviteToCF(inv); currentInvite = inv; await showHeadsUp(id, placeholder, true); }
       function fit() {
         var boardEl = document.getElementById('board'); if (!boardEl) return;
         var mastH = document.querySelector('.mast')?.offsetHeight || 56;
@@ -1442,13 +1091,12 @@
       function scheduleFit() { requestAnimationFrame(() => requestAnimationFrame(() => { fit(); setTimeout(fit, 80); setTimeout(fit, 300); })); }
       window.addEventListener('resize', scheduleFit);
       if (window.visualViewport) { window.visualViewport.addEventListener('resize', scheduleFit); window.visualViewport.addEventListener('scroll', scheduleFit); }
-
       $('submitWord').onclick = commit; $('undo').onclick = undo; $('pass').onclick = pass; $('playWord').onclick = playTyped; $('shuffle').onclick = shuffleRack;
       $('wordInput').onkeydown = function (e) { if (e.key === 'Enter') { if (waiting) return; e.preventDefault(); playTyped(); } };
       $('wordInput').addEventListener('input', function () { if (waiting) return; if (!anchor) return; let raw = this.value; if (!raw) { if (pending.length) { let lr = getLocalRack(); for (let i = pending.length - 1; i >= 0; i--) { let x = pending[i]; state.board[x.r][x.c] = null; lr.push(x.tile.blank ? tile('?') : x.tile); } pending = []; render(); } return; } let parsed = parseEntry(raw); let word = parsed.word; if (!word) return; if (word.length >= 1) placeWordAtAnchor(word); });
       $('help').onclick = function () { alert('Type word + Enter. Add 8,8,0 across / 8,8,1 down in any order (1-15). Or word alone then click board. Contestants decide first move by longest word.') };
       $('btn-register').onclick = handleRegister; $('btn-begin').onclick = handleBegin; $('btn-invite').onclick = handleCreateInvitation;
-      let _sc = document.getElementById('share-copy'); if (_sc) { _sc.onclick = function () { let u = document.getElementById('share-url').value; try { navigator.clipboard.writeText(u).catch(() => { }); } catch (e) { prompt("Copy:", u) } }; }
+      let _sc = document.getElementById('share-copy'); if (_sc) { _sc.onclick = function () { let u = document.getElementById('share-url').value; try { navigator.clipboard.writeText(u).catch(() => { }) } catch (e) { prompt("Copy:", u) } }; }
       $('btn-logout').onclick = function () { localStorage.removeItem("bt_owner"); $('setup').hidden = false; renderBoxes(); $('reg-user').value = ''; $('reg-pass').value = ''; $('reg-pass2').value = ''; $('nameB').value = ''; let sp = $('share-panel'); if (sp) sp.hidden = true; currentInvite = null; $('bt-headsup').hidden = true; pendingGameForHeadsUp = null; };
       $('reg-user').onkeydown = function (e) { if (e.key === 'Enter') handleRegister() }; $('reg-pass2').onkeydown = function (e) { if (e.key === 'Enter') handleRegister() }; $('nameB').onkeydown = function (e) { if (e.key === 'Enter') handleBegin() };
       $('bt-headsup-copy-msg').onclick = handleHeadsUpCopyMsg; $('bt-headsup-copy-link').onclick = handleHeadsUpCopyLink; $('bt-headsup-continue').onclick = handleHeadsUpContinue;
@@ -1456,7 +1104,7 @@
       setInterval(async () => {
         try {
           if (!state || !state.id) return;
-          let p1 = (state.players?.[1]?.name || "").toLowerCase();
+          let p1 = (state.players?.name || "").toLowerCase();
           let isPlaceholder = p1 === "" || p1.indexOf("opponent") === 0;
           if (!isPlaceholder && !waiting) return;
           let g = await loadGame(state.id);
@@ -1465,98 +1113,6 @@
       }, 1000);
 
       (async () => {
-        try { fit(); } catch (e) { }
-
-        let params = null;
-        try { params = new URLSearchParams(location.search); }
-        catch (e) { params = { get: () => null } }
-        let iid = params.get("invite");
-        let gid = params.get("game");
-        let pParam = params.get("p");
-        let owner = getOwner();
-        let hasState = false;
-
-        let sState = tryLoadFromHash();
-        if (sState) {
-          state = sState; hasState = true;
-          if (state) initBroadcastChannel(state.id);
-        }
-
-        if (!hasState && gid) {
-          let g = await loadGame(gid);
-          if (g) {
-            state = cloneRacks(g); hasState = true;
-            initBroadcastChannel(state.id);
-            let se = $('bt-setup') || $('setup'); if (se) se.hidden = true;
-            try { if (pParam === "0") { localStorage.setItem("bt_owner", state.players[0].name); owner = state.players[0].name; } } catch (e) { }
-          }
-        }
-
-        if (!hasState && iid) {
-          let inv = await loadInvite(iid);
-          if (inv) {
-            currentInvite = inv;
-            if (owner) {
-              let g = null;
-              if (inv.gameId) {
-                try { await linkGameViaInvite(iid, owner); } catch (e) { }
-                g = await loadGame(inv.gameId);
-              }
-              if (g) {
-                g = cloneRacks(g);
-                let type = inv.mode === "unregistered-invite" ? "active" : "passive";
-                let se = $('setup') || $('bt-setup'); if (se) se.hidden = true;
-                showCollabHeadsUp(inv, g, type, owner);
-                hasState = false;
-              }
-            } else {
-              let se = $('setup') || $('bt-setup'); if (se) se.hidden = false;
-              renderBoxes();
-            }
-          }
-        }
-
-        try {
-          if (!state) {
-            let gsTxt = $('game-state').textContent;
-            if (gsTxt && gsTxt.trim() !== 'null' && gsTxt.trim() !== '') {
-              state = cloneRacks(JSON.parse(gsTxt)); hasState = !!state;
-              if (state) initBroadcastChannel(state.id);
-            }
-          }
-        } catch (e) { }
-        if (state && hasState) {
-          try { if (!owner) owner = localStorage.getItem("bt_owner"); } catch (e) { }
-
-          if (owner) {
-            let se = $('setup') || $('bt-setup'); if (se) se.hidden = true;
-            let hu = $('bt-headsup'); if (hu) hu.hidden = true;
-            try {
-              let url = new URL(location.href);
-              if (!url.searchParams.get('p')) { let li = getLocalIdx(); url.searchParams.set('p', String(li)); }
-              if (!url.searchParams.get('game')) url.searchParams.set('game', state.id);
-              history.replaceState(null, '', url.pathname + url.search + location.hash);
-            } catch (e) { }
-            initComm(state.id);
-            render();
-            ensureCommPanel();
-          } else {
-            let se = $('setup') || $('bt-setup'); if (se) se.hidden = false;
-            renderBoxes();
-          }
-
-        } else if (!iid && !gid && !hasState) {
-          let se = $('setup') || $('bt-setup'); if (se) se.hidden = false;
-          renderBoxes();
-        }
-        try { fit(); } catch (e) { }
-        requestAnimationFrame(() => {
-          try { fit(); } catch (e) { }
-          try { new ResizeObserver(scheduleFit).observe(document.getElementById('game')); } catch (e) { }
-        });
-      })();
-
-      /* (async () => {
         let params = null; try { params = new URLSearchParams(location.search); } catch (e) { params = { get: () => null } }
         let iid = params.get("invite"); let gid = params.get("game"); let pParam = params.get("p");
         let owner = getOwner(); let hasState = false;
@@ -1564,23 +1120,17 @@
         if (!hasState && gid) {
           let g = await loadGame(gid);
           if (g) {
-            state = cloneRacks(g);
-            hasState = true;
-            initBroadcastChannel(state.id);
-            $('bt-setup').hidden = true;
-            try { if (pParam === "0") { localStorage.setItem("bt_owner", state.players[0].name); owner = state.players[0].name; } } catch (e) { }
+            state = cloneRacks(g); hasState = true; initBroadcastChannel(state.id);
+            try { if (pParam === "0") { localStorage.setItem("bt_owner", state.players.name); owner = state.players.name; } } catch (e) { }
           }
         }
         if (!hasState && iid) {
           let inv = await loadInvite(iid);
           if (inv) {
             currentInvite = inv;
-            if (owner) {
-              let g = null; if (inv.gameId) {
-                try { await linkGameViaInvite(iid, owner); } catch (e) { }
-                g = await loadGame(inv.gameId);
-              }
-              // let g = null; if (inv.gameId) g = await loadGame(inv.gameId);
+            let isHostIdentity = owner && inv.invitedBy && owner.toLowerCase() === inv.invitedBy.toLowerCase();
+            if (owner && !isHostIdentity) {
+              let g = null; if (inv.gameId) g = await loadGame(inv.gameId);
               if (g) { g = cloneRacks(g); let type = inv.mode === "unregistered-invite" ? "active" : "passive"; $('setup').hidden = true; showCollabHeadsUp(inv, g, type, owner); hasState = false; scheduleFit(); }
             } else { $('setup').hidden = false; renderBoxes(); }
           }
@@ -1592,16 +1142,18 @@
             $('setup').hidden = true; $('bt-headsup').hidden = true; initBroadcastChannel(state.id); render(); scheduleFit();
             try {
               let url = new URL(location.href);
-              if (!url.searchParams.get('p')) { let li = getLocalIdx(); url.searchParams.set('p', String(li)); }
+              if (!url.searchParams.get('p')) {
+                let li = getLocalIdx();
+                url.searchParams.set('p', String(li));
+              }
               if (!url.searchParams.get('game')) url.searchParams.set('game', state.id);
               history.replaceState(null, '', url.pathname + url.search + location.hash);
             } catch (e) { }
           } else { $('setup').hidden = false; renderBoxes(); }
         } else if (!iid && !gid && !hasState) { $('setup').hidden = false; renderBoxes(); scheduleFit(); }
         scheduleFit(); try { new ResizeObserver(scheduleFit).observe(document.getElementById('game')); } catch (e) { }
-      })(); */
-    }
-      ());
+      })();
+    }());
   </script>
 </body>
 
