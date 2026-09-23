@@ -1552,94 +1552,46 @@
           if (state) initBroadcastChannel(state.id);
         }
 
-
         if (!hasState && gid) {
           let g = await loadGame(gid);
           if (g) {
             g = cloneRacks(g);
-
-
             if (pParam === "1") {
-              let p1 = (g.players[1].name || "").toLowerCase();
+              let p1 = (g.players[1]?.name || "").toLowerCase();
               let isPlaceholder = p1 === "" || p1.indexOf("opponent") === 0;
-              if (isPlaceholder || (g.players[1].name || "") === (g.players[0].name || "")) {
+              let sameAsP0 = (g.players[1].name || "") === (g.players[0].name || "");
+              if (isPlaceholder || sameAsP0) {
                 let me = "";
-                try { me = (getOwner() || "").trim(); } catch (e) { }
-                // if same as P0 (your separate-tabs case), ask for real P1 name
-                if (!me || me.toLowerCase() === (g.players[0].name || "").toLowerCase()) {
-                  try { me = (prompt("Enter name for P1:", "") || "").trim(); } catch (e) { me = ""; }
-                  if (me) { try { localStorage.setItem("bt_owner", me); } catch (e) { } }
-                }
-                if (me && me.toLowerCase() !== (g.players[0].name || "").toLowerCase()) {
-                  g.players[1].name = me;
-                  console.log("[P1 capture] saving P1 as", me);
-                  try { await saveGameToCF(g); } catch (e) { console.warn("saveGameToCF failed", e); }
-                }
-              }
-            }
-
-
-            /* if (pParam === "1") {
-              let p1 = (g.players[1].name || "").toLowerCase();
-              let isPlaceholder = p1 === "" || p1.indexOf("opponent") === 0;
-              if (isPlaceholder) {
-                let me = "";
-                try { me = (getOwner() || "").trim(); } catch (e) { }
+                try { me = (getOwner() || localStorage.getItem("bt_owner") || "").trim(); } catch (e) { }
                 if (me && me.toLowerCase() !== (g.players[0].name || "").toLowerCase()) {
                   g.players[1].name = me;
                   try { await saveGameToCF(g); } catch (e) { }
                 }
               }
-            } */
-            state = g; hasState = true;
+            }
+            state = g;
+            hasState = true;
             let se = $('bt-setup') || $('setup'); if (se) se.hidden = true;
             let ge = $('bt-game') || $('game'); if (ge) ge.hidden = false;
-            try { if (pParam === "0") { localStorage.setItem("bt_owner", state.players[0].name); } } catch (e) { }
-            initBroadcastChannel(state.id);
+            let hu = $('bt-headsup'); if (hu) hu.hidden = true;
+            try {
+              if (pParam === "0") { localStorage.setItem("bt_owner", state.players[0].name); owner = state.players[0].name; }
+              else if (pParam === "1") { let own = getOwner() || localStorage.getItem("bt_owner"); if (own) owner = own; }
+            } catch (e) { }
+            try {
+              let url = new URL(location.href);
+              if (!url.searchParams.get('p')) url.searchParams.set('p', String(getLocalIdx()));
+              if (!url.searchParams.get('game')) url.searchParams.set('game', state.id);
+              history.replaceState(null, '', url.pathname + url.search + location.hash);
+            } catch (e) { }
+            try { initBroadcastChannel(state.id); } catch (e) { }
+            try { initComm(state.id); } catch (e) { }
+            render();
+            scheduleFit();
+            ensureCommPanel();
             if (pParam === "1") { try { broadcastGame(state); } catch (e) { } }
           }
         }
-
-
-        /* if (!hasState && gid) {
-          let g = await loadGame(gid);
-          if (g) {
-            g = cloneRacks(g);
-            if (pParam === "1") {
-              let p1 = (g.players[1].name || "").toLowerCase();
-              let isPlaceholder = p1 === "" || p1.indexOf("opponent") === 0;
-              let me = "";
-              try { me = (getOwner() || localStorage.getItem("bt_owner") || "").trim(); } catch (e) { }
-              if (isPlaceholder && me && me.toLowerCase() !== (g.players[0].name || "").toLowerCase()) {
-                g.players[1].name = me;
-                try { await saveGameToCF(g); } catch (e) { }
-              }
-            }
-            state = g; hasState = true;
-            let se = $('bt-setup') || $('setup'); if (se) se.hidden = true;
-            let ge = $('bt-game') || $('game'); if (ge) ge.hidden = false;
-            try { if (pParam === "0") { localStorage.setItem("bt_owner", state.players[0].name); } } catch (e) { }
-            initBroadcastChannel(state.id);
-            if (pParam === "1") { try { broadcastGame(state); } catch (e) { } }
-          }
-        } */
-
-        /* if (!hasState && gid) {
-          let g = await loadGame(gid);
-          if (g) {
-            g = cloneRacks(g);
-            let p1 = (g.players[1]?.name || "").toLowerCase();
-            let isPlaceholder = p1 === "" || p1.indexOf("opponent") === 0;
-            let ownerNow = (getOwner() || "").trim();
-            if (isPlaceholder && ownerNow && ownerNow.toLowerCase() !== (g.players[0].name || "").toLowerCase()) {
-              g.players[1].name = ownerNow;
-              try { await saveGameToCF(g); } catch (e) { }
-              try { broadcastGame(g); } catch (e) { }
-            }
-            state = g; hasState = true; initBroadcastChannel(state.id); initComm(state.id);
-            if (pParam === "0") try { localStorage.setItem("bt_owner", state.players[0].name); owner = state.players[0].name; } catch (e) { }
-          }
-        } */
 
         if (!hasState && iid) {
           let inv = await loadInvite(iid);
@@ -1670,90 +1622,45 @@
             let gsTxt = $('game-state').textContent;
             if (gsTxt && gsTxt.trim() !== 'null' && gsTxt.trim() !== '') {
               state = cloneRacks(JSON.parse(gsTxt)); hasState = !!state;
-              if (state) initBroadcastChannel(state.id);
+              if (state) {
+                try { initBroadcastChannel(state.id); } catch (e) { }
+                try { initComm(state.id); } catch (e) { }
+              }
             }
           }
         } catch (e) { }
 
-
         if (state && hasState) {
           try { if (!owner) owner = localStorage.getItem("bt_owner"); } catch (e) { }
-
           if (owner) {
             let se = $('setup') || $('bt-setup'); if (se) se.hidden = true;
             let hu = $('bt-headsup'); if (hu) hu.hidden = true;
-            try {
-              let url = new URL(location.href);
-              if (!url.searchParams.get('p')) {
-                let li = getLocalIdx();
-                url.searchParams.set('p', String(li));
-              }
-              if (!url.searchParams.get('game')) url.searchParams.set('game', state.id);
-              history.replaceState(null, '', url.pathname + url.search + location.hash);
-            } catch (e) { }
-            initComm(state.id);
-            render();
-            ensureCommPanel();
-          } else {
-            let se = $('setup') || $('bt-setup'); if (se) se.hidden = false;
-            renderBoxes();
-          }
-
-        } else if (!iid && !gid && !hasState) {
-          let se = $('setup') || $('bt-setup'); if (se) se.hidden = false;
-          renderBoxes();
-        }
-        try { fit(); } catch (e) { }
-        requestAnimationFrame(() => {
-          try { fit(); } catch (e) { }
-          try { new ResizeObserver(scheduleFit).observe(document.getElementById('game')); } catch (e) { }
-        });
-      })();
-
-      /* (async () => {
-        let params = null; try { params = new URLSearchParams(location.search); } catch (e) { params = { get: () => null } }
-        let iid = params.get("invite"); let gid = params.get("game"); let pParam = params.get("p");
-        let owner = getOwner(); let hasState = false;
-        let sState = tryLoadFromHash(); if (sState) { state = sState; hasState = true; if (state) initBroadcastChannel(state.id); }
-        if (!hasState && gid) {
-          let g = await loadGame(gid);
-          if (g) {
-            state = cloneRacks(g);
-            hasState = true;
-            initBroadcastChannel(state.id);
-            $('bt-setup').hidden = true;
-            try { if (pParam === "0") { localStorage.setItem("bt_owner", state.players[0].name); owner = state.players[0].name; } } catch (e) { }
-          }
-        }
-        if (!hasState && iid) {
-          let inv = await loadInvite(iid);
-          if (inv) {
-            currentInvite = inv;
-            if (owner) {
-              let g = null; if (inv.gameId) {
-                try { await linkGameViaInvite(iid, owner); } catch (e) { }
-                g = await loadGame(inv.gameId);
-              }
-              // let g = null; if (inv.gameId) g = await loadGame(inv.gameId);
-              if (g) { g = cloneRacks(g); let type = inv.mode === "unregistered-invite" ? "active" : "passive"; $('setup').hidden = true; showCollabHeadsUp(inv, g, type, owner); hasState = false; scheduleFit(); }
-            } else { $('setup').hidden = false; renderBoxes(); }
-          }
-        }
-        try { if (!state) { let gsTxt = $('game-state').textContent; if (gsTxt && gsTxt.trim() !== 'null' && gsTxt.trim() !== '') { state = cloneRacks(JSON.parse(gsTxt)); hasState = !!state; if (state) initBroadcastChannel(state.id); } } } catch (e) { }
-        if (state && hasState) {
-          try { if (!owner) owner = localStorage.getItem("bt_owner"); } catch (e) { }
-          if (owner) {
-            $('setup').hidden = true; $('bt-headsup').hidden = true; initBroadcastChannel(state.id); render(); scheduleFit();
             try {
               let url = new URL(location.href);
               if (!url.searchParams.get('p')) { let li = getLocalIdx(); url.searchParams.set('p', String(li)); }
               if (!url.searchParams.get('game')) url.searchParams.set('game', state.id);
               history.replaceState(null, '', url.pathname + url.search + location.hash);
             } catch (e) { }
-          } else { $('setup').hidden = false; renderBoxes(); }
-        } else if (!iid && !gid && !hasState) { $('setup').hidden = false; renderBoxes(); scheduleFit(); }
-        scheduleFit(); try { new ResizeObserver(scheduleFit).observe(document.getElementById('game')); } catch (e) { }
-      })(); */
+            try { initBroadcastChannel(state.id); } catch (e) { }
+            try { initComm(state.id); } catch (e) { }
+            render();
+            scheduleFit();
+            ensureCommPanel();
+          } else {
+            let se = $('setup') || $('bt-setup'); if (se) se.hidden = false;
+            renderBoxes();
+          }
+        } else if (!iid && !gid && !hasState) {
+          let se = $('setup') || $('bt-setup'); if (se) se.hidden = false;
+          renderBoxes();
+        }
+
+        try { fit(); } catch (e) { }
+        requestAnimationFrame(() => {
+          try { fit(); } catch (e) { }
+          try { new ResizeObserver(scheduleFit).observe(document.getElementById('game')); } catch (e) { }
+        });
+      })();
     }
       ());
   </script>
