@@ -1083,14 +1083,33 @@
       function cloneRacks(g) { if (!g || !g.players) return g; g.players = g.players.map(function (pl) { return { name: pl.name, score: pl.score, rack: pl.rack.map(function (t) { return { l: t.l, blank: !!t.blank } }) } }); return g; }
       function message(t, isPrompt) { var el = $('status'); el.textContent = t; el.classList.remove('prompt'); void el.offsetWidth; if (isPrompt) el.classList.add('prompt') }
       function clearPrompt() { var el = $('status'); el.classList.remove('prompt'); }
+
+
       function getLocalIdx() {
+        try {
+          let p = new URLSearchParams(location.search).get('p');
+          if (p === "0" || p === "1") return parseInt(p, 10);
+        } catch (e) { }
+        let owner = "";
+        try { owner = (getOwner() || "").toLowerCase(); } catch (e) { }
+        if (!owner) return 0;
+        try {
+          for (let i = 0; i < state.players.length; i++) {
+            if ((state.players[i].name || "").toLowerCase() === owner) return i;
+          }
+        } catch (e) { }
+        return 0;
+      }
+
+      /* function getLocalIdx() {
         let q; try { q = new URLSearchParams(location.search) } catch (e) { q = { get: () => null } }
         if (q.get('p') === '0' || q.get('p') === '1') return Number(q.get('p'))
         let owner = (getOwner() || "").toLowerCase()
         if (!state) return 0
         for (let i = 0; i < state.players.length; i++) if ((state.players[i].name || "").toLowerCase() === owner) return i
         return state.turn
-      }
+      } */
+
       function getLocalRack() { if (!state) return []; return state.players[getLocalIdx()].rack; }
       function renderRack() { if (!state) return; var rack = getLocalRack(); if (waiting && waitingRack) { rack = waitingRack; } var rh = ''; for (var i = 0; i < rack.length; i++) { rh += '<button draggable="true" class="rack-tile ' + (i === selected ? 'selected' : '') + '" data-i="' + i + '">' + rack[i].l + '<small>' + V[rack[i].l] + '</small></button>'; } $('rack').innerHTML = rh; var rs = $('rack').getElementsByTagName('button'); for (i = 0; i < rs.length; i++) { rs[i].onclick = pick; rs[i].ondragstart = dragRack; } }
 
@@ -1482,7 +1501,34 @@
           if (state) initBroadcastChannel(state.id);
         }
 
+
         if (!hasState && gid) {
+          let g = await loadGame(gid);
+          if (g) {
+            g = cloneRacks(g);
+            if (pParam === "1") {
+              let p1 = (g.players[1].name || "").toLowerCase();
+              let isPlaceholder = p1 === "" || p1.indexOf("opponent") === 0;
+              if (isPlaceholder) {
+                let me = "";
+                try { me = (getOwner() || "").trim(); } catch (e) { }
+                if (me && me.toLowerCase() !== (g.players[0].name || "").toLowerCase()) {
+                  g.players[1].name = me;
+                  try { await saveGameToCF(g); } catch (e) { }
+                }
+              }
+            }
+            state = g; hasState = true;
+            let se = $('bt-setup') || $('setup'); if (se) se.hidden = true;
+            let ge = $('bt-game') || $('game'); if (ge) ge.hidden = false;
+            try { if (pParam === "0") { localStorage.setItem("bt_owner", state.players[0].name); } } catch (e) { }
+            initBroadcastChannel(state.id);
+            if (pParam === "1") { try { broadcastGame(state); } catch (e) { } }
+          }
+        }
+
+
+        /* if (!hasState && gid) {
           let g = await loadGame(gid);
           if (g) {
             g = cloneRacks(g);
@@ -1503,7 +1549,7 @@
             initBroadcastChannel(state.id);
             if (pParam === "1") { try { broadcastGame(state); } catch (e) { } }
           }
-        }
+        } */
 
         /* if (!hasState && gid) {
           let g = await loadGame(gid);
