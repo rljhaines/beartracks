@@ -1085,7 +1085,7 @@
       function clearPrompt() { var el = $('status'); el.classList.remove('prompt'); }
 
 
-      function getLocalIdx() {
+      /* function getLocalIdx() {
         try {
           let p = new URLSearchParams(location.search).get('p');
           if (p === "0" || p === "1") return parseInt(p, 10);
@@ -1093,8 +1093,7 @@
         return 0;
       }
 
-
-      /* function getLocalIdx() {
+      function getLocalIdx() {
         try {
           let p = new URLSearchParams(location.search).get('p');
           if (p === "0" || p === "1") return parseInt(p, 10);
@@ -1110,14 +1109,20 @@
         return 0;
       } */
 
-      /* function getLocalIdx() {
+      function getLocalIdx() {
         let q; try { q = new URLSearchParams(location.search) } catch (e) { q = { get: () => null } }
         if (q.get('p') === '0' || q.get('p') === '1') return Number(q.get('p'))
         let owner = (getOwner() || "").toLowerCase()
         if (!state) return 0
         for (let i = 0; i < state.players.length; i++) if ((state.players[i].name || "").toLowerCase() === owner) return i
         return state.turn
-      } */
+      }
+
+      if (q.get('p') === '0' || q.get('p') === '1') return Number(q.get('p'))
+      let owner = (getOwner() || "").toLowerCase()
+      for (i) if (players[i].name.toLowerCase() === owner) return i // <- this is p=1 when owner matches players[1]
+      return state.turn
+
 
       function getLocalRack() { if (!state) return []; return state.players[getLocalIdx()].rack; }
       function renderRack() { if (!state) return; var rack = getLocalRack(); if (waiting && waitingRack) { rack = waitingRack; } var rh = ''; for (var i = 0; i < rack.length; i++) { rh += '<button draggable="true" class="rack-tile ' + (i === selected ? 'selected' : '') + '" data-i="' + i + '">' + rack[i].l + '<small>' + V[rack[i].l] + '</small></button>'; } $('rack').innerHTML = rh; var rs = $('rack').getElementsByTagName('button'); for (i = 0; i < rs.length; i++) { rs[i].onclick = pick; rs[i].ondragstart = dragRack; } }
@@ -1364,7 +1369,10 @@
           return;
         }
         (async () => {
-          try { let freshG = await loadGame(gid); if (freshG) pendingGameForHeadsUp = cloneRacks(freshG); } catch (e) { }
+          try {
+            let freshG = await loadGame(gid);
+            if (freshG) pendingGameForHeadsUp = cloneRacks(freshG);
+          } catch (e) { }
           let g = pendingGameForHeadsUp;
           if (!g) return;
           let li = getLocalIdx();
@@ -1375,8 +1383,8 @@
           }
           $('bt-headsup').hidden = true;
           state = g;
-          /* initBroadcastChannel(g.id); */
-          initComm(g.id);
+          initBroadcastChannel(g.id);
+          initComm(g.id); // kept for your app
           $('setup').hidden = true;
           render();
           pendingGameForHeadsUp = null;
@@ -1390,6 +1398,40 @@
           } catch (e) { }
         })();
       }
+      /* function handleHeadsUpContinue() {
+        let gid = pendingGameForHeadsUp?.id || currentInvite?.gameId;
+        if (!gid) return;
+        if (location.protocol === 'file:') {
+          location.href = LIVE_SITE + "?game=" + encodeURIComponent(gid) + "&p=0";
+          return;
+        }
+        (async () => {
+          try { let freshG = await loadGame(gid); if (freshG) pendingGameForHeadsUp = cloneRacks(freshG); } catch (e) { }
+          let g = pendingGameForHeadsUp;
+          if (!g) return;
+          let li = getLocalIdx();
+          if (!new URLSearchParams(location.search).get('p')) {
+            li = 0;
+            let owner = (getOwner() || "").toLowerCase();
+            for (let i = 0; i < g.players.length; i++) if ((g.players[i].name || "").toLowerCase() === owner) li = i;
+          }
+          $('bt-headsup').hidden = true;
+          state = g;
+          initBroadcastChannel(g.id);
+          initComm(g.id);
+          $('setup').hidden = true;
+          render();
+          pendingGameForHeadsUp = null;
+          scheduleFit();
+          try {
+            let url = new URL(location.href);
+            url.searchParams.set('game', gid);
+            url.searchParams.set('p', String(li));
+            url.searchParams.delete('invite');
+            history.replaceState(null, '', url.pathname + url.search + location.hash);
+          } catch (e) { }
+        })();
+      } */
 
       async function handleRegister() {
         let uEl = $('reg-user'), pEl = $('reg-pass'), p2El = $('reg-pass2'), errEl = $('reg-error');
@@ -1632,6 +1674,8 @@
             }
           }
         } catch (e) { }
+
+
         if (state && hasState) {
           try { if (!owner) owner = localStorage.getItem("bt_owner"); } catch (e) { }
 
@@ -1640,7 +1684,10 @@
             let hu = $('bt-headsup'); if (hu) hu.hidden = true;
             try {
               let url = new URL(location.href);
-              if (!url.searchParams.get('p')) { let li = getLocalIdx(); url.searchParams.set('p', String(li)); }
+              if (!url.searchParams.get('p')) {
+                let li = getLocalIdx();
+                url.searchParams.set('p', String(li));
+              }
               if (!url.searchParams.get('game')) url.searchParams.set('game', state.id);
               history.replaceState(null, '', url.pathname + url.search + location.hash);
             } catch (e) { }
