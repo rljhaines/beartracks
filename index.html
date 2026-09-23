@@ -1115,14 +1115,7 @@
         let owner = (getOwner() || "").toLowerCase()
         if (!state) return 0
         for (let i = 0; i < state.players.length; i++) if ((state.players[i].name || "").toLowerCase() === owner) return i
-        return state.turn
       }
-
-      if (q.get('p') === '0' || q.get('p') === '1') return Number(q.get('p'))
-      let owner = (getOwner() || "").toLowerCase()
-      for (i) if (players[i].name.toLowerCase() === owner) return i // <- this is p=1 when owner matches players[1]
-      return state.turn
-
 
       function getLocalRack() { if (!state) return []; return state.players[getLocalIdx()].rack; }
       function renderRack() { if (!state) return; var rack = getLocalRack(); if (waiting && waitingRack) { rack = waitingRack; } var rh = ''; for (var i = 0; i < rack.length; i++) { rh += '<button draggable="true" class="rack-tile ' + (i === selected ? 'selected' : '') + '" data-i="' + i + '">' + rack[i].l + '<small>' + V[rack[i].l] + '</small></button>'; } $('rack').innerHTML = rh; var rs = $('rack').getElementsByTagName('button'); for (i = 0; i < rs.length; i++) { rs[i].onclick = pick; rs[i].ondragstart = dragRack; } }
