@@ -1658,11 +1658,11 @@
         try { fit(); } catch (e) { }
         requestAnimationFrame(() => {
           try { fit(); } catch (e) { }
-          try { new ResizeObserver(scheduleFit).observe(document.getElementById('game')); } catch (e) { }
+          try { new ResizeObserver(scheduleFit).observe(document.getElementById('game') || document.getElementById('bt-game')); }
+          catch (e) { }
         });
       })();
-    }
-      ());
+    })();
   </script>
 </body>
 
