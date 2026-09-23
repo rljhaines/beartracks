@@ -1486,6 +1486,29 @@
           let g = await loadGame(gid);
           if (g) {
             g = cloneRacks(g);
+            if (pParam === "1") {
+              let p1 = (g.players[1].name || "").toLowerCase();
+              let isPlaceholder = p1 === "" || p1.indexOf("opponent") === 0;
+              let me = "";
+              try { me = (getOwner() || localStorage.getItem("bt_owner") || "").trim(); } catch (e) { }
+              if (isPlaceholder && me && me.toLowerCase() !== (g.players[0].name || "").toLowerCase()) {
+                g.players[1].name = me;
+                try { await saveGameToCF(g); } catch (e) { }
+              }
+            }
+            state = g; hasState = true;
+            let se = $('bt-setup') || $('setup'); if (se) se.hidden = true;
+            let ge = $('bt-game') || $('game'); if (ge) ge.hidden = false;
+            try { if (pParam === "0") { localStorage.setItem("bt_owner", state.players[0].name); } } catch (e) { }
+            initBroadcastChannel(state.id);
+            if (pParam === "1") { try { broadcastGame(state); } catch (e) { } }
+          }
+        }
+
+        /* if (!hasState && gid) {
+          let g = await loadGame(gid);
+          if (g) {
+            g = cloneRacks(g);
             let p1 = (g.players[1]?.name || "").toLowerCase();
             let isPlaceholder = p1 === "" || p1.indexOf("opponent") === 0;
             let ownerNow = (getOwner() || "").trim();
@@ -1497,7 +1520,7 @@
             state = g; hasState = true; initBroadcastChannel(state.id); initComm(state.id);
             if (pParam === "0") try { localStorage.setItem("bt_owner", state.players[0].name); owner = state.players[0].name; } catch (e) { }
           }
-        }
+        } */
 
         if (!hasState && iid) {
           let inv = await loadInvite(iid);
