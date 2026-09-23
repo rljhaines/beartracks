@@ -1090,6 +1090,15 @@
           let p = new URLSearchParams(location.search).get('p');
           if (p === "0" || p === "1") return parseInt(p, 10);
         } catch (e) { }
+        return 0;
+      }
+
+
+      /* function getLocalIdx() {
+        try {
+          let p = new URLSearchParams(location.search).get('p');
+          if (p === "0" || p === "1") return parseInt(p, 10);
+        } catch (e) { }
         let owner = "";
         try { owner = (getOwner() || "").toLowerCase(); } catch (e) { }
         if (!owner) return 0;
@@ -1099,7 +1108,7 @@
           }
         } catch (e) { }
         return 0;
-      }
+      } */
 
       /* function getLocalIdx() {
         let q; try { q = new URLSearchParams(location.search) } catch (e) { q = { get: () => null } }
@@ -1506,7 +1515,29 @@
           let g = await loadGame(gid);
           if (g) {
             g = cloneRacks(g);
+
+
             if (pParam === "1") {
+              let p1 = (g.players[1].name || "").toLowerCase();
+              let isPlaceholder = p1 === "" || p1.indexOf("opponent") === 0;
+              if (isPlaceholder || (g.players[1].name || "") === (g.players[0].name || "")) {
+                let me = "";
+                try { me = (getOwner() || "").trim(); } catch (e) { }
+                // if same as P0 (your separate-tabs case), ask for real P1 name
+                if (!me || me.toLowerCase() === (g.players[0].name || "").toLowerCase()) {
+                  try { me = (prompt("Enter name for P1:", "") || "").trim(); } catch (e) { me = ""; }
+                  if (me) { try { localStorage.setItem("bt_owner", me); } catch (e) { } }
+                }
+                if (me && me.toLowerCase() !== (g.players[0].name || "").toLowerCase()) {
+                  g.players[1].name = me;
+                  console.log("[P1 capture] saving P1 as", me);
+                  try { await saveGameToCF(g); } catch (e) { console.warn("saveGameToCF failed", e); }
+                }
+              }
+            }
+
+
+            /* if (pParam === "1") {
               let p1 = (g.players[1].name || "").toLowerCase();
               let isPlaceholder = p1 === "" || p1.indexOf("opponent") === 0;
               if (isPlaceholder) {
@@ -1517,7 +1548,7 @@
                   try { await saveGameToCF(g); } catch (e) { }
                 }
               }
-            }
+            } */
             state = g; hasState = true;
             let se = $('bt-setup') || $('setup'); if (se) se.hidden = true;
             let ge = $('bt-game') || $('game'); if (ge) ge.hidden = false;
