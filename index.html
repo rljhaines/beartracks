@@ -1115,11 +1115,33 @@
         let owner = (getOwner() || "").toLowerCase()
         if (!state) return 0
         for (let i = 0; i < state.players.length; i++) if ((state.players[i].name || "").toLowerCase() === owner) return i
+      }
+
+      function getLocalIdx() {
+        let q; try { q = new URLSearchParams(location.search) } catch (e) { q = { get: () => null } }
+        if (q.get('p') === '0' || q.get('p') === '1') return Number(q.get('p'))
+        let owner = (getOwner() || "").toLowerCase()
+        if (!state) return 0
+        for (let i = 0; i < state.players.length; i++) if ((state.players[i].name || "").toLowerCase() === owner) return i
+        return state.turn
+      }
+
+      function getLocalIdx() {
+        let q; try { q = new URLSearchParams(location.search) } catch (e) { q = { get: () => null } }
+        if (q.get('p') === '0' || q.get('p') === '1') return Number(q.get('p'))
+        if (q.get('invite')) return 1 // <- new: p1 is never local, even on same machine
+        let owner = (getOwner() || "").toLowerCase()
+        if (!state) return 0
+        for (let i = 0; i < state.players.length; i++) if ((state.players[i].name || "").toLowerCase() === owner) return i
+        return state.turn
       } */
 
       function getLocalIdx() {
         let q; try { q = new URLSearchParams(location.search) } catch (e) { q = { get: () => null } }
         if (q.get('p') === '0' || q.get('p') === '1') return Number(q.get('p'))
+        if (q.get('invite')) {
+          return 1
+        }
         let owner = (getOwner() || "").toLowerCase()
         if (!state) return 0
         for (let i = 0; i < state.players.length; i++) if ((state.players[i].name || "").toLowerCase() === owner) return i
@@ -1339,6 +1361,48 @@
         let gid = pendingGameForHeadsUp?.id || currentInvite?.gameId;
         if (!gid) return;
         if (location.protocol === 'file:') {
+          location.href = LIVE_SITE + "?game=" + encodeURIComponent(gid) + "&p=1";
+          return;
+        }
+        (async () => {
+          try {
+            let freshG = await loadGame(gid);
+            if (freshG) pendingGameForHeadsUp = cloneRacks(freshG);
+          } catch (e) { }
+          let g = pendingGameForHeadsUp;
+          if (!g) return;
+          let li;
+          let q = new URLSearchParams(location.search);
+          if (q.get('invite') || currentInvite) {
+            li = 1;
+          } else if (!q.get('p')) {
+            let owner = (getOwner() || "").toLowerCase();
+            li = ((g.players[0].name || "").toLowerCase() === owner) ? 0 : 1;
+          } else {
+            li = getLocalIdx();
+          }
+          $('bt-headsup').hidden = true;
+          state = g;
+          initBroadcastChannel(g.id);
+          initComm(g.id);
+          $('setup').hidden = true;
+          render();
+          pendingGameForHeadsUp = null;
+          scheduleFit();
+          try {
+            let url = new URL(location.href);
+            url.searchParams.set('game', gid);
+            url.searchParams.set('p', String(li));
+            url.searchParams.delete('invite');
+            history.replaceState(null, '', url.pathname + url.search + location.hash);
+          } catch (e) { }
+        })();
+      }
+
+      /* function handleHeadsUpContinue() {
+        let gid = pendingGameForHeadsUp?.id || currentInvite?.gameId;
+        if (!gid) return;
+        if (location.protocol === 'file:') {
           location.href = LIVE_SITE + "?game=" + encodeURIComponent(gid) + "&p=0";
           return;
         }
@@ -1372,7 +1436,7 @@
           } catch (e) { }
         })();
       }
-      /* function handleHeadsUpContinue() {
+      function handleHeadsUpContinue() {
         let gid = pendingGameForHeadsUp?.id || currentInvite?.gameId;
         if (!gid) return;
         if (location.protocol === 'file:') {
