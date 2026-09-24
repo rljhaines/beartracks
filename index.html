@@ -1361,7 +1361,53 @@
         let gid = pendingGameForHeadsUp?.id || currentInvite?.gameId;
         if (!gid) return;
         if (location.protocol === 'file:') {
-          location.href = LIVE_SITE + "?game=" + encodeURIComponent(gid) + "&p=1";
+          location.href = LIVE_SITE + "?game=" + encodeURIComponent(gid) + "&p=0";
+          return;
+        }
+        (async () => {
+          try {
+            let freshG = await loadGame(gid);
+            if (freshG) pendingGameForHeadsUp = cloneRacks(freshG);
+          } catch (e) { }
+          let g = pendingGameForHeadsUp;
+          if (!g) return;
+          let q = new URLSearchParams(location.search);
+          let li;
+          if (q.get('invite')) {
+            li = 1;
+          } else if (q.get('p') === '0' || q.get('p') === '1') {
+            li = Number(q.get('p'));
+          } else {
+            let owner = (getOwner() || "").toLowerCase();
+            li = ((g.players[0].name || "").toLowerCase() === owner) ? 0 : 1;
+            if (!owner && g.players[0].name) {
+              try { localStorage.setItem("bt_owner", g.players[0].name); } catch (e) { }
+              li = 0;
+            }
+          }
+          $('bt-headsup').hidden = true;
+          state = g;
+          initBroadcastChannel(g.id);
+          initComm(g.id);
+          $('setup').hidden = true;
+          render();
+          pendingGameForHeadsUp = null;
+          scheduleFit();
+          try {
+            let url = new URL(location.href);
+            url.searchParams.set('game', gid);
+            url.searchParams.set('p', String(li));
+            url.searchParams.delete('invite');
+            history.replaceState(null, '', url.pathname + url.search + location.hash);
+          } catch (e) { }
+        })();
+      }
+
+      /* function handleHeadsUpContinue() {
+        let gid = pendingGameForHeadsUp?.id || currentInvite?.gameId;
+        if (!gid) return;
+        if (location.protocol === 'file:') {
+          location.href = LIVE_SITE + "?game=" + encodeURIComponent(gid) + "&p=0";
           return;
         }
         (async () => {
@@ -1398,8 +1444,7 @@
           } catch (e) { }
         })();
       }
-
-      /* function handleHeadsUpContinue() {
+      function handleHeadsUpContinue() {
         let gid = pendingGameForHeadsUp?.id || currentInvite?.gameId;
         if (!gid) return;
         if (location.protocol === 'file:') {
