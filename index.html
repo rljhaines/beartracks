@@ -1170,7 +1170,25 @@
           "4. First move: At move 0 you both decide the opener - we let the player with the longest word play first, ties decided by a coin toss or something. Passing on the first move is not a solo 'I'm not ready' - it's you both agreeing to let the other go first. Use Message / Table Talk to coordinate that.\n\n" +
           "Use Table Talk any time to check in - board focus won't steal typing while you're chatting.";
       }
+
       function showCollabHeadsUp(inv, gameObj, type, inviteeName) {
+        var url = makeInviteUrl(inv.id); var msg = getCollabMessage(inv, inviteeName || "there", type);
+        headsupData.url = url; headsupData.msg = msg; headsupData.isInvite = true;
+        $('bt-headsup-help').textContent = msg; $('bt-headsup-input').value = url;
+        initBroadcastChannel(inv.gameId); initComm(inv.gameId);
+        if (!TableTalk.element) TableTalk.create(inv.invitedBy); else { TableTalk.element = null; TableTalk.create(inv.invitedBy); }
+        var chHolder = document.getElementById("bt-headsup-comm-holder");
+        if (chHolder) { chHolder.innerHTML = ''; chHolder.appendChild(TableTalk.element); chHolder.hidden = true; }
+        var instr = document.getElementById('bt-headsup-instructions');
+        if (instr) { instr.textContent = getGameInstructions(); instr.hidden = true; }
+        $('bt-headsup-copy-msg').disabled = false; $('bt-headsup-copy-msg').textContent = "Game Instructions";
+        $('bt-headsup-copy-msg').onclick = function () { if (instr) instr.hidden = !instr.hidden; scheduleFit(); };
+        $('bt-headsup-copy-link').disabled = false; $('bt-headsup-copy-link').textContent = "Message " + inv.invitedBy;
+        $('bt-headsup-copy-link').onclick = function () { if (chHolder) chHolder.hidden = !chHolder.hidden; scheduleFit(); };
+        $('bt-headsup').hidden = false; pendingGameForHeadsUp = gameObj; currentInvite = inv; showShare(url, false); scheduleFit();
+      }
+
+      /* function showCollabHeadsUp(inv, gameObj, type, inviteeName) {
         var url = makeInviteUrl(inv.id); var msg = getCollabMessage(inv, inviteeName || "there", type);
         headsupData.url = url; headsupData.msg = msg; headsupData.isInvite = true;
         $('bt-headsup-help').textContent = msg; $('bt-headsup-input').value = url;
@@ -1183,7 +1201,7 @@
         // $('bt-headsup-copy-link').disabled = false; $('bt-headsup-copy-link').textContent = "Call " + inv.invitedBy;
         // $('bt-headsup-copy-link').onclick = function () { TableTalk.activate('call'); };
         $('bt-headsup').hidden = false; pendingGameForHeadsUp = gameObj; currentInvite = inv; showShare(url, false); scheduleFit();
-      }
+      } */
       async function showHeadsUp(inviteId, gameObj, isInvite) {
         let url = isInvite ? makeInviteUrl(inviteId) : makeGameStateUrl(gameObj);
         let fullMsg = isInvite ? "Join me in a scrabble-like game on BearTracks: " + url : url;
