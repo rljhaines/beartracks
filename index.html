@@ -1032,7 +1032,7 @@
         return state.turn
       }
       function getLocalRack() { if (!state) return []; return state.players[getLocalIdx()].rack; }
-      function renderRack() { if (!state) return; var rack = getLocalRack(); if (waiting && waitingRack) { rack = waitingRack; } var rh = ''; for (var i = 0; i < rack.length; i++) { rh += '<button draggable="true" class="rack-tile ' + (i === selected ? 'selected' : '') + '" data-i="' + i + '">' + rack[i].l + '<small>' + V[rack[i].l] + '</small></button>'; } $('rack').innerHTML = rh; var rs = $('rack').getElementsByTagName('button'); for (i = 0; i < rs.length; i++) { rs[i].onclick = pick; rs[i].ondragstart = dragRack; } }
+      function renderRack() { if (!state) return; var rack = getLocalRack(); if (waiting && waitingRack) { rack = waitingRack; } var rh = ''; for (var i = 0; i < rack.length; i++) { rh += '<button draggable="true" class="rack-tile ' + (i === selected ? 'selected' : '') + '" data-i="' + i + '">' + rack[i].l + '<small>' + V[rack[i].l] + '</small></button>'; } $('rack').innerHTML = rh; var rs = $('rack').getElementsByTagName('button'); for (i = 0; i < rs.length; i++) { rs[i].onclick = pick; rs[i].ondragstart = dragRack; rs[i].ondragover = allowDrop; rs[i].ondrop = dropOnRackTile; } }
       function render() {
         if (!state) return;
         let li = getLocalIdx(); let isMyTurn = (state.moveCount === 0) ? true : (state.turn === li); waiting = !isMyTurn; if (!waiting) { waitingRack = null; waitingOpp = null; }
@@ -1055,6 +1055,21 @@
       function dragRack(e) { if (waiting) return; let li = getLocalIdx(); let isMyTurn = (state.moveCount === 0) ? true : (state.turn === li); if (!isMyTurn) return; dragItem = { kind: 'rack', i: Number(e.currentTarget.getAttribute('data-i')) }; }
       function dragBoard(e) { if (waiting) return; let li = getLocalIdx(); let isMyTurn = (state.moveCount === 0) ? true : (state.turn === li); if (!isMyTurn) return; var r = Number(e.currentTarget.getAttribute('data-r')), c = Number(e.currentTarget.getAttribute('data-c')); if (!isNew(r, c)) { e.preventDefault(); return } dragItem = { kind: 'board', r: r, c: c }; }
       function dropCell(e) { if (waiting) return; let li = getLocalIdx(); let isMyTurn = (state.moveCount === 0) ? true : (state.turn === li); if (!isMyTurn) return; e.preventDefault(); if (!dragItem) return; var r = Number(e.currentTarget.getAttribute('data-r')), c = Number(e.currentTarget.getAttribute('data-c')); if (state.board[r][c] && !(dragItem.kind === 'board' && dragItem.r === r && dragItem.c === c)) return; if (dragItem.kind === 'rack') { var q = getLocalRack().splice(dragItem.i, 1)[0]; putTile(r, c, q); } else { var idx = -1; for (var i = 0; i < pending.length; i++)if (pending[i].r === dragItem.r && pending[i].c === dragItem.c) idx = i; if (idx < 0) return; var t = state.board[dragItem.r][dragItem.c]; state.board[dragItem.r][dragItem.c] = null; state.board[r][c] = t; pending[idx].r = r; pending[idx].c = c; } dragItem = null; render(); }
+
+      function dropOnRackTile(e) {
+        if (waiting) return;
+        let li = getLocalIdx(); let isMyTurn = (state.moveCount === 0) ? true : (state.turn === li); if (!isMyTurn) return;
+        e.preventDefault();
+        if (!dragItem || dragItem.kind !== 'rack') return;
+        var targetI = Number(e.currentTarget.getAttribute('data-i'));
+        var rack = getLocalRack();
+        if (targetI === dragItem.i) { dragItem = null; return; }
+        var moved = rack.splice(dragItem.i, 1)[0];
+        rack.splice(targetI, 0, moved);
+        dragItem = null; selected = -1;
+        renderRack();
+      }
+
       function dropRack(e) { if (waiting) return; e.preventDefault(); if (!dragItem || dragItem.kind !== 'board') return; for (var i = 0; i < pending.length; i++)if (pending[i].r === dragItem.r && pending[i].c === dragItem.c) { state.board[dragItem.r][dragItem.c] = null; getLocalRack().push(pending[i].tile.blank ? tile('?') : pending[i].tile); state.board[dragItem.r][dragItem.c] = null; pending.splice(i, 1); break; } dragItem = null; render(); }
       function startGesture(e) { if (waiting) return; let li = getLocalIdx(); let isMyTurn = (state.moveCount === 0) ? true : (state.turn === li); if (!isMyTurn) return; if (selected >= 0 || state.board[Number(e.currentTarget.getAttribute('data-r'))][Number(e.currentTarget.getAttribute('data-c'))]) return; gesture = { r: Number(e.currentTarget.getAttribute('data-r')), c: Number(e.currentTarget.getAttribute('data-c')) } }
       function endGesture(e) { if (waiting || !gesture) return; var r = Number(e.currentTarget.getAttribute('data-r')), c = Number(e.currentTarget.getAttribute('data-c')); if (r === gesture.r && c !== gesture.c) { anchor = { r: gesture.r, c: gesture.c, d: 'H' }; suppressClick = true; } else if (c === gesture.c && r !== gesture.r) { anchor = { r: gesture.r, c: gesture.c, d: 'V' }; suppressClick = true; } gesture = null; if (suppressClick) { render(); } }
