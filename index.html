@@ -893,7 +893,12 @@
         <div id="bt-headsup-help">Join me in a scrabble-like game on BearTracks:</div><textarea
           id="bt-headsup-input"
           readonly
-        ></textarea>
+        ><div
+          id="bt-headsup-instructions"
+          class="help"
+          hidden
+          style="margin-top:8px"
+        ></div></textarea>
         <div id="bt-headsup-comm-holder"></div>
       </div>
       <div id="bt-headsup-right"><button
@@ -953,7 +958,7 @@
         create(by) {
           this.opponent = by || "opponent";
           const el = document.createElement('section'); el.className = 'card'; el.id = 'bt-comm-panel';
-          el.innerHTML = '<h2>Table Talk</h2><div id="comm-log" style="max-height:140px;overflow:auto;font-size:12px;margin-bottom:8px;border:1px solid var(--line);border-radius:8px;padding:6px;background:#fff"></div><div style="display:flex;gap:6px"><input id="comm-input" placeholder="Message..." maxlength="200" style="flex:1;border:1px solid #b7bcad;border-radius:8px;padding:8px"><button id="comm-send" class="action alt" style="padding:8px 10px">Send</button></div>';
+          el.innerHTML = '<h2>Table Talk</h2><div id="comm-log" style="max-height:140px;overflow:auto;font-size:12px;margin-bottom:8px;border:1px solid var(--line);border-radius:8px;padding:6px;background:#fff"></div><div style="display:flex;gap:6px"><input id="comm-input" placeholder="Message..." maxlength="200" style="flex:1;border:1px solid #b7bcad;border-radius:8px;padding:8px"><button id="comm-send" class="action alt" style="padding:8px 10px">Send</button></div><div id="comm-status" class="help" style="margin-top:6px"></div>';
           this.element = el;
           setTimeout(() => {
             const s = el.querySelector("#comm-send"); const inp = el.querySelector("#comm-input");
@@ -1036,7 +1041,9 @@
       function render() {
         if (!state) return;
         let li = getLocalIdx(); let isMyTurn = (state.moveCount === 0) ? true : (state.turn === li); waiting = !isMyTurn; if (!waiting) { waitingRack = null; waitingOpp = null; }
-        var b = $('board'); b.innerHTML = ''; for (var r = 0; r < N; r++)for (var c = 0; c < N; c++) { var btn = document.createElement('button'); btn.className = 'cell ' + premium(r, c).toLowerCase() + (anchor && anchor.r === r && anchor.c === c ? ' anchor' : ''); btn.dataset.r = r; btn.dataset.c = c; if (state.board[r][c] && isNew(r, c)) btn.draggable = true; var t2 = state.board[r][c]; var pr = premium(r, c); if (t2) { var sp = document.createElement('span'); sp.className = 'tile ' + (t2.blank ? 'blank' : ''); sp.textContent = t2.l; var b2 = document.createElement('b'); b2.textContent = t2.blank ? 0 : V[t2.l]; sp.appendChild(b2); btn.appendChild(sp); } else if (pr) { var prs = document.createElement('span'); prs.className = 'premium'; prs.textContent = pr; btn.appendChild(prs); } b.appendChild(btn); } var cells = b.getElementsByTagName('button'); for (var i = 0; i < cells.length; i++) { cells[i].onclick = place; cells[i].ondblclick = vertical; cells[i].ondragover = allowDrop; cells[i].ondrop = dropCell; cells[i].ondragstart = dragBoard; cells[i].onmousedown = startGesture; cells[i].onmouseup = endGesture } renderRack(); if (state.moveCount === 0) { $('scores').innerHTML = state.players.map(function (x) { return '<div class="score"><span>' + esc(x.name) + '</span><strong>' + x.score + '</strong></div>' }).join(''); } else { $('scores').innerHTML = state.players.map(function (x, i) { return '<div class="score ' + (i === state.turn ? 'active' : '') + '"><span>' + esc(x.name) + (i === state.turn ? ' - turn' : '') + '</span><strong>' + x.score + '</strong></div>' }).join(''); } $('history').innerHTML = state.history.slice().reverse().map(function (x, i) { return '<li>' + (state.history.length - i) + '. ' + esc(x) + '</li>' }).join(''); $('bag').textContent = state.bag.length + ' tiles remain.'; if (state.moveCount === 0) { $('turnPill').textContent = 'Decide first move - longest word'; } else { $('turnPill').textContent = isMyTurn ? 'Your turn (' + state.players[li].name + ')' : state.players[state.turn].name + "'s turn"; } $('placement').textContent = anchor ? 'Starts at ' + String.fromCharCode(65 + anchor.c) + (anchor.r + 1) + ' ' + (anchor.d === 'H' ? 'across' : 'down') : '';
+        var b = $('board'); b.innerHTML = ''; for (var r = 0; r < N; r++)for (var c = 0; c < N; c++) { var btn = document.createElement('button'); btn.className = 'cell ' + premium(r, c).toLowerCase() + (anchor && anchor.r === r && anchor.c === c ? ' anchor' : ''); btn.dataset.r = r; btn.dataset.c = c; if (state.board[r][c] && isNew(r, c)) btn.draggable = true; var t2 = state.board[r][c]; var pr = premium(r, c); if (t2) { var sp = document.createElement('span'); sp.className = 'tile ' + (t2.blank ? 'blank' : ''); sp.textContent = t2.l; var b2 = document.createElement('b'); b2.textContent = t2.blank ? 0 : V[t2.l]; sp.appendChild(b2); btn.appendChild(sp); } else if (pr) { var prs = document.createElement('span'); prs.className = 'premium'; prs.textContent = pr; btn.appendChild(prs); } b.appendChild(btn); } var cells = b.getElementsByTagName('button'); for (var i = 0; i < cells.length; i++) { cells[i].onclick = place; cells[i].ondblclick = vertical; cells[i].ondragover = allowDrop; cells[i].ondrop = dropCell; cells[i].ondragstart = dragBoard; cells[i].onmousedown = startGesture; cells[i].onmouseup = endGesture } renderRack(); if (state.moveCount === 0) { $('scores').innerHTML = state.players.map(function (x) { return '<div class="score"><span>' + esc(x.name) + '</span><strong>' + x.score + '</strong></div>' }).join(''); } else { $('scores').innerHTML = state.players.map(function (x, i) { return '<div class="score ' + (i === state.turn ? 'active' : '') + '"><span>' + esc(x.name) + (i === state.turn ? ' - turn' : '') + '</span><strong>' + x.score + '</strong></div>' }).join(''); } $('history').innerHTML = state.history.slice().reverse().map(function (x, i) { return '<li>' + (state.history.length - i) + '. ' + esc(x) + '</li>' }).join(''); $('bag').textContent = state.bag.length + ' tiles remain.'; $('turnPill').textContent = isMyTurn ? 'Your turn (' + state.players[li].name + ')' : state.players[state.turn].name + "'s turn"; var previewPts = previewScore();
+        var placementBase = anchor ? 'Starts at ' + String.fromCharCode(65 + anchor.c) + (anchor.r + 1) + ' ' + (anchor.d === 'H' ? 'across' : 'down') : '';
+        $('placement').textContent = placementBase + (previewPts !== null ? (placementBase ? ' • ' : '') + 'Score: ' + previewPts : '');
         $('wordInput').disabled = !isMyTurn; $('wordInput').placeholder = isMyTurn ? 'Type word or word 8,8,0 (1-15)' : 'Waiting'; $('playWord').disabled = !isMyTurn; $('submitWord').disabled = !isMyTurn; $('pass').disabled = false; $('undo').disabled = !isMyTurn;
         if (!pending.length && !pendingWord) { if (state.moveCount === 0) { let other = state.players[1 - li].name; message(state.players[li].name + ': first move - type word then click board. Pass to let ' + other + ' start.'); } else { message(isMyTurn ? state.players[li].name + ': type word + Enter, add 8,8,0 for coords (1-15), or word alone then click board.' : 'Waiting for ' + state.players[state.turn].name + ' to play.'); } } if (!pending.length && !pendingWord) { if (state.moveCount === 0) { let other = state.players[1 - li].name; message(state.players[li].name + ': first move - type word then click board. Pass to let ' + other + ' start.'); } else { message(isMyTurn ? state.players[li].name + ': type word + Enter, add 8,8,0 for coords (1-15), or word alone then click board.' : 'Waiting for ' + state.players[state.turn].name + ' to play.'); } } setTimeout(function () { var inp = $('wordInput'); if (inp && isMyTurn) inp.focus(); }, 0);
         ensureCommPanel(); initComm(state.id);
@@ -1078,6 +1085,18 @@
       function isNew(r, c) { for (var i = 0; i < pending.length; i++)if (pending[i].r === r && pending[i].c === c) return true; return false; }
       function validate() { if (!pending.length) throw Error('Place at least one tile.'); var rows = {}, cols = {}, i, x; for (i = 0; i < pending.length; i++) { rows[pending[i].r] = 1; cols[pending[i].c] = 1; } if (Object.keys(rows).length > 1 && Object.keys(cols).length > 1) throw Error('New tiles must be in one row or column.'); var hasExisting = false; for (var rr = 0; rr < N; rr++)for (var cc = 0; cc < N; cc++)if (state.board[rr][cc] && !isNew(rr, cc)) hasExisting = true; if (!hasExisting) { if (!isNew(C, C)) throw Error('First move must cover the center.'); } else { var touches = false; for (i = 0; i < pending.length; i++) { x = pending[i]; if ((state.board[x.r - 1] && state.board[x.r - 1][x.c] && !isNew(x.r - 1, x.c)) || (state.board[x.r + 1] && state.board[x.r + 1][x.c] && !isNew(x.r + 1, x.c)) || (state.board[x.r][x.c - 1] && !isNew(x.r, x.c - 1)) || (state.board[x.r][x.c + 1] && !isNew(x.r, x.c + 1))) touches = true; } if (!touches) throw Error('Must connect to an existing tile.'); } var words = [], seen = {}; for (i = 0; i < pending.length; i++) { x = pending[i];[[0, 1], [1, 0]].forEach(function (d) { var w = line(x.r, x.c, d[0], d[1]); var key = w.map(function (y) { return y.r + ',' + y.c }).join('|'); if (w.length > 1 && !seen[key]) { seen[key] = 1; words.push(w); } }); } if (!words.length) throw Error('Must form at least two letters.'); return words; }
       function score(w) { var total = 0, mult = 1; for (var i = 0; i < w.length; i++) { var x = w[i], v = x.t.blank ? 0 : V[x.t.l], p = isNew(x.r, x.c) ? premium(x.r, x.c) : ''; if (p === 'DL') v *= 2; if (p === 'TL') v *= 3; if (p === 'DW') mult *= 2; if (p === 'TW') mult *= 3; total += v; } return total * mult; }
+
+      function previewScore() {
+        if (!pending.length) return null;
+        try {
+          var words = validate();
+          var pts = 0;
+          for (var i = 0; i < words.length; i++) pts += score(words[i]);
+          if (pending.length === 7) pts += 50;
+          return pts;
+        } catch (e) { return null; }
+      }
+
       function snapshotForRollback() { return { board: JSON.parse(JSON.stringify(state.board)), players: JSON.parse(JSON.stringify(state.players)), bag: state.bag.slice(), history: state.history.slice(), moveCount: state.moveCount, turn: state.turn }; }
       function showShare(url, isGameState) { let sp = $('share-panel'), su = $('share-url'), sh = $('share-help'); if (sp && su) { su.value = url; sp.hidden = false; if (sh) sh.textContent = isGameState ? 'Game-state backup (for testing):' : 'Join me in a scrabble-like game on BearTracks:'; } }
       function b64DecodeUnicode(b64) { try { b64 = b64.replace(/-/g, '+').replace(/_/g, '/').replace(/\s/g, ''); while (b64.length % 4) b64 += '='; const bin = atob(b64); const bytes = Uint8Array.from(bin, c => c.charCodeAt(0)); return new TextDecoder().decode(bytes); } catch (e) { return null; } }
@@ -1142,6 +1161,14 @@
         var base = "Hello, " + inviteeName + "!! " + inv.invitedBy + " thanks you for joining in on this word-building collaboration.";
         if (type === "passive") { return base + " " + inv.invitedBy + " has made preparations for the journey. Join in by clicking Continue To Game to the right of this message. If " + inv.invitedBy + " is on BearTracks, you're welcome to message that person using the buttons to the right of this box."; }
         else { return base + " If you know " + inv.invitedBy + " to currently be in BearTracks, feel free to coordinate the start of the game with " + inv.invitedBy + " using Message " + inv.invitedBy + ". If unknown, either coordinate with " + inv.invitedBy + " through your own means or simply begin the game using the Continue to Game button to your right."; }
+      }
+      function getGameInstructions() {
+        return "BearTracks is a two-player word game - you coordinate when to start and who opens.\n\n" +
+          "1. Placing a word: Click any square to set your starting point. Click the same square again to flip Across / Down. You can also double-click to set and flip in one go. The Placement line will show you e.g. 'Starts at H8 across'.\n\n" +
+          "2. Typing: Select tiles from your rack by clicking them, then type the word in the word-entry box, or type a coordinate with it like 'H8 across WORD' / 'H8 down WORD'. Only legal, connected words will show a Score preview.\n\n" +
+          "3. Rules: The first word of the game must cover the center star. Every word after that must connect to a tile already on the board. Letter values, bonus squares, and +50 for using all 7 tiles apply.\n\n" +
+          "4. First move: At move 0 you both decide the opener - we let the player with the longest word play first, ties decided by a coin toss or something. Passing on the first move is not a solo 'I'm not ready' - it's you both agreeing to let the other go first. Use Message / Table Talk to coordinate that.\n\n" +
+          "Use Table Talk any time to check in - board focus won't steal typing while you're chatting.";
       }
       function showCollabHeadsUp(inv, gameObj, type, inviteeName) {
         var url = makeInviteUrl(inv.id); var msg = getCollabMessage(inv, inviteeName || "there", type);
