@@ -1270,7 +1270,9 @@
       $('btn-register').onclick = handleRegister; $('btn-begin').onclick = handleBegin; $('btn-invite').onclick = handleCreateInvitation;
       let _sc = document.getElementById('share-copy'); if (_sc) { _sc.onclick = function () { let u = document.getElementById('share-url').value; try { navigator.clipboard.writeText(u).catch(() => { }) } catch (e) { prompt("Copy:", u) } }; }
       $('btn-logout').onclick = function () { localStorage.removeItem("bt_owner"); $('setup').hidden = false; renderBoxes(); $('reg-user').value = ''; $('reg-pass').value = ''; $('reg-pass2').value = ''; $('nameB').value = ''; let sp = $('share-panel'); if (sp) sp.hidden = true; currentInvite = null; $('bt-headsup').hidden = true; pendingGameForHeadsUp = null; };
-      $('reg-user').onkeydown = function (e) { if (e.key === 'Enter') handleRegister() }; $('reg-pass2').onkeydown = function (e) { if (e.key === 'Enter') handleRegister() }; $('nameB').onkeydown = function (e) { if (e.key === 'Enter') handleBegin() };
+      $('reg-user').onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); handleRegister(); } };
+      $('reg-pass').onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); handleRegister(); } };
+      $('reg-pass2').onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); handleRegister(); } };
       $('bt-headsup-copy-msg').onclick = handleHeadsUpCopyMsg; $('bt-headsup-copy-link').onclick = handleHeadsUpCopyLink; $('bt-headsup-continue').onclick = handleHeadsUpContinue;
       // BEGIN FIX opponent-name
       setInterval(async () => {
