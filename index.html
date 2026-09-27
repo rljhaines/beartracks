@@ -1070,15 +1070,21 @@
 
       async function commit() {
         try {
+          let li = getLocalIdx();
           let server = null; try { server = await loadGame(state.id); } catch (e) { }
-          if (server && server.moveCount !== state.moveCount) { state = cloneRacks(server); pending = []; anchor = null; pendingWord = null; selected = -1; render(); }
+          if (server && server.moveCount !== state.moveCount) {
+            state = cloneRacks(server); pending = []; anchor = null; pendingWord = null; selected = -1; render();
+            throw Error('Game updated elsewhere - reloaded bag/board. Try again.');
+          }
           if (state.moveCount === 0) {
             alert('First word cannot be submitted until opponent has passed.');
             return;
           }
-          let li = getLocalIdx(); let isMyTurn = (state.moveCount === 0) ? true : (state.turn === li); if (!isMyTurn) throw Error("Not your turn");
+          let isMyTurn = (state.moveCount === 0) ? true : (state.turn === li); if (!isMyTurn) throw Error("Not your turn");
           if (server?.players?.[1]?.name && server.players[1].name.toLowerCase() !== "opponent") { state.players[1].name = server.players[1].name; }
-          if (server && server.moveCount !== state.moveCount) { state = cloneRacks(server); pending = []; anchor = null; pendingWord = null; selected = -1; render(); throw Error('Game updated elsewhere - reloaded bag/board. Try again.'); } if (server && server.bag) state.bag = server.bag.slice(); var words = validate(), pts = 0, nms = []; for (var i = 0; i < words.length; i++) { pts += score(words[i]); nms.push(words[i].map(function (x) { return x.t.l }).join('')); } if (pending.length === 7) pts += 50; state.undoStack = state.undoStack || []; if (state.undoStack.length > 0) state.undoStack.shift(); state.undoStack.push(snapshotForRollback()); var myIdx = getLocalIdx(); var oppIdx = 1 - myIdx; var p = state.players[myIdx]; p.score += pts; state.history.push(p.name + ': ' + nms.join(' + ') + ' for ' + pts); state.moveCount = (state.moveCount || 0) + 1; draw(state, p); state.turn = oppIdx; var myRack = p.rack.slice(); var oppName = state.players[oppIdx].name; pending = []; anchor = null; pendingWord = null; let gameToSave = JSON.parse(JSON.stringify(state)); await saveGameToCF(gameToSave); broadcastGame(gameToSave); let gsUrl = makeGameStateUrl(gameToSave); try { if (navigator.clipboard && navigator.clipboard.writeText) await navigator.clipboard.writeText(gsUrl); } catch (e) { } showShare(gsUrl, true); $('scores').innerHTML = state.players.map(function (x, i) { return '<div class="score ' + (i === state.turn ? 'active' : '') + '"><span>' + esc(x.name) + (i === state.turn ? ' - turn' : '') + '</span><strong>' + x.score + '</strong></div>' }).join(''); $('history').innerHTML = state.history.slice().reverse().map(function (x, i) { return '<li>' + (state.history.length - i) + '. ' + esc(x) + '</li>' }).join(''); $('bag').textContent = state.bag.length + ' tiles remain.'; enterWaitingMode(myRack, oppName, false);
+          if (server && server.bag) state.bag = server.bag.slice();
+          var words = validate(), pts = 0, nms = [];
+          for (var i = 0; i < words.length; i++) { pts += score(words[i]); nms.push(words[i].map(function (x) { return x.t.l }).join('')); } if (pending.length === 7) pts += 50; state.undoStack = state.undoStack || []; if (state.undoStack.length > 0) state.undoStack.shift(); state.undoStack.push(snapshotForRollback()); var myIdx = getLocalIdx(); var oppIdx = 1 - myIdx; var p = state.players[myIdx]; p.score += pts; state.history.push(p.name + ': ' + nms.join(' + ') + ' for ' + pts); state.moveCount = (state.moveCount || 0) + 1; draw(state, p); state.turn = oppIdx; var myRack = p.rack.slice(); var oppName = state.players[oppIdx].name; pending = []; anchor = null; pendingWord = null; let gameToSave = JSON.parse(JSON.stringify(state)); await saveGameToCF(gameToSave); broadcastGame(gameToSave); let gsUrl = makeGameStateUrl(gameToSave); try { if (navigator.clipboard && navigator.clipboard.writeText) await navigator.clipboard.writeText(gsUrl); } catch (e) { } showShare(gsUrl, true); $('scores').innerHTML = state.players.map(function (x, i) { return '<div class="score ' + (i === state.turn ? 'active' : '') + '"><span>' + esc(x.name) + (i === state.turn ? ' - turn' : '') + '</span><strong>' + x.score + '</strong></div>' }).join(''); $('history').innerHTML = state.history.slice().reverse().map(function (x, i) { return '<li>' + (state.history.length - i) + '. ' + esc(x) + '</li>' }).join(''); $('bag').textContent = state.bag.length + ' tiles remain.'; enterWaitingMode(myRack, oppName, false);
         } catch (e) { message(e.message); }
       }
       async function pass() {
