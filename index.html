@@ -474,6 +474,21 @@
       display: none
     }
 
+    #screenSplash {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      border: 0;
+      z-index: 4;
+      pointer-events: none;
+      display: none
+    }
+
+    #screenSplash.show {
+      display: block
+    }
+
     .dialog {
       width: min(460px, 100%);
       background: #fffdf8;
@@ -835,6 +850,12 @@
       </aside>
     </div>
   </main>
+  <iframe
+    id="screenSplash"
+    title="Background"
+    aria-hidden="true"
+    tabindex="-1"
+  ></iframe>
   <div
     class="modal"
     id="setup"
@@ -1211,6 +1232,7 @@
         try { if (navigator.clipboard && navigator.clipboard.writeText) await navigator.clipboard.writeText(fullMsg); } catch (e) { }
         $('bt-headsup-copy-msg').disabled = true; $('bt-headsup-copy-msg').textContent = "Message copied"; $('bt-headsup-copy-msg').onclick = handleHeadsUpCopyMsg;
         $('bt-headsup-copy-link').disabled = false; $('bt-headsup-copy-link').textContent = "Copy link instead"; $('bt-headsup-copy-link').onclick = handleHeadsUpCopyLink;
+        $('setup').hidden = true;
         $('bt-headsup').hidden = false; pendingGameForHeadsUp = gameObj; showShare(url, isInvite ? false : true); scheduleFit();
       }
       function handleHeadsUpCopyMsg() { $('bt-headsup-input').value = headsupData.msg; try { navigator.clipboard.writeText(headsupData.msg).catch(() => { }); } catch (e) { } $('bt-headsup-copy-msg').disabled = true; $('bt-headsup-copy-msg').textContent = "Message copied"; $('bt-headsup-copy-link').disabled = false; $('bt-headsup-copy-link').textContent = headsupData.isInvite ? "Copy link instead" : "Copy link"; }
@@ -1287,6 +1309,36 @@
         } catch (e) { }
       }, 1000);
       // END FIX
+
+      // The whole splashscreen (board, rack, side panels, wandering paws)
+      // lives in its own isolated document, loaded into a hidden iframe via
+      // .srcdoc. Nothing in it can collide with this page's own CSS classes
+      // or JS variables, and nothing here can affect the splashscreen either.
+      var BT_SPLASH_HTML = "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width,initial-scale=1.0\">\n  <title>Board - with side panels - swapped margins - Beartracks splash - paw walkers</title>\n  <style>\n    :root {\n      --bg: #f6f0e4; --board-bg: #315647; --cell-bg: #e7d9bd; --tw: #c94a3c; --dw: #e68a82; --tl: #2e8aa8; --dl: #86c2cc;\n      --tile: #fbf2c0; --tile-edge: #d9c99a; --ink: #1a2a1e; --gap: 2px; --pad: var(--gap); --board-size: min(92vw, 78vh);\n    }\n    * { box-sizing: border-box; margin: 0; padding: 0 }\n    body { background: var(--bg); height: 100vh; display: flex; align-items: center; justify-content: center; font-family: system-ui, -apple-system, Segoe UI, sans-serif; overflow: hidden; }\n\n    .stage {\n      width: min(1600px, 96vw);\n      aspect-ratio: 16/9;\n      background: var(--bg);\n      display: grid;\n      grid-template-columns: minmax(160px, 1fr) auto minmax(200px, 1fr);\n      gap: clamp(10px, 1.2vw, 20px);\n      align-items: center;\n      padding: 0 8px;\n    }\n\n    .panel {\n      background: #fffef6;\n      border: 1px solid var(--tile-edge);\n      border-radius: 8px;\n      box-shadow: 2px 2px 0 rgba(0,0,0,.06);\n      display: flex;\n      flex-direction: column;\n      overflow: hidden;\n    }\n    .panel h3 {\n      font-size: clamp(10px, .85vw, 12px);\n      font-weight: 700;\n      letter-spacing: .06em;\n      text-transform: uppercase;\n      padding: 7px 10px;\n      background: var(--cell-bg);\n      color: #274336;\n      border-bottom: 1px solid var(--tile-edge);\n      flex: 0 0 auto;\n    }\n    .panel-body { padding: 10px; font-size: 12.5px; line-height: 1.4; color: #3a2f20; flex: 1; overflow-y: auto; }\n\n    .left-panel {\n      height: calc(var(--board-size) + var(--board-size)/15 + 50px);\n      width: 60%;\n      justify-self: start;\n      align-self: center;\n    }\n    .right-col {\n      height: calc(var(--board-size) + var(--board-size)/15 + 50px);\n      width: 60%;\n      justify-self: end;\n      display: flex;\n      flex-direction: column;\n      gap: 10px;\n      align-self: center;\n    }\n    .score-panel { flex: 0 0 36%; }\n    .talk-panel { flex: 1; }\n\n    .combo { display: flex; flex-direction: column; align-items: center; gap: 0; justify-self: center; }\n    .rack { display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px; width: calc(var(--board-size)*10/15 + 54px); }\n    .rack-tile { aspect-ratio: 1/1; background: var(--tile); border: 1px solid var(--tile-edge); border-radius: 6px; box-shadow: 2px 2px 0 rgba(0,0,0,.08); display: grid; place-items: center; font-size: clamp(16px, 1.9vw, 28px); font-weight: 400; color: var(--ink); line-height: 1; text-transform: lowercase; }\n    .rack-tile b { margin-left: 2px; font-size: .35em; font-weight: 400; }\n\n    /* Board + walker overlay share one box so the paws can never leave the board */\n    .board-wrap { position: relative; width: var(--board-size); height: var(--board-size); }\n    .board { width: 100%; height: 100%; display: grid; grid-template-columns: repeat(15, minmax(0, 1fr)); gap: var(--gap); padding: var(--pad); background: var(--board-bg); border-radius: 2px; }\n    #walkers { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }\n\n    /* Bonus squares: the paws have left, so the label carries the colour now */\n    .cell { background: var(--cell-bg); border-radius: 2px; display: flex; align-items: center; justify-content: center; font-size: clamp(6px, .7vw, 9px); font-weight: 700; color: #274336; aspect-ratio: 1/1; position: relative; overflow: hidden; }\n    .cell.tw span.label { color: #a3352a; }\n    .cell.dw span.label { color: #b05a52; }\n    .cell.tl span.label { color: #1f6f8a; }\n    .cell.dl span.label { color: #2f6f78; }\n\n    .entry-wrap { display: grid; grid-template-columns: repeat(15, minmax(0, 1fr)); gap: var(--gap); width: var(--board-size); height: 50px; padding: 0 var(--pad); align-items: center; }\n    .byline { grid-column: 1 / -1; width: 100%; text-align: center; font-size: clamp(11px, calc(var(--board-size)/15 * 0.31), 14px); font-style: italic; color: #5a4630; letter-spacing: .02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }\n\n    .btn-pill { border: 1px solid #c87a7a; background: #f8d5d5; color: #6b2a2a; border-radius: 999px; padding: 2px 9px; font-size: calc(var(--board-size)/15 * 0.22); font-weight: 600; cursor: pointer; white-space: nowrap; height: calc(var(--board-size)/15 * 0.45); width: max-content; display: inline-flex; align-items: center; justify-content: center; gap: 4px; }\n    .btn-pill i { font-style: normal; font-size: 1.15em; line-height: 1; }\n    .upper { width: var(--board-size); position: relative; display: flex; flex-direction: column; align-items: center; gap: 0; }\n    .side-stack { position: absolute; bottom: 0; display: flex; flex-direction: column; gap: 6px; }\n    .side-stack.left { left: 0; } .side-stack.right { right: 0; align-items: flex-end; }\n  </style>\n</head>\n<body>\n  <div class=\"stage\">\n    <div class=\"panel left-panel\">\n      <h3>Instructions</h3>\n      <div class=\"panel-body\">\n        <p>Type word or <em>word 8,8,0</em> format.<br><br>\u2022 Undo: last move<br>\u2022 Shuffle: rack<br>\u2022 Exchg: exchange tiles<br>\u2022 Play: preview<br>\u2022 Submit: lock in<br>\u2022 Pass: skip turn</p>\n      </div>\n    </div>\n\n    <div class=\"combo\" id=\"combo\">\n      <div class=\"upper\" id=\"upper\">\n        <div class=\"rack\">\n          <div class=\"rack-tile\">b<b>3</b></div>\n          <div class=\"rack-tile\">e<b>1</b></div>\n          <div class=\"rack-tile\">a<b>1</b></div>\n          <div class=\"rack-tile\">r<b>1</b></div>\n          <div class=\"rack-tile\">t<b>1</b></div>\n          <div class=\"rack-tile\">r<b>1</b></div>\n          <div class=\"rack-tile\">a<b>1</b></div>\n          <div class=\"rack-tile\">c<b>3</b></div>\n          <div class=\"rack-tile\">k<b>5</b></div>\n          <div class=\"rack-tile\">s<b>1</b></div>\n        </div>\n        <div class=\"entry-wrap\"><div class=\"byline\">Destination unknown, but we'll get there together.</div></div>\n        <div class=\"side-stack left\"><button class=\"btn-pill\" id=\"btnUndo\"><i>\u21a9</i> Undo</button><button class=\"btn-pill\" id=\"btnShuffle\"><i>\u21c4</i> Shuffle</button><button class=\"btn-pill\" id=\"btnExchg\"><i>\u21c6</i> Exchg</button></div>\n        <div class=\"side-stack right\"><button class=\"btn-pill\" id=\"btnPlay\"><i>\u25b6</i> Play</button><button class=\"btn-pill\" id=\"btnSubmit\"><i>\u2713</i> Submit</button><button class=\"btn-pill\" id=\"btnPass\"><i>\u23ed</i> Pass</button></div>\n      </div>\n      <div class=\"board-wrap\">\n        <div class=\"board\" id=\"board\"></div>\n        <canvas id=\"walkers\" aria-hidden=\"true\"></canvas>\n      </div>\n    </div>\n\n    <div class=\"right-col\">\n      <div class=\"panel score-panel\">\n        <h3>Scoring</h3>\n        <div class=\"panel-body\">Score / history goes here</div>\n      </div>\n      <div class=\"panel talk-panel\">\n        <h3>Table Talk</h3>\n        <div class=\"panel-body\">Chat / log goes here</div>\n      </div>\n    </div>\n  </div>\n  <script>\n    const p = {}; [[0,0],[0,7],[0,14],[7,0],[7,14],[14,0],[14,7],[14,14]].forEach(([r,c])=>p[r+'-'+c]='TW'); [[2,2],[3,3],[4,4],[2,12],[3,11],[4,10],[10,4],[11,3],[12,2],[10,10],[11,11],[12,12],[7,7]].forEach(([r,c])=>p[r+'-'+c]='DW'); [[1,5],[1,9],[5,1],[5,5],[5,9],[5,13],[9,1],[9,5],[9,9],[9,13],[13,5],[13,9],[3,7],[7,3],[7,11],[11,7],[1,1],[1,13],[13,1],[13,13]].forEach(([r,c])=>p[r+'-'+c]='TL'); [[0,3],[0,11],[2,6],[2,8],[3,0],[3,14],[6,2],[6,6],[6,8],[6,12],[8,2],[8,6],[8,8],[8,12],[11,0],[11,14],[12,6],[12,8],[14,3],[14,11]].forEach(([r,c])=>p[r+'-'+c]='DL');\n    const b=document.getElementById('board');\n    for(let r=0;r<15;r++) for(let c=0;c<15;c++){\n      const d=document.createElement('div');\n      const pr=p[r+'-'+c]||'';\n      d.className='cell '+(pr?pr.toLowerCase():'');\n      if(pr){\n        const label=document.createElement('span');\n        label.className='label';\n        label.textContent=pr;\n        d.appendChild(label);\n      }\n      b.appendChild(d);\n    }\n\n    /* ---- Paw walkers: one per bonus square (61), roaming the board only ---- */\n    const walkerCanvas = document.getElementById('walkers');\n    const wctx = walkerCanvas.getContext('2d');\n    const PAW_COLORS = { TW:'#c94a3c', DW:'#e68a82', TL:'#2e8aa8', DL:'#86c2cc' };\n    const PAW_PAD = new Path2D('M 20 56 C 20 46 35 42 50 42 C 65 42 80 46 80 56 C 84 70 78 86 50 92 C 22 86 16 70 20 56 Z');\n    const PAW_TOES = [[23,28,14],[50,15,16],[77,28,14]];\n    let W = 0, H = 0, cell = 0;\n\n    // Positions are stored as 0..1 fractions of the board, so they survive resizes.\n    const walkers = Object.values(p).map(type => ({\n      nx: Math.random(), ny: Math.random(),          // random start, not the home square\n      ang: Math.random() * Math.PI * 2,\n      speed: 0.4 + Math.random() * 0.9,              // cells per second\n      color: PAW_COLORS[type]\n    }));\n\n    function sizeWalkerCanvas(){\n      const dpr = window.devicePixelRatio || 1;\n      W = walkerCanvas.clientWidth; H = walkerCanvas.clientHeight; cell = W / 15;\n      walkerCanvas.width = Math.round(W * dpr); walkerCanvas.height = Math.round(H * dpr);\n      wctx.setTransform(dpr, 0, 0, dpr, 0, 0);\n      drawWalkers();\n    }\n\n    function drawPaw(x, y, ang, color){\n      const k = (cell * 0.6) / 100;\n      wctx.save();\n      wctx.translate(x, y); wctx.rotate(ang + Math.PI / 2); wctx.scale(k, k); wctx.translate(-50, -50);\n      wctx.fillStyle = color;\n      PAW_TOES.forEach(([cx, cy, r]) => { wctx.beginPath(); wctx.arc(cx, cy, r, 0, Math.PI * 2); wctx.fill(); });\n      wctx.fill(PAW_PAD);\n      wctx.restore();\n    }\n\n    function drawWalkers(){\n      if (!W) return;\n      wctx.clearRect(0, 0, W, H);\n      wctx.globalAlpha = 0.85;\n      walkers.forEach(w => drawPaw(w.nx * W, w.ny * H, w.ang, w.color));\n      wctx.globalAlpha = 1;\n    }\n\n    function stepWalkers(dt){\n      const m = cell * 0.3;\n      walkers.forEach(w => {\n        w.ang += (Math.random() - 0.5) * 0.15 * (dt * 60);\n        let x = w.nx * W + Math.cos(w.ang) * w.speed * cell * dt;\n        let y = w.ny * H + Math.sin(w.ang) * w.speed * cell * dt;\n        if (x < m || x > W - m) { w.ang = Math.PI - w.ang; x = Math.min(W - m, Math.max(m, x)); }\n        if (y < m || y > H - m) { w.ang = -w.ang;          y = Math.min(H - m, Math.max(m, y)); }\n        w.nx = x / W; w.ny = y / H;\n      });\n    }\n\n    let lastT = performance.now();\n    function tick(now){\n      const dt = Math.min((now - lastT) / 1000, 0.05); lastT = now;\n      if (W) { stepWalkers(dt); drawWalkers(); }\n      requestAnimationFrame(tick);\n    }\n    new ResizeObserver(sizeWalkerCanvas).observe(walkerCanvas);\n    requestAnimationFrame(tick);\n\n    /* ---- Existing layout fitting (unchanged) ---- */\n    const REAL_ESTATE={marginV:0.04,marginH:0.05,maxBoard:900,minBoard:280,rackGap:50};\n    function fillRealEstate(){\n      const vw=window.innerWidth,vh=window.innerHeight,availW=vw*(1-REAL_ESTATE.marginH*2),availH=vh*(1-REAL_ESTATE.marginV*2),comboFactor=1+1/15;\n      let boardFromH=(availH-REAL_ESTATE.rackGap)/comboFactor,boardFromW=availW;\n      let board=Math.min(boardFromH,boardFromW);board=Math.max(REAL_ESTATE.minBoard,Math.min(board,REAL_ESTATE.maxBoard));\n      document.documentElement.style.setProperty('--board-size',board+'px');\n      const combo=document.getElementById('combo'),tileH=board/15,comboH=board+tileH+REAL_ESTATE.rackGap,free=vh-comboH;\n      combo.style.transform=`translateY(${-free/6}px)`;\n      equalizePills();\n      const inputH = board/15*0.55; const offset = (50 - inputH)/2;\n      document.querySelectorAll('.side-stack').forEach(s=> s.style.bottom = offset+'px');\n    }\n    function equalizePills(){const pills=document.querySelectorAll('.btn-pill'); pills.forEach(p=>p.style.width='max-content'); let max=0; pills.forEach(p=>{ max=Math.max(max, p.offsetWidth); }); pills.forEach(p=>p.style.width=max+'px');}\n    window.addEventListener('load',fillRealEstate); window.addEventListener('resize',fillRealEstate);\n  <\/script>\n</body>\n</html>\n";
+
+      try {
+        var splashFrame = document.getElementById('screenSplash');
+        if (splashFrame) {
+          splashFrame.srcdoc = BT_SPLASH_HTML;
+          (function () {
+            function updateScreenSplash() {
+              try {
+                var setupEl = document.getElementById('setup');
+                var huEl = document.getElementById('bt-headsup');
+                var show = (setupEl && !setupEl.hidden) || (huEl && !huEl.hidden);
+                splashFrame.classList.toggle('show', !!show);
+              } catch (e) { }
+            }
+            var splashMo = new MutationObserver(updateScreenSplash);
+            ['setup', 'bt-headsup'].forEach(function (id) {
+              var el = document.getElementById(id);
+              if (el) splashMo.observe(el, { attributes: true, attributeFilter: ['hidden'] });
+            });
+            updateScreenSplash();
+          })();
+        }
+      } catch (e) { /* decorative only - never let this break the page */ }
+
       (async () => {
         let params = null; try { params = new URLSearchParams(location.search); } catch (e) { params = { get: () => null } }
         let iid = params.get("invite"); let gid = params.get("game"); let pParam = params.get("p");
