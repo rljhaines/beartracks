@@ -98,8 +98,6 @@
 
     [hidden] { display: none !important }
     /* ===== page shell: same as boardBuild_pawSquares_Qwen.html (body centred, stage 16:9) ===== */ #game, .wrap { width: 100vw; height: 100vh; max-width: none; margin: 0; padding: 0; display: flex; align-items: center; justify-content: center; position: relative }
-    .mast { position: absolute; top: 3px; right: calc((100vw - min(1600px, 96vw)) / 2 + 8px); margin: 0; z-index: 3 }
-    .mast .turn-pill { padding: 4px 12px }
     .stage { width: min(1600px, 96vw); aspect-ratio: 16/9; background: var(--paper); display: grid; grid-template-columns: minmax(160px, 1fr) auto minmax(200px, 1fr); gap: clamp(10px, 1.2vw, 20px); align-items: center; padding: 0 8px }
     .panel { background: #fffef6; border: 1px solid var(--tile-edge); border-radius: 8px; box-shadow: 2px 2px 0 rgba(0, 0, 0, .06); display: flex; flex-direction: column; overflow: hidden }
     .panel h3 { font-size: clamp(10px, .85vw, 12px); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 7px 10px; background: var(--cell-bg); color: #274336; border-bottom: 1px solid var(--tile-edge); flex: 0 0 auto; margin: 0 }
@@ -139,7 +137,7 @@
     .cell { background: var(--cell-bg); border-radius: 2px; display: flex; align-items: center; justify-content: center; font-size: clamp(6px, .7vw, 9px); font-weight: 700; color: #274336; aspect-ratio: 1/1; position: relative; overflow: hidden; border: 0; padding: 0; min-width: 0; cursor: pointer }
     .cell:focus { outline: 3px solid var(--orange); z-index: 2 }
     .cell.anchor { outline: 3px solid var(--orange); z-index: 2 }
-    .cell .paw { position: absolute; inset: 7%; background: transparent; -webkit-mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="23" cy="28" r="14"/><circle cx="50" cy="15" r="16"/><circle cx="77" cy="28" r="14"/><path d="M 20 56 C 20 46 35 42 50 42 C 65 42 80 46 80 56 C 84 70 78 86 50 92 C 22 86 16 70 20 56 Z"/></svg>') center / contain no-repeat; mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="23" cy="28" r="14"/><circle cx="50" cy="15" r="16"/><circle cx="77" cy="28" r="14"/><path d="M 20 56 C 20 46 35 42 50 42 C 65 42 80 46 80 56 C 84 70 78 86 50 92 C 22 86 16 70 20 56 Z"/></svg>') center / contain no-repeat }
+    .cell .paw { position: absolute; inset: 7%; background: transparent; pointer-events: none; -webkit-mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="23" cy="28" r="14"/><circle cx="50" cy="15" r="16"/><circle cx="77" cy="28" r="14"/><path d="M 20 56 C 20 46 35 42 50 42 C 65 42 80 46 80 56 C 84 70 78 86 50 92 C 22 86 16 70 20 56 Z"/></svg>') center / contain no-repeat; mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="23" cy="28" r="14"/><circle cx="50" cy="15" r="16"/><circle cx="77" cy="28" r="14"/><path d="M 20 56 C 20 46 35 42 50 42 C 65 42 80 46 80 56 C 84 70 78 86 50 92 C 22 86 16 70 20 56 Z"/></svg>') center / contain no-repeat }
     .cell.tw .paw { background: var(--tw) }
     .cell.dw .paw { background: var(--dw) }
     .cell.tl .paw { background: var(--tl) }
@@ -523,10 +521,7 @@
     class="wrap"
     id="game"
   >
-    <header class="mast"><div
-        class="turn-pill"
-        id="turnPill"
-      ></div></header>
+    <span id="turnPill" hidden></span>
     <div class="stage">
       <div class="left-col">
         <div class="panel status-panel">
