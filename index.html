@@ -24,7 +24,19 @@
       --orange: #d66f42;
       --muted: #65756b;
       --gap: 2px;
-      --pad: 4px
+      --pad: var(--gap);
+      --board-bg: #315647;
+      --cell-bg: #e7d9bd;
+      --tw: #c94a3c;
+      --dw: #e68a82;
+      --tl: #2e8aa8;
+      --dl: #86c2cc;
+      --rack-bg: #fbf2c0;
+      --tile-edge: #d9c99a;
+      --board-size: min(92vw, 78vh);
+      --cell: calc(var(--board-size) / 15);
+      --rack-t: calc((var(--cell) * 7.3 - 30px) / 7);
+      --combo-h: calc(var(--board-size) + var(--rack-t) + 50px)
     }
 
     * {
@@ -87,307 +99,104 @@
       font-size: 13px
     }
 
-    .layout {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) 300px;
-      gap: 20px;
-      flex: 1;
-      min-height: 0;
-      align-items: start
-    }
-
-    .left-col {
-      display: flex;
-      flex-direction: column;
-      gap: 0;
-      min-height: 0;
-      flex: 1
-    }
-
-    .board {
-      display: grid;
-      grid-template-columns: repeat(15, minmax(0, 1fr));
-      gap: var(--gap);
-      padding: var(--pad);
-      background: #315647;
-      border-radius: 9px;
-      aspect-ratio: 1/1;
-      width: 100%;
-      flex: 1;
-      min-height: 0;
-      max-width: min(100vw, 100dvh - 160px);
-      margin: auto;
-      box-sizing: border-box
-    }
-
-    .cell {
-      border: 0;
-      min-width: 0;
-      padding: 0;
-      position: relative;
-      background: #e7d9bd;
-      color: #274336;
-      cursor: pointer;
-      aspect-ratio: 1
-    }
-
-    .cell:focus {
-      outline: 3px solid var(--orange);
-      z-index: 2
-    }
-
-    .cell.anchor {
-      outline: 3px solid var(--orange);
-      z-index: 2
-    }
-
-    .premium {
-      position: absolute;
-      inset: 3px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      font-size: 8px;
-      font-weight: 800;
-      line-height: 1.05
-    }
-
-    .tw {
-      background: #cf7c6f;
-      color: white
-    }
-
-    .dw {
-      background: #e6aaa2
-    }
-
-    .tl {
-      background: #5c99aa;
-      color: white
-    }
-
-    .dl {
-      background: #a8cbd0
-    }
-
-    .tile {
-      position: absolute;
-      inset: 3px;
-      background: var(--tile);
-      border-radius: 4px;
-      box-shadow: 0 1px 2px #8d7548;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: clamp(13px, 2.1vw, 26px);
-      font-weight: 900;
-      color: #25291e
-    }
-
-    .tile b {
-      position: absolute;
-      right: 3px;
-      bottom: 1px;
-      font-size: 9px
-    }
-
-    .tile.blank:after {
-      content: "•";
-      font-size: 10px;
-      position: absolute;
-      top: 1px;
-      left: 4px
-    }
-
-    .below-board {
-      display: grid;
-      grid-template-columns: repeat(15, minmax(0, 1fr));
-      gap: var(--gap);
-      margin-top: 8px;
-      width: 100%;
-      padding: 0 var(--pad);
-      box-sizing: border-box;
-      align-items: stretch;
-      flex: 0 0 auto
-    }
-
-    .rack {
-      grid-column: 1 / 8;
-      grid-row: 1;
-      display: grid;
-      grid-template-columns: repeat(7, minmax(0, 1fr));
-      gap: var(--gap);
-      width: 100%;
-      box-sizing: border-box
-    }
-
-    .rack-tile {
-      aspect-ratio: 1;
-      width: 100%;
-      border: 0;
-      border-radius: 4px;
-      background: var(--tile);
-      box-shadow: 0 1px 2px #8d7548;
-      position: relative;
-      font-size: clamp(13px, 2.1vw, 26px);
-      font-weight: 900;
-      color: #25291e;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center
-    }
-
-    .rack-tile small {
-      position: absolute;
-      right: 3px;
-      bottom: 1px;
-      font-size: 9px
-    }
-
-    .rack-tile.selected {
-      outline: 3px solid var(--orange);
-      transform: translateY(-2px);
-      z-index: 1
-    }
-
-    .entry-row {
-      grid-column: 1 / 8;
-      grid-row: 2;
-      display: flex;
-      gap: 6px;
-      align-items: center;
-      height: 44px;
-      width: 100%
-    }
-
-    .entry-row input {
-      flex: 1 1 0;
-      min-width: 0;
-      height: 44px;
-      border: 1px solid #b7bcad;
-      border-radius: 8px;
-      padding: 0 10px;
-      font: inherit;
-      text-transform: uppercase
-    }
-
-    .entry-row input::placeholder {
-      text-transform: none;
-      font-style: italic;
-      font-size: 12px
-    }
-
-    .entry-row button {
-      height: 44px;
-      flex: 0 0 auto;
-      padding: 0 14px;
-      white-space: nowrap;
-      border: 0;
-      border-radius: 8px;
-      font-weight: 800;
-      cursor: pointer
-    }
-
-    #shuffle {
-      background: #e4dfd3;
-      color: var(--ink)
-    }
-
-    #playWord {
-      background: var(--green);
-      color: white
-    }
-
-    .gameplay-box {
-      grid-column: 9 / 16;
-      grid-row: 1;
-      align-self: stretch;
-      min-height: 0;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      gap: 2px;
-      background: #fffdf8;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 6px 8px;
-      box-shadow: 0 2px 7px #362c1711
-    }
-
-    .placement {
-      font-size: 11px;
-      color: var(--muted);
-      font-style: italic;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      line-height: 1
-    }
-
-    .status {
-      font-size: 11px;
-      color: var(--ink);
-      font-style: italic;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      line-height: 1.2
-    }
-
-    .status.prompt {
-      font-size: 14px;
-      font-style: normal;
-      color: #c0392b;
-      white-space: normal;
-      font-weight: 700;
-      text-shadow: 0 0 0.5px currentColor;
-      animation: btBreathe 3.1s ease-in-out infinite
-    }
-
+    [hidden] { display: none !important }
+    /* ---------- three-column stage: panels | rack + board | panels ---------- */ .stage { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: clamp(10px, 1.2vw, 20px); align-items: center }
+    .panel { background: #fffef6; border: 1px solid var(--tile-edge); border-radius: 8px; box-shadow: 2px 2px 0 rgba(0, 0, 0, .06); display: flex; flex-direction: column; overflow: hidden; min-height: 0 }
+    details.panel { display: block }
+    .panel>h3, .panel>summary { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 7px 10px; margin: 0; background: var(--cell-bg); color: #274336; border-bottom: 1px solid var(--tile-edge); flex: 0 0 auto }
+    .panel>summary { list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; user-select: none }
+    .panel>summary::-webkit-details-marker { display: none }
+    .panel>summary:focus-visible { outline: 2px solid var(--orange); outline-offset: -2px }
+    details.panel:not([open])>summary { border-bottom: 0 }
+    .chev::after { content: "\25BE"; display: inline-block; transition: transform .15s }
+    details:not([open]) .chev::after { transform: rotate(-90deg) }
+    .panel-body { padding: 10px; font-size: 12.5px; line-height: 1.4; color: #3a2f20; flex: 1; min-height: 0; overflow-y: auto }
+    .panel-body p { margin: 0 0 8px }
+    .panel-body ul { margin: 0 0 8px; padding-left: 16px }
+    .panel-body li { margin: 2px 0 }
+    .side-left, .side-right { height: var(--combo-h); display: flex; flex-direction: column; gap: 10px; min-height: 0; min-width: 0 }
+    .instr-panel { flex: 0 0 auto }
+    .instr-panel .panel-body { max-height: calc(var(--combo-h) * .55) }
+    .msg-panel { flex: 1 1 0 }
+    .score-panel { flex: 1.15 1 0 }
+    .talk-panel { flex: 1 1 0 }
+    .side-right>.card { flex: 0 0 auto; padding: 10px }
+    .score-panel .history { max-height: none }
+    .sub { margin: 10px 0 4px; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #426050 }
+    .score-panel .help { margin: 8px 0 0 }
+    /* ---------- Table Talk lives inside its panel ---------- */ .talk-body { display: flex; flex-direction: column; padding: 8px }
+    .talk-panel #bt-comm-panel { flex: 1; display: flex; flex-direction: column; min-height: 0; border: 0; box-shadow: none; padding: 0; background: transparent }
+    .talk-panel #bt-comm-panel h2 { display: none }
+    .talk-panel #comm-log { flex: 1; min-height: 60px; max-height: none !important }
+    /* ---------- play status ---------- */ .gameplay-box { display: flex; flex-direction: column; gap: 6px }
+    .placement { font-size: 12px; color: var(--muted); font-style: italic; line-height: 1.3 }
+    .status { font-size: 12px; color: var(--ink); font-style: italic; line-height: 1.35 }
+    .status.prompt { font-size: 14px; font-style: normal; color: #c0392b; font-weight: 700; text-shadow: 0 0 0.5px currentColor; animation: btBreathe 3.1s ease-in-out infinite }
     @keyframes btBreathe {
-      0% {
-        opacity: 1
-      }
-
-      50% {
-        opacity: 0.62
-      }
-
-      100% {
-        opacity: 1
-      }
+    0% { opacity: 1 }
+    50% { opacity: 0.62 }
+    100% { opacity: 1 }
     }
-
-    .actions-row {
-      display: flex;
-      gap: 6px;
-      align-items: stretch;
-      height: 44px;
-      grid-column: 9 / 16;
-      grid-row: 2;
-      align-self: stretch;
-      margin-top: 0;
-      box-sizing: border-box
+    /* ---------- centre column: rack, entry row, board ---------- */ .combo { display: flex; flex-direction: column; align-items: center; gap: 0; justify-self: center }
+    .upper { width: var(--board-size); position: relative; display: flex; flex-direction: column; align-items: center }
+    .rack { display: flex; align-items: center; justify-content: center; gap: 6px; width: calc(var(--cell) * 8 + 12px); min-height: var(--rack-t) }
+    .rack-tile { flex: 0 0 auto; width: var(--rack-t); height: var(--rack-t); position: relative; padding: 0; font: inherit; font-size: calc(var(--rack-t) * .62); font-weight: 500; line-height: 1; text-transform: lowercase; color: #1a2a1e; background: var(--rack-bg); border: 1px solid var(--tile-edge); border-radius: 6px; box-shadow: 2px 2px 0 rgba(0, 0, 0, .08); display: grid; place-items: center; cursor: pointer }
+    .rack-tile small { position: absolute; right: 3px; bottom: 2px; font-size: max(7px, calc(var(--rack-t) * .26)); font-weight: 400 }
+    .rack-tile.selected { outline: 3px solid var(--orange); transform: translateY(-2px); z-index: 1 }
+    .rack-tile.xsel { background: #f3c9c1; outline: 3px solid #c0392b; transform: translateY(-2px); z-index: 1 }
+    .rack-tile:disabled { cursor: default }
+    .rack-gap { flex: 0 0 auto; width: calc(var(--cell) * .7); height: var(--rack-t); border: 1px dashed rgba(39, 67, 54, .22); border-radius: 6px; cursor: grab; position: relative }
+    .rack-gap:hover { border-color: rgba(39, 67, 54, .5) }
+    .rack-tile.dragging, .rack-gap.dragging { opacity: .35 }
+    .rack-tile.drop-before::before, .rack-gap.drop-before::before, .rack-tile.drop-after::after, .rack-gap.drop-after::after { content: ""; position: absolute; top: -2px; bottom: -2px; width: 3px; background: var(--orange); border-radius: 2px }
+    .rack-tile.drop-before::before, .rack-gap.drop-before::before { left: -5px }
+    .rack-tile.drop-after::after, .rack-gap.drop-after::after { right: -5px }
+    .entry-wrap { display: grid; grid-template-columns: repeat(15, minmax(0, 1fr)); gap: var(--gap); width: var(--board-size); height: 50px; padding: 0 var(--pad); align-items: center }
+    #wordInput { grid-column: 6 / 11; width: 100%; height: clamp(28px, calc(var(--cell) * .62), 38px); border: 1px solid #b7bcad; border-radius: 4px; padding: 0 8px; font: inherit; font-size: clamp(12px, calc(var(--cell) * .34), 16px); text-align: center; text-transform: uppercase; background: #fffef6; outline: none }
+    #wordInput:focus { border-color: var(--green) }
+    #wordInput:disabled { background: #eee9db }
+    #wordInput::placeholder { text-transform: none; font-style: italic; font-size: .8em; opacity: .7 }
+    .btn-pill { border: 1px solid #c87a7a; background: #f8d5d5; color: #6b2a2a; border-radius: 999px; padding: 2px 9px; font: inherit; font-size: clamp(10px, calc(var(--cell) * .25), 13px); font-weight: 600; cursor: pointer; white-space: nowrap; height: clamp(22px, calc(var(--cell) * .5), 28px); width: max-content; display: inline-flex; align-items: center; justify-content: center; gap: 4px }
+    .btn-pill:hover:not(:disabled) { background: #f3c3c3 }
+    .btn-pill:disabled { opacity: .45; cursor: default }
+    .btn-pill.armed { background: #c0392b; border-color: #8f2a20; color: #fff }
+    .btn-pill i { font-style: normal; font-size: 1.15em; line-height: 1 }
+    .side-stack { position: absolute; bottom: 0; display: flex; flex-direction: column; gap: 6px }
+    .side-stack.left { left: 0 }
+    .side-stack.right { right: 0; align-items: flex-end }
+    .board { width: var(--board-size); height: var(--board-size); display: grid; grid-template-columns: repeat(15, minmax(0, 1fr)); gap: var(--gap); padding: var(--pad); background: var(--board-bg); border-radius: 2px }
+    /* ---------- squares, bear-paw bonuses, tiles ---------- */ .cell { border: 0; min-width: 0; padding: 0; position: relative; background: var(--cell-bg); color: #274336; cursor: pointer; aspect-ratio: 1 / 1; border-radius: 2px; display: flex; align-items: center; justify-content: center; overflow: hidden; font: inherit }
+    .cell:focus { outline: 3px solid var(--orange); z-index: 2 }
+    .cell.anchor { outline: 3px solid var(--orange); z-index: 2 }
+    .cell .paw { position: absolute; inset: 7%; background: transparent; pointer-events: none; -webkit-mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="23" cy="28" r="14"/><circle cx="50" cy="15" r="16"/><circle cx="77" cy="28" r="14"/><path d="M 20 56 C 20 46 35 42 50 42 C 65 42 80 46 80 56 C 84 70 78 86 50 92 C 22 86 16 70 20 56 Z"/></svg>') center / contain no-repeat; mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="23" cy="28" r="14"/><circle cx="50" cy="15" r="16"/><circle cx="77" cy="28" r="14"/><path d="M 20 56 C 20 46 35 42 50 42 C 65 42 80 46 80 56 C 84 70 78 86 50 92 C 22 86 16 70 20 56 Z"/></svg>') center / contain no-repeat }
+    .cell.tw .paw { background: var(--tw) }
+    .cell.dw .paw { background: var(--dw) }
+    .cell.tl .paw { background: var(--tl) }
+    .cell.dl .paw { background: var(--dl) }
+    .cell.tw, .cell.tl { color: white }
+    .cell.dw { color: #4a1f1c }
+    .cell.dl { color: #16353a }
+    .cell .label { position: relative; z-index: 1; pointer-events: none; font-size: clamp(6px, calc(var(--cell) * .22), 10px); font-weight: 700 }
+    .tile { position: absolute; inset: 2px; z-index: 2; background: var(--tile); border-radius: 4px; box-shadow: 0 1px 2px #8d7548; display: flex; align-items: center; justify-content: center; font-size: calc(var(--cell) * .55); font-weight: 900; color: #25291e }
+    .tile b { position: absolute; right: 3px; bottom: 1px; font-size: max(7px, calc(var(--cell) * .22)) }
+    .tile.blank:after { content: "\2022"; font-size: 10px; position: absolute; top: 1px; left: 4px }
+    /* ---------- narrow screens: stack everything, let the stage scroll ---------- */
+    @media(max-width:900px) {
+    .stage { display: flex; flex-direction: column; align-items: stretch; gap: 10px; overflow-y: auto; padding-bottom: 12px }
+    .side-left, .side-right { display: contents }
+    .combo { order: 1; align-self: center }
+    .msg-panel { order: 2 }
+    .score-panel { order: 3 }
+    .talk-panel { order: 4 }
+    .side-right>.card { order: 5 }
+    .instr-panel { order: 6 }
+    .msg-panel, .score-panel, .talk-panel, .instr-panel { flex: 0 0 auto }
+    .score-panel .panel-body { max-height: 220px }
+    .talk-panel #comm-log { flex: none; max-height: 160px !important }
+    .instr-panel .panel-body { max-height: none }
     }
-
-    .actions-row.action {
-      height: 44px;
-      align-self: stretch;
-      box-sizing: border-box;
-      display: flex;
-      align-items: center;
-      justify-content: center
-    }
-
-    .side {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      min-height: 0;
-      overflow: auto
+    @media(max-width:600px) {
+    .btn-pill { padding: 2px 5px; gap: 2px }
     }
 
     .card {
@@ -754,30 +563,39 @@
         id="turnPill"
       ></div>
     </header>
-    <div class="layout">
-      <section class="left-col">
-        <div
-          class="board"
-          id="board"
-        ></div>
-        <div class="below-board">
+    <div class="stage">
+      <aside class="side-left">
+        <details
+          class="panel instr-panel"
+          id="instrPanel"
+          open
+        >
+          <summary>Gameplay Instructions<span
+              class="chev"
+              aria-hidden="true"
+            ></span></summary>
+          <div class="panel-body">
+            <p>Type a word, or <em>word 8,8,0</em> (row, column, then 0 across / 1 down), and press Play.</p>
+            <p>Or type a word and click a square to start it there (double-click for down). You can also click a rack
+              tile, then a square, or drag tiles onto the board.</p>
+            <ul>
+              <li><b>Undo</b>: take back tiles you haven't submitted</li>
+              <li><b>Shuffle</b>: mix up your rack</li>
+              <li><b>Exchg</b>: click it, mark the tiles to swap, click it again to confirm (uses your turn)</li>
+              <li><b>Play</b>: preview the word and its score</li>
+              <li><b>Submit</b>: lock in your move</li>
+              <li><b>Pass</b>: skip your turn</li>
+            </ul>
+            <p>Drag rack tiles to reorder them. The dashed gap can be dragged too, so you can split your rack wherever
+              you like.</p>
+            <p>The first word must cover the center square; every word after must connect to a tile already on the
+              board. Using all 7 tiles earns +50.</p>
+          </div>
+        </details>
+        <section class="panel msg-panel">
+          <h3>Play Status</h3>
           <div
-            class="rack"
-            id="rack"
-          ></div>
-          <div class="entry-row"><input
-              id="wordInput"
-              maxlength="30"
-              placeholder="Type word or word 8,8,0"
-            ><button
-              class="action alt"
-              id="shuffle"
-            >Shuffle</button><button
-              class="action"
-              id="playWord"
-            >Play</button></div>
-          <div
-            class="gameplay-box"
+            class="panel-body gameplay-box"
             id="gameplayBox"
           >
             <div
@@ -789,19 +607,56 @@
               id="status"
             ></div>
           </div>
-          <div class="actions-row"><button
-              class="action"
-              id="submitWord"
-            >Submit Word</button><button
-              class="action alt"
+        </section>
+      </aside>
+
+      <div
+        class="combo"
+        id="combo"
+      >
+        <div
+          class="upper"
+          id="upper"
+        >
+          <div
+            class="rack"
+            id="rack"
+          ></div>
+          <div class="entry-wrap"><input
+              id="wordInput"
+              maxlength="30"
+              placeholder="Type word or word 8,8,0"
+              autocomplete="off"
+              spellcheck="false"
+            ></div>
+          <div class="side-stack left"><button
+              class="btn-pill"
               id="undo"
-            >Undo</button><button
-              class="action alt"
+            ><i>&#8617;</i> Undo</button><button
+              class="btn-pill"
+              id="shuffle"
+            ><i>&#8644;</i> Shuffle</button><button
+              class="btn-pill"
+              id="exchg"
+            ><i>&#8646;</i> Exchg</button></div>
+          <div class="side-stack right"><button
+              class="btn-pill"
+              id="playWord"
+            ><i>&#9654;</i> Play</button><button
+              class="btn-pill"
+              id="submitWord"
+            ><i>&#10003;</i> Submit</button><button
+              class="btn-pill"
               id="pass"
-            >Pass</button></div>
+            ><i>&#9197;</i> Pass</button></div>
         </div>
-      </section>
-      <aside class="side">
+        <div
+          class="board"
+          id="board"
+        ></div>
+      </div>
+
+      <aside class="side-right">
         <section
           class="card"
           id="share-panel"
@@ -821,31 +676,35 @@
               class="action alt"
             >Copy</button></div>
         </section>
-        <div
-          id="bt-comm-holder"
-          hidden
-        ></div>
-        <section class="card">
-          <h2>Scoreboard</h2>
-          <div
-            class="scores"
-            id="scores"
-          ></div>
-          <p
-            class="help"
-            id="bag"
-          ></p>
+        <section class="panel score-panel">
+          <h3>Scoring</h3>
+          <div class="panel-body">
+            <div
+              class="scores"
+              id="scores"
+            ></div>
+            <p
+              class="help"
+              id="bag"
+            ></p>
+            <div class="sub">Moves</div>
+            <ul
+              class="history"
+              id="history"
+            ></ul>
+          </div>
         </section>
-        <section class="card">
-          <h2>Moves</h2>
-          <ul
-            class="history"
-            id="history"
-          ></ul><button
-            class="action alt"
-            id="help"
-            style="margin-top:10px;width:100%"
-          >How this works</button>
+        <section class="panel talk-panel">
+          <h3>Table Talk</h3>
+          <div
+            class="panel-body talk-body"
+            id="talkBody"
+          >
+            <div
+              id="bt-comm-holder"
+              hidden
+            ></div>
+          </div>
         </section>
       </aside>
     </div>
@@ -942,6 +801,7 @@
       var D = { A: 9, B: 2, C: 2, D: 4, E: 12, F: 2, G: 3, H: 2, I: 9, J: 1, K: 1, L: 4, M: 2, N: 6, O: 8, P: 2, Q: 1, R: 6, S: 4, T: 6, U: 4, V: 2, W: 2, X: 1, Y: 2, Z: 1, "?": 2 };
       var TW = [[0, 0], [0, 7], [0, 14], [7, 0], [7, 14], [14, 0], [14, 7], [14, 14]], DW = [[1, 1], [2, 2], [3, 3], [4, 4], [10, 10], [11, 11], [12, 12], [13, 13], [1, 13], [2, 12], [3, 11], [4, 10], [10, 4], [11, 3], [12, 2], [13, 1], [7, 7]], TL = [[1, 5], [1, 9], [5, 1], [5, 5], [5, 9], [5, 13], [9, 1], [9, 5], [9, 9], [9, 13], [13, 5], [13, 9]], DL = [[0, 3], [0, 11], [2, 6], [2, 8], [3, 0], [3, 7], [3, 14], [6, 2], [6, 6], [6, 8], [6, 12], [7, 3], [7, 11], [8, 2], [8, 6], [8, 8], [8, 12], [11, 0], [11, 7], [11, 14], [12, 6], [12, 8], [14, 3], [14, 11]];
       var state = null, pending = [], selected = -1, anchor = null, dragItem = null, gesture = null, suppressClick = false, waiting = false, waitingRack = null, waitingOpp = null, pendingWord = null;
+      var rackGap = 5, exchangeMode = false, exchSet = new Set();
       const API = "https://tracker-api.beartracksgames.workers.dev"; const LIVE_SITE = "https://rljhaines.github.io/beartracks/";
       let currentInvite = null; let btChannel = null;
 
@@ -1009,7 +869,7 @@
       function tryMessageOpponent(id) { let gid = pendingGameForHeadsUp?.id || state?.id || currentInvite?.gameId; initComm(gid); let who = id || currentInvite?.invitedBy || TableTalk.opponent || "opponent"; let t = prompt("Message " + who + ":"); if (!t || !t.trim()) { setCommStatus("Table Talk ready"); return; } let p = { type: "chat", from: getOwner() || "You", text: t.trim() }; sendComm(p); addCommLine((getOwner() || "You") + ": " + t.trim()); }
       // async function tryCallOpponent(id) { let gid = pendingGameForHeadsUp?.id || state?.id || currentInvite?.gameId; initComm(gid); let who = id || currentInvite?.invitedBy || TableTalk.opponent || "opponent"; let btn = document.getElementById("comm-call"); if (pc) { try { pc.close(); } catch (_) { } pc = null; if (localStream) localStream.getTracks().forEach(tr => tr.stop()); localStream = null; if (btn) btn.textContent = "Call"; addCommLine("Call ended"); return; } try { localStream = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch (e) { alert("Mic needed: " + e.message); return; } pc = new RTCPeerConnection({ iceServers: await getIceServers() }); localStream.getTracks().forEach(tr => pc.addTrack(tr, localStream)); pc.onicecandidate = (e) => { if (e.candidate) sendComm({ type: "rtc-ice", candidate: e.candidate, from: getOwner(), to: who }); }; pc.ontrack = (e) => { let a = document.getElementById("remote-audio"); if (a) a.srcObject = e.streams[0]; if (btn) btn.textContent = "Hang up"; addCommLine("In call with " + who); }; let off = await pc.createOffer(); await pc.setLocalDescription(off); sendComm({ type: "rtc-offer", sdp: off, from: getOwner() || "You", to: who }); addCommLine("Calling " + who + "..."); }
       // async function handleOffer(m) { let gid = pendingGameForHeadsUp?.id || state?.id || currentInvite?.gameId; initComm(gid); try { if (!localStream) localStream = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch (e) { addCommLine("Incoming call but mic blocked"); return; } if (pc) try { pc.close(); } catch (_) { } pc = new RTCPeerConnection({ iceServers: await getIceServers() }); localStream.getTracks().forEach(tr => pc.addTrack(tr, localStream)); pc.onicecandidate = (e) => { if (e.candidate) sendComm({ type: "rtc-ice", candidate: e.candidate, from: getOwner(), to: m.from }); }; pc.ontrack = (e) => { let a = document.getElementById("remote-audio"); if (a) a.srcObject = e.streams[0]; let b = document.getElementById("comm-call"); if (b) b.textContent = "Hang up"; addCommLine("Joined call with " + m.from); }; await pc.setRemoteDescription(new RTCSessionDescription(m.sdp)); let ans = await pc.createAnswer(); await pc.setLocalDescription(ans); sendComm({ type: "rtc-answer", sdp: ans, from: getOwner() || "You", to: m.from }); }
-      function ensureCommPanel() { if (!state || !state.id) return; let share = document.getElementById('share-panel'); if (!share) return; let existing = document.getElementById('bt-comm-panel'); if (existing) { if (existing.parentElement?.id === 'bt-headsup-comm-holder') { share.after(existing); } existing.hidden = false; return; } let li = typeof getLocalIdx === 'function' ? getLocalIdx() : 0; let opp = state.players?.[1 - li]?.name || TableTalk.opponent || 'Opponent'; if (!TableTalk.element) TableTalk.create(opp); else TableTalk.opponent = opp; if (TableTalk.element && share) { share.after(TableTalk.element); TableTalk.element.hidden = false; } }
+      function ensureCommPanel() { if (!state || !state.id) return; let host = document.getElementById('talkBody'); if (!host) return; let existing = document.getElementById('bt-comm-panel'); if (existing) { if (existing.parentElement !== host) host.appendChild(existing); existing.hidden = false; return; } let li = typeof getLocalIdx === 'function' ? getLocalIdx() : 0; let opp = state.players?.[1 - li]?.name || TableTalk.opponent || 'Opponent'; if (!TableTalk.element) TableTalk.create(opp); else TableTalk.opponent = opp; if (TableTalk.element) { host.appendChild(TableTalk.element); TableTalk.element.hidden = false; } }
       // BEGIN FIX opponent-name
       function applyExternalState(g) {
         if (!g || !g.id || !state || g.id !== state.id) return;
@@ -1022,7 +882,7 @@
           render(); return;
         }
         if (typeof g.moveCount === 'number' && typeof state.moveCount === 'number' && g.moveCount < state.moveCount) return;
-        state = cloneRacks(g); pending = []; anchor = null; pendingWord = null; selected = -1; render();
+        state = cloneRacks(g); pending = []; anchor = null; pendingWord = null; selected = -1; cancelExchange(); render();
       }
       function initBroadcastChannel(id) { if (location.protocol === 'file:') return; try { if (btChannel) btChannel.close(); btChannel = new BroadcastChannel('bt_' + id); btChannel.onmessage = function (e) { if (e.data && e.data.game) applyExternalState(e.data.game); }; } catch (e) { } }
       function broadcastGame(g) { if (location.protocol === 'file:') return; try { if (btChannel) btChannel.postMessage({ game: g }); } catch (e) { } }
@@ -1059,50 +919,104 @@
         return state.turn
       }
       function getLocalRack() { if (!state) return []; return state.players[getLocalIdx()].rack; }
-      function renderRack() { if (!state) return; var rack = getLocalRack(); if (waiting && waitingRack) { rack = waitingRack; } var rh = ''; for (var i = 0; i < rack.length; i++) { rh += '<button draggable="true" class="rack-tile ' + (i === selected ? 'selected' : '') + '" data-i="' + i + '">' + rack[i].l + '<small>' + V[rack[i].l] + '</small></button>'; } $('rack').innerHTML = rh; var rs = $('rack').getElementsByTagName('button'); for (i = 0; i < rs.length; i++) { rs[i].onclick = pick; rs[i].ondragstart = dragRack; rs[i].ondragover = allowDrop; rs[i].ondrop = dropOnRackTile; } }
+      /* ---- Rack: seven tiles plus one movable gap ----
+         The rack is described by a "layout": an array whose entries are rack indexes (tiles) or null (the gap).
+         Dragging a tile or the gap moves that entry inside the layout; the rack order and rackGap are then
+         derived from it, so the gap stays wherever the player last put it. */
+      function myTurnNow() { if (!state) return false; var li = getLocalIdx(); return (state.moveCount === 0) ? true : (state.turn === li); }
+      function rackLayout(rack) { var g = Math.min(rackGap, rack.length), out = []; for (var i = 0; i <= rack.length; i++) { if (i === g) out.push(null); if (i < rack.length) out.push(i); } return out; }
+      function moveInLayout(lay, a, b, after) { var item = lay.splice(a, 1)[0]; if (a < b) b--; lay.splice(after ? b + 1 : b, 0, item); return lay; }
+      function applyLayout(rack, lay) { var nr = []; for (var k = 0; k < lay.length; k++) if (lay[k] !== null) nr.push(rack[lay[k]]); rackGap = lay.indexOf(null); Array.prototype.splice.apply(rack, [0, rack.length].concat(nr)); }
+      function renderRack() {
+        if (!state) return;
+        var rack = getLocalRack(); if (waiting && waitingRack) { rack = waitingRack; }
+        var lay = rackLayout(rack), rh = '', k, i, drag = waiting ? 'false' : 'true';
+        for (k = 0; k < lay.length; k++) {
+          i = lay[k];
+          if (i === null) { rh += '<div class="rack-gap" draggable="' + drag + '" data-k="' + k + '" title="Gap - drag to move it"></div>'; continue; }
+          rh += '<button draggable="' + drag + '" class="rack-tile' + (i === selected ? ' selected' : '') + (exchSet.has(rack[i]) ? ' xsel' : '') + '" data-i="' + i + '" data-k="' + k + '"' + (waiting ? ' disabled' : '') + '>' + rack[i].l + '<small>' + V[rack[i].l] + '</small></button>';
+        }
+        var host = $('rack'); host.innerHTML = rh;
+        var kids = host.children;
+        for (k = 0; k < kids.length; k++) {
+          kids[k].ondragstart = rackDragStart; kids[k].ondragover = rackDragOver; kids[k].ondragleave = clearDropMarks; kids[k].ondrop = rackDrop; kids[k].ondragend = rackDragEnd;
+          if (kids[k].tagName === 'BUTTON') kids[k].onclick = pick;
+        }
+        host.ondragover = rackAreaOver; host.ondrop = rackAreaDrop;
+      }
       function render() {
         if (!state) return;
         let li = getLocalIdx(); let isMyTurn = (state.moveCount === 0) ? true : (state.turn === li); waiting = !isMyTurn; if (!waiting) { waitingRack = null; waitingOpp = null; }
-        var b = $('board'); b.innerHTML = ''; for (var r = 0; r < N; r++)for (var c = 0; c < N; c++) { var btn = document.createElement('button'); btn.className = 'cell ' + premium(r, c).toLowerCase() + (anchor && anchor.r === r && anchor.c === c ? ' anchor' : ''); btn.dataset.r = r; btn.dataset.c = c; if (state.board[r][c] && isNew(r, c)) btn.draggable = true; var t2 = state.board[r][c]; var pr = premium(r, c); if (t2) { var sp = document.createElement('span'); sp.className = 'tile ' + (t2.blank ? 'blank' : ''); sp.textContent = t2.l; var b2 = document.createElement('b'); b2.textContent = t2.blank ? 0 : V[t2.l]; sp.appendChild(b2); btn.appendChild(sp); } else if (pr) { var prs = document.createElement('span'); prs.className = 'premium'; prs.textContent = pr; btn.appendChild(prs); } b.appendChild(btn); } var cells = b.getElementsByTagName('button'); for (var i = 0; i < cells.length; i++) { cells[i].onclick = place; cells[i].ondblclick = vertical; cells[i].ondragover = allowDrop; cells[i].ondrop = dropCell; cells[i].ondragstart = dragBoard; cells[i].onmousedown = startGesture; cells[i].onmouseup = endGesture } renderRack(); if (state.moveCount === 0) { $('scores').innerHTML = state.players.map(function (x) { return '<div class="score"><span>' + esc(x.name) + '</span><strong>' + x.score + '</strong></div>' }).join(''); } else { $('scores').innerHTML = state.players.map(function (x, i) { return '<div class="score ' + (i === state.turn ? 'active' : '') + '"><span>' + esc(x.name) + (i === state.turn ? ' - turn' : '') + '</span><strong>' + x.score + '</strong></div>' }).join(''); } $('history').innerHTML = state.history.slice().reverse().map(function (x, i) { return '<li>' + (state.history.length - i) + '. ' + esc(x) + '</li>' }).join(''); $('bag').textContent = state.bag.length + ' tiles remain.'; $('turnPill').textContent = isMyTurn ? 'Your turn (' + state.players[li].name + ')' : state.players[state.turn].name + "'s turn"; var previewPts = previewScore();
+        var b = $('board'); b.innerHTML = ''; for (var r = 0; r < N; r++)for (var c = 0; c < N; c++) { var btn = document.createElement('button'); btn.className = 'cell ' + premium(r, c).toLowerCase() + (anchor && anchor.r === r && anchor.c === c ? ' anchor' : ''); btn.dataset.r = r; btn.dataset.c = c; if (state.board[r][c] && isNew(r, c)) btn.draggable = true; var t2 = state.board[r][c]; var pr = premium(r, c); if (t2) { var sp = document.createElement('span'); sp.className = 'tile ' + (t2.blank ? 'blank' : ''); sp.textContent = t2.l; var b2 = document.createElement('b'); b2.textContent = t2.blank ? 0 : V[t2.l]; sp.appendChild(b2); btn.appendChild(sp); } else if (pr) { var paw = document.createElement('div'); paw.className = 'paw'; btn.appendChild(paw); var prs = document.createElement('span'); prs.className = 'label'; prs.textContent = pr; btn.appendChild(prs); } b.appendChild(btn); } var cells = b.getElementsByTagName('button'); for (var i = 0; i < cells.length; i++) { cells[i].onclick = place; cells[i].ondblclick = vertical; cells[i].ondragover = allowDrop; cells[i].ondrop = dropCell; cells[i].ondragstart = dragBoard; cells[i].onmousedown = startGesture; cells[i].onmouseup = endGesture } renderRack(); if (state.moveCount === 0) { $('scores').innerHTML = state.players.map(function (x) { return '<div class="score"><span>' + esc(x.name) + '</span><strong>' + x.score + '</strong></div>' }).join(''); } else { $('scores').innerHTML = state.players.map(function (x, i) { return '<div class="score ' + (i === state.turn ? 'active' : '') + '"><span>' + esc(x.name) + (i === state.turn ? ' - turn' : '') + '</span><strong>' + x.score + '</strong></div>' }).join(''); } $('history').innerHTML = state.history.slice().reverse().map(function (x, i) { return '<li>' + (state.history.length - i) + '. ' + esc(x) + '</li>' }).join(''); $('bag').textContent = state.bag.length + ' tiles remain.'; $('turnPill').textContent = isMyTurn ? 'Your turn (' + state.players[li].name + ')' : state.players[state.turn].name + "'s turn"; var previewPts = previewScore();
         var placementBase = anchor ? 'Starts at ' + String.fromCharCode(65 + anchor.c) + (anchor.r + 1) + ' ' + (anchor.d === 'H' ? 'across' : 'down') : '';
         $('placement').textContent = placementBase + (previewPts !== null ? (placementBase ? ' • ' : '') + 'Score: ' + previewPts : '');
-        $('wordInput').disabled = !isMyTurn; $('wordInput').placeholder = isMyTurn ? 'Type word or word 8,8,0 (1-15)' : 'Waiting'; $('playWord').disabled = !isMyTurn; $('submitWord').disabled = !isMyTurn; $('pass').disabled = false; $('undo').disabled = !isMyTurn;
+        $('wordInput').disabled = !isMyTurn; $('wordInput').placeholder = isMyTurn ? 'Type word or word 8,8,0' : 'Waiting'; $('playWord').disabled = !isMyTurn; $('submitWord').disabled = !isMyTurn; $('pass').disabled = false; $('undo').disabled = !isMyTurn; $('exchg').disabled = !isMyTurn || state.moveCount === 0;
         if (!pending.length && !pendingWord) { if (state.moveCount === 0) { let other = state.players[1 - li].name; message(state.players[li].name + ': first move - type word then click board. Pass to let ' + other + ' start.'); } else { message(isMyTurn ? state.players[li].name + ': type word + Enter, add 8,8,0 for coords (1-15), or word alone then click board.' : 'Waiting for ' + state.players[state.turn].name + ' to play.'); } } if (!pending.length && !pendingWord) { if (state.moveCount === 0) { let other = state.players[1 - li].name; message(state.players[li].name + ': first move - type word then click board. Pass to let ' + other + ' start.'); } else { message(isMyTurn ? state.players[li].name + ': type word + Enter, add 8,8,0 for coords (1-15), or word alone then click board.' : 'Waiting for ' + state.players[state.turn].name + ' to play.'); } } setTimeout(function () { var inp = $('wordInput'); if (inp && isMyTurn) inp.focus(); }, 0);
-        ensureCommPanel(); initComm(state.id);
+        if (exchangeMode) message('Exchange mode: click the tiles to swap (' + exchSet.size + ' marked), then click Exchg again. Undo cancels.', true); ensureCommPanel(); initComm(state.id);
       }
-      function renderWaitingRack() { var rh = ''; for (var i = 0; i < waitingRack.length; i++)rh += '<button class="rack-tile" disabled>' + waitingRack[i].l + '<small>' + V[waitingRack[i].l] + '</small></button>'; $('rack').innerHTML = rh; }
-      function enterWaitingMode(myRack, opponentName, isPass) { waitingRack = myRack.slice(); waitingOpp = opponentName; render(); if (waitingRack) renderWaitingRack(); $('wordInput').value = ''; $('wordInput').disabled = true; $('wordInput').placeholder = 'Waiting'; $('playWord').disabled = true; $('submitWord').disabled = true; $('pass').disabled = true; $('undo').disabled = true; $('turnPill').textContent = 'Waiting for ' + opponentName; if (isPass) { $('placement').textContent = ''; $('status').textContent = ''; $('status').classList.remove('prompt'); } else { $('placement').textContent = 'Game saved to cloud. Backup link copied.'; $('status').textContent = "The Bear's tracks have been captured. Backup game-state link in clipboard."; $('status').classList.remove('prompt'); } }
+      function renderWaitingRack() { renderRack(); }
+      function enterWaitingMode(myRack, opponentName, isPass) { waitingRack = myRack.slice(); waitingOpp = opponentName; render(); if (waitingRack) renderWaitingRack(); $('wordInput').value = ''; $('wordInput').disabled = true; $('wordInput').placeholder = 'Waiting'; $('playWord').disabled = true; $('submitWord').disabled = true; $('pass').disabled = true; $('undo').disabled = true; $('exchg').disabled = true; $('turnPill').textContent = 'Waiting for ' + opponentName; if (isPass) { $('placement').textContent = ''; $('status').textContent = ''; $('status').classList.remove('prompt'); } else { $('placement').textContent = 'Game saved to cloud. Backup link copied.'; $('status').textContent = "The Bear's tracks have been captured. Backup game-state link in clipboard."; $('status').classList.remove('prompt'); } }
       function shuffleRack() { if (waiting && waitingRack) { shuffle(waitingRack); renderWaitingRack(); return; } if (!state) return; shuffle(getLocalRack()); selected = -1; renderRack(); }
-      function pick(e) { if (waiting) return; let li = getLocalIdx(); let isMyTurn = (state.moveCount === 0) ? true : (state.turn === li); if (!isMyTurn) return; var n = Number(e.currentTarget.getAttribute('data-i')); selected = (selected === n) ? -1 : n; renderRack(); }
+      function pick(e) {
+        if (waiting) return; let li = getLocalIdx(); let isMyTurn = (state.moveCount === 0) ? true : (state.turn === li); if (!isMyTurn) return;
+        var n = Number(e.currentTarget.getAttribute('data-i'));
+        if (exchangeMode) { var t = getLocalRack()[n]; if (exchSet.has(t)) exchSet.delete(t); else exchSet.add(t); renderRack(); message('Exchange mode: ' + exchSet.size + ' tile' + (exchSet.size === 1 ? '' : 's') + ' marked. Click Exchg again to swap, or Undo to cancel.', true); return; }
+        selected = (selected === n) ? -1 : n; renderRack();
+      }
       function place(e) { if (waiting) return; let li = getLocalIdx(); let isMyTurn = (state.moveCount === 0) ? true : (state.turn === li); if (!isMyTurn) return; if (suppressClick) { suppressClick = false; return } var r = Number(e.currentTarget.getAttribute('data-r')), c = Number(e.currentTarget.getAttribute('data-c')); if (pendingWord) { anchor = { r: r, c: c, d: 'H' }; placeWordAtAnchor(pendingWord); return; } if (selected < 0) { anchor = { r: r, c: c, d: 'H' }; render(); if (!$('wordInput').value.trim()) { $('placement').textContent = 'Starts at ' + String.fromCharCode(65 + c) + (r + 1) + ' across — type your word'; message('Type your word then click Play', true); } return; } if (state.board[r][c]) return message('That square is occupied.'); putTile(r, c, getLocalRack().splice(selected, 1)[0]); selected = -1; render(); }
       function vertical(e) { if (waiting) return; let li = getLocalIdx(); let isMyTurn = (state.moveCount === 0) ? true : (state.turn === li); if (!isMyTurn) return; e.preventDefault(); var r = Number(e.currentTarget.getAttribute('data-r')), c = Number(e.currentTarget.getAttribute('data-c')); if (pendingWord) { anchor = { r: r, c: c, d: 'V' }; placeWordAtAnchor(pendingWord); return; } anchor = { r: r, c: c, d: 'V' }; render(); }
       function putTile(r, c, q) { if (q.l === '?') { var z = prompt('Blank = a-z'); z = (z || '').trim().toUpperCase(); if (!/^[A-Z]$/.test(z)) { getLocalRack().push(q); message('Blank cancelled.'); return false; } q = { l: z, blank: true } } state.board[r][c] = q; pending.push({ r: r, c: c, tile: q }); return true }
       function placeWordAtAnchor(word) { if (!state) return; let li = getLocalIdx(); let isMyTurn = (state.moveCount === 0) ? true : (state.turn === li); if (!isMyTurn) return; if (!anchor) { message('select a starting square with a click or double-click', true); return; } if (pending.length) { let lr = getLocalRack(); for (let i = pending.length - 1; i >= 0; i--) { let x = pending[i]; state.board[x.r][x.c] = null; lr.push(x.tile.blank ? tile('?') : x.tile); } pending = []; } var dr = anchor.d === 'V' ? 1 : 0, dc = anchor.d === 'H' ? 1 : 0; var cands = []; if (state.board[anchor.r][anchor.c]) { var bl = state.board[anchor.r][anchor.c].l; for (var k = 0; k < word.length; k++)if (word[k] === bl) cands.push({ r0: anchor.r - k * dr, c0: anchor.c - k * dc }); if (!cands.length) { message('Anchor ' + (anchor.r + 1) + ',' + (anchor.c + 1) + ' is ' + bl + ' not in ' + word); return; } } else { cands.push({ r0: anchor.r, c0: anchor.c }); } var last = ''; for (var ci = 0; ci < cands.length; ci++) { var r0 = cands[ci].r0, c0 = cands[ci].c0, copy = getLocalRack().slice(), planned = [], ok = true; for (var i = 0; i < word.length; i++) { var r = r0 + i * dr, c = c0 + i * dc; if (r < 0 || r >= N || c < 0 || c >= N) { ok = false; last = 'Off board at ' + (r + 1) + ',' + (c + 1); break; } if (state.board[r][c]) { if (state.board[r][c].l !== word.charAt(i)) { ok = false; last = 'Conflict at ' + (r + 1) + ',' + (c + 1) + ' has ' + state.board[r][c].l + ' vs ' + word.charAt(i); break; } } else { var at = copy.findIndex(function (x) { return x.l === word.charAt(i) }); if (at < 0) at = copy.findIndex(function (x) { return x.l === '?' }); if (at < 0) { ok = false; last = 'Need ' + word.charAt(i) + ' have [' + getLocalRack().map(function (x) { return x.l }).join('') + ']'; break; } planned.push({ r: r, c: c, q: copy.splice(at, 1)[0], idx: i }); } } if (!ok) continue; var lr = getLocalRack(); for (var j = 0; j < planned.length; j++) { var actual = lr.findIndex(function (x) { return x.l === planned[j].q.l }); if (actual < 0) actual = lr.findIndex(function (x) { return x.l === '?' }); var q = lr.splice(actual, 1)[0]; if (q.l === '?') q = { l: word.charAt(planned[j].idx), blank: true }; state.board[planned[j].r][planned[j].c] = q; pending.push({ r: planned[j].r, c: planned[j].c, tile: q }); } pendingWord = null; clearPrompt(); render(); return; } message(last || 'Cannot place ' + word); }
       function parseEntry(raw) { if (!raw) return { word: '', nums: [] }; var letters = (raw.match(/[A-Za-z]+/g) || []).join(''); var word = letters.toUpperCase(); var numMatches = raw.match(/\d+/g) || []; var nums = numMatches.map(function (n) { return parseInt(n, 10); }); return { word: word, nums: nums }; }
-      function playTyped() { if (waiting) return; let li = getLocalIdx(); let isMyTurn = (state.moveCount === 0) ? true : (state.turn === li); if (!isMyTurn) return; var raw = $('wordInput').value.trim(); if (!raw) { message('Type a word first.'); return; } var parsed = parseEntry(raw); var word = parsed.word; var nums = parsed.nums; if (!word) { message('Type a word first.'); return; } if (nums.length >= 2) { var rr = nums[0], cc = nums[1], dir = nums.length >= 3 ? nums[2] : 0; if (rr < 1 || rr > 15 || cc < 1 || cc > 15) { message('Rows and cols 1-15. 1,1 is top-left.'); return; } if (dir !== 0 && dir !== 1) { message('Direction 0=across, 1=down.'); return; } anchor = { r: rr - 1, c: cc - 1, d: dir === 1 ? 'V' : 'H' }; placeWordAtAnchor(word); } else { if (anchor) { placeWordAtAnchor(word); } else { pendingWord = word; message('select a starting square with a click or double-click', true); $('placement').textContent = 'Word: ' + word + ' — click for across, double-click for down'; } } }
+      function playTyped() { if (waiting) return; if (exchangeMode) { cancelExchange(); renderRack(); } let li = getLocalIdx(); let isMyTurn = (state.moveCount === 0) ? true : (state.turn === li); if (!isMyTurn) return; var raw = $('wordInput').value.trim(); if (!raw) { message('Type a word first.'); return; } var parsed = parseEntry(raw); var word = parsed.word; var nums = parsed.nums; if (!word) { message('Type a word first.'); return; } if (nums.length >= 2) { var rr = nums[0], cc = nums[1], dir = nums.length >= 3 ? nums[2] : 0; if (rr < 1 || rr > 15 || cc < 1 || cc > 15) { message('Rows and cols 1-15. 1,1 is top-left.'); return; } if (dir !== 0 && dir !== 1) { message('Direction 0=across, 1=down.'); return; } anchor = { r: rr - 1, c: cc - 1, d: dir === 1 ? 'V' : 'H' }; placeWordAtAnchor(word); } else { if (anchor) { placeWordAtAnchor(word); } else { pendingWord = word; message('select a starting square with a click or double-click', true); $('placement').textContent = 'Word: ' + word + ' — click for across, double-click for down'; } } }
       function allowDrop(e) { if (waiting) return; e.preventDefault(); }
-      function dragRack(e) { if (waiting) return; let li = getLocalIdx(); let isMyTurn = (state.moveCount === 0) ? true : (state.turn === li); if (!isMyTurn) return; dragItem = { kind: 'rack', i: Number(e.currentTarget.getAttribute('data-i')) }; }
+
       function dragBoard(e) { if (waiting) return; let li = getLocalIdx(); let isMyTurn = (state.moveCount === 0) ? true : (state.turn === li); if (!isMyTurn) return; var r = Number(e.currentTarget.getAttribute('data-r')), c = Number(e.currentTarget.getAttribute('data-c')); if (!isNew(r, c)) { e.preventDefault(); return } dragItem = { kind: 'board', r: r, c: c }; }
       function dropCell(e) { if (waiting) return; let li = getLocalIdx(); let isMyTurn = (state.moveCount === 0) ? true : (state.turn === li); if (!isMyTurn) return; e.preventDefault(); if (!dragItem) return; var r = Number(e.currentTarget.getAttribute('data-r')), c = Number(e.currentTarget.getAttribute('data-c')); if (state.board[r][c] && !(dragItem.kind === 'board' && dragItem.r === r && dragItem.c === c)) return; if (dragItem.kind === 'rack') { var q = getLocalRack().splice(dragItem.i, 1)[0]; putTile(r, c, q); } else { var idx = -1; for (var i = 0; i < pending.length; i++)if (pending[i].r === dragItem.r && pending[i].c === dragItem.c) idx = i; if (idx < 0) return; var t = state.board[dragItem.r][dragItem.c]; state.board[dragItem.r][dragItem.c] = null; state.board[r][c] = t; pending[idx].r = r; pending[idx].c = c; } dragItem = null; render(); }
 
-      function dropOnRackTile(e) {
-        if (waiting) return;
-        let li = getLocalIdx(); let isMyTurn = (state.moveCount === 0) ? true : (state.turn === li); if (!isMyTurn) return;
-        e.preventDefault();
-        if (!dragItem || dragItem.kind !== 'rack') return;
-        var targetI = Number(e.currentTarget.getAttribute('data-i'));
-        var rack = getLocalRack();
-        if (targetI === dragItem.i) { dragItem = null; return; }
-        var moved = rack.splice(dragItem.i, 1)[0];
-        rack.splice(targetI, 0, moved);
-        dragItem = null; selected = -1;
-        renderRack();
+      function clearDropMarks() { var m = document.querySelectorAll('#rack .drop-before, #rack .drop-after'); for (var i = 0; i < m.length; i++) m[i].classList.remove('drop-before', 'drop-after'); }
+      function rackDragStart(e) {
+        if (waiting || !state || !myTurnNow()) { e.preventDefault(); return; }
+        var el = e.currentTarget;
+        dragItem = { kind: el.classList.contains('rack-gap') ? 'gap' : 'rack', i: Number(el.getAttribute('data-i')) };
+        try { e.dataTransfer.setData('text/plain', 'bt-rack'); e.dataTransfer.effectAllowed = 'move'; } catch (_) { }
+        setTimeout(function () { el.classList.add('dragging'); }, 0);
+      }
+      function rackDragOver(e) {
+        if (waiting || !dragItem) return; e.preventDefault();
+        if (dragItem.kind === 'board') return;
+        clearDropMarks(); var el = e.currentTarget, r = el.getBoundingClientRect();
+        el.classList.add(e.clientX < r.left + r.width / 2 ? 'drop-before' : 'drop-after');
+      }
+      function rackAreaOver(e) { if (waiting || !dragItem) return; e.preventDefault(); }
+      function rackDragEnd() { var m = document.querySelectorAll('#rack .dragging'); for (var i = 0; i < m.length; i++) m[i].classList.remove('dragging'); clearDropMarks(); dragItem = null; }
+      function rackDrop(e) {
+        if (waiting || !state || !myTurnNow()) return;
+        e.preventDefault(); e.stopPropagation(); clearDropMarks();
+        if (!dragItem) return;
+        if (dragItem.kind === 'board') { dropRack(e); return; }
+        var el = e.currentTarget, rack = getLocalRack(), lay = rackLayout(rack);
+        var b = Number(el.getAttribute('data-k')), r = el.getBoundingClientRect(), after = e.clientX >= r.left + r.width / 2;
+        var a = dragItem.kind === 'gap' ? lay.indexOf(null) : lay.indexOf(dragItem.i);
+        if (a < 0 || a === b) { dragItem = null; return; }
+        applyLayout(rack, moveInLayout(lay, a, b, after));
+        dragItem = null; selected = -1; renderRack();
+      }
+      function rackAreaDrop(e) {
+        if (waiting || !state || !myTurnNow()) return;
+        e.preventDefault(); clearDropMarks();
+        if (!dragItem) return;
+        if (dragItem.kind === 'board') { dropRack(e); return; }
+        var rack = getLocalRack(), lay = rackLayout(rack), a = dragItem.kind === 'gap' ? lay.indexOf(null) : lay.indexOf(dragItem.i);
+        if (a < 0) { dragItem = null; return; }
+        applyLayout(rack, moveInLayout(lay, a, lay.length - 1, true));
+        dragItem = null; selected = -1; renderRack();
       }
 
       function dropRack(e) { if (waiting) return; e.preventDefault(); if (!dragItem || dragItem.kind !== 'board') return; for (var i = 0; i < pending.length; i++)if (pending[i].r === dragItem.r && pending[i].c === dragItem.c) { state.board[dragItem.r][dragItem.c] = null; getLocalRack().push(pending[i].tile.blank ? tile('?') : pending[i].tile); state.board[dragItem.r][dragItem.c] = null; pending.splice(i, 1); break; } dragItem = null; render(); }
       function startGesture(e) { if (waiting) return; let li = getLocalIdx(); let isMyTurn = (state.moveCount === 0) ? true : (state.turn === li); if (!isMyTurn) return; if (selected >= 0 || state.board[Number(e.currentTarget.getAttribute('data-r'))][Number(e.currentTarget.getAttribute('data-c'))]) return; gesture = { r: Number(e.currentTarget.getAttribute('data-r')), c: Number(e.currentTarget.getAttribute('data-c')) } }
       function endGesture(e) { if (waiting || !gesture) return; var r = Number(e.currentTarget.getAttribute('data-r')), c = Number(e.currentTarget.getAttribute('data-c')); if (r === gesture.r && c !== gesture.c) { anchor = { r: gesture.r, c: gesture.c, d: 'H' }; suppressClick = true; } else if (c === gesture.c && r !== gesture.r) { anchor = { r: gesture.r, c: gesture.c, d: 'V' }; suppressClick = true; } gesture = null; if (suppressClick) { render(); } }
-      function undo() { if (waiting) return; let li = getLocalIdx(); let isMyTurn = (state.moveCount === 0) ? true : (state.turn === li); if (!isMyTurn) return; var lr = getLocalRack(); for (var i = 0; i < pending.length; i++) { var x = pending[i]; state.board[x.r][x.c] = null; lr.push(x.tile.blank ? tile('?') : x.tile); } pending = []; selected = -1; anchor = null; pendingWord = null; $('wordInput').value = ''; clearPrompt(); render(); }
+      function undo() { if (waiting) return; if (exchangeMode) { cancelExchange(); render(); return; } let li = getLocalIdx(); let isMyTurn = (state.moveCount === 0) ? true : (state.turn === li); if (!isMyTurn) return; var lr = getLocalRack(); for (var i = 0; i < pending.length; i++) { var x = pending[i]; state.board[x.r][x.c] = null; lr.push(x.tile.blank ? tile('?') : x.tile); } pending = []; selected = -1; anchor = null; pendingWord = null; $('wordInput').value = ''; clearPrompt(); render(); }
       function line(r, c, dr, dc) { var a = []; while (r - dr >= 0 && r - dr < N && c - dc >= 0 && c - dc < N && state.board[r - dr][c - dc]) { r -= dr; c -= dc; } while (r >= 0 && r < N && c >= 0 && c < N && state.board[r][c]) { a.push({ r: r, c: c, t: state.board[r][c] }); r += dr; c += dc; } return a; }
       function isNew(r, c) { for (var i = 0; i < pending.length; i++)if (pending[i].r === r && pending[i].c === c) return true; return false; }
       function validate() { if (!pending.length) throw Error('Place at least one tile.'); var rows = {}, cols = {}, i, x; for (i = 0; i < pending.length; i++) { rows[pending[i].r] = 1; cols[pending[i].c] = 1; } if (Object.keys(rows).length > 1 && Object.keys(cols).length > 1) throw Error('New tiles must be in one row or column.'); var hasExisting = false; for (var rr = 0; rr < N; rr++)for (var cc = 0; cc < N; cc++)if (state.board[rr][cc] && !isNew(rr, cc)) hasExisting = true; if (!hasExisting) { if (!isNew(C, C)) throw Error('First move must cover the center.'); } else { var touches = false; for (i = 0; i < pending.length; i++) { x = pending[i]; if ((state.board[x.r - 1] && state.board[x.r - 1][x.c] && !isNew(x.r - 1, x.c)) || (state.board[x.r + 1] && state.board[x.r + 1][x.c] && !isNew(x.r + 1, x.c)) || (state.board[x.r][x.c - 1] && !isNew(x.r, x.c - 1)) || (state.board[x.r][x.c + 1] && !isNew(x.r, x.c + 1))) touches = true; } if (!touches) throw Error('Must connect to an existing tile.'); } var words = [], seen = {}; for (i = 0; i < pending.length; i++) { x = pending[i];[[0, 1], [1, 0]].forEach(function (d) { var w = line(x.r, x.c, d[0], d[1]); var key = w.map(function (y) { return y.r + ',' + y.c }).join('|'); if (w.length > 1 && !seen[key]) { seen[key] = 1; words.push(w); } }); } if (!words.length) throw Error('Must form at least two letters.'); return words; }
@@ -1120,6 +1034,41 @@
       }
 
       function snapshotForRollback() { return { board: JSON.parse(JSON.stringify(state.board)), players: JSON.parse(JSON.stringify(state.players)), bag: state.bag.slice(), history: state.history.slice(), moveCount: state.moveCount, turn: state.turn }; }
+      /* ---- Exchange: swap marked rack tiles for fresh ones from the bag (costs the turn) ---- */
+      function cancelExchange() { exchangeMode = false; exchSet = new Set(); var b = $('exchg'); if (b) b.classList.remove('armed'); }
+      async function exchange() {
+        if (waiting || !state) return;
+        let li = getLocalIdx();
+        if (state.moveCount === 0) return message("Exchange isn't available on the opening move. Play a word, or Pass to let your opponent start.");
+        if (state.turn !== li) return message('Not your turn');
+        if (pending.length) return message('Undo unplayed tiles before exchanging.');
+        if (!exchangeMode) {
+          exchangeMode = true; exchSet = new Set(); selected = -1; anchor = null; pendingWord = null;
+          $('exchg').classList.add('armed'); renderRack();
+          message('Exchange mode: click the tiles to swap, then click Exchg again to confirm. Undo cancels.', true);
+          return;
+        }
+        if (!exchSet.size) { cancelExchange(); render(); return message('Exchange cancelled - no tiles were marked.'); }
+        let server = null; try { server = await loadGame(state.id); } catch (e) { }
+        if (server && server.moveCount !== state.moveCount) { cancelExchange(); state = cloneRacks(server); pending = []; anchor = null; pendingWord = null; selected = -1; render(); return message('Game updated elsewhere - reloaded. Try again.'); }
+        if (server && server.bag) state.bag = server.bag.slice();
+        if (state.bag.length < C) return message('The bag needs at least ' + C + ' tiles to exchange (' + state.bag.length + ' left).');
+        var myIdx = getLocalIdx(), oppIdx = 1 - myIdx, p = state.players[myIdx], oppName = state.players[oppIdx].name;
+        var out = p.rack.filter(function (t) { return exchSet.has(t); });
+        if (!out.length) { cancelExchange(); render(); return message('Exchange cancelled - no tiles were marked.'); }
+        state.undoStack = state.undoStack || []; if (state.undoStack.length > 3) state.undoStack.shift(); state.undoStack.push(snapshotForRollback());
+        p.rack = p.rack.filter(function (t) { return !exchSet.has(t); });
+        draw(state, p);
+        out.forEach(function (t) { state.bag.push(t.l); });
+        shuffle(state.bag);
+        state.history.push(p.name + ' exchanged ' + out.length + (out.length === 1 ? ' tile' : ' tiles'));
+        state.moveCount = (state.moveCount || 0) + 1; state.turn = oppIdx; anchor = null; pendingWord = null; selected = -1;
+        var myRackX = p.rack.slice(); cancelExchange();
+        let gameToSave = JSON.parse(JSON.stringify(state));
+        saveGameToCF(gameToSave).then(() => { broadcastGame(gameToSave); let gsUrl = makeGameStateUrl(gameToSave); try { navigator.clipboard.writeText(gsUrl) } catch (e) { } showShare(gsUrl, true); }).catch(() => { });
+        enterWaitingMode(myRackX, oppName, true);
+        $('status').textContent = 'You exchanged ' + out.length + (out.length === 1 ? ' tile.' : ' tiles.') + ' Waiting for ' + oppName + '.';
+      }
       function showShare(url, isGameState) { let sp = $('share-panel'), su = $('share-url'), sh = $('share-help'); if (sp && su) { su.value = url; sp.hidden = false; if (sh) sh.textContent = isGameState ? 'Game-state backup (for testing):' : 'Join me in a scrabble-like game on BearTracks:'; } }
       function b64DecodeUnicode(b64) { try { b64 = b64.replace(/-/g, '+').replace(/_/g, '/').replace(/\s/g, ''); while (b64.length % 4) b64 += '='; const bin = atob(b64); const bytes = Uint8Array.from(bin, c => c.charCodeAt(0)); return new TextDecoder().decode(bytes); } catch (e) { return null; } }
       function tryLoadFromHash() { var h = location.hash || ''; if (h.indexOf('#s=') === 0) { try { var b64 = decodeURIComponent(h.slice(3)); var txt = b64DecodeUnicode(b64); if (!txt) return null; var gs = JSON.parse(txt); if (gs) return cloneRacks(gs); } catch (e) { } } try { var q = new URLSearchParams(location.search); var qs = q.get('s'); if (qs) { var txt2 = b64DecodeUnicode(decodeURIComponent(qs)); if (!txt2) return null; var gs2 = JSON.parse(txt2); if (gs2) return cloneRacks(gs2); } } catch (e) { } return null; }
@@ -1272,23 +1221,34 @@
       async function handleRegister() { let uEl = $('reg-user'), pEl = $('reg-pass'), p2El = $('reg-pass2'), errEl = $('reg-error'); let u = uEl ? uEl.value.trim() : '', p = pEl ? pEl.value : '', p2 = p2El ? p2El.value : ''; if (errEl) errEl.textContent = ''; if (!u || !p) { if (errEl) errEl.textContent = 'Fill username and password'; return; } if (p !== p2) { if (errEl) errEl.textContent = 'Passwords do not match'; return; } let users = []; try { users = JSON.parse(localStorage.getItem("bt_users") || "[]") } catch (e) { users = [] } if (users.some(x => x.toLowerCase() === u.toLowerCase())) { if (errEl) errEl.textContent = 'Username taken'; return; } localStorage.setItem("bt_owner", u); try { localStorage.removeItem("bt_pass_" + u.toLowerCase()); } catch (e) { } users.push(u); localStorage.setItem("bt_users", JSON.stringify(users)); let inviteParam = null; try { inviteParam = new URLSearchParams(location.search).get("invite"); } catch (e) { } if (inviteParam) { try { let res = await linkGameViaInvite(inviteParam, u); if (res && res.game && res.invite) { let type = res.invite.mode === "unregistered-invite" ? "active" : "passive"; $('setup').hidden = true; showCollabHeadsUp(res.invite, res.game, type, u); return; } } catch (e) { } } renderBoxes(); }
       async function handleBegin() { let owner = getOwner(); if (!owner) { renderBoxes(); return; } let opp = ($('nameB') ? $('nameB').value.trim() : ''); let g = fresh(owner, opp || "Opponent"); await saveGameToCF(g); initBroadcastChannel(g.id); if (!opp) { let iid = Date.now().toString(36) + Math.random().toString(36).slice(2, 7); currentInvite = { id: iid, invitedBy: owner, invitedByOpponents: getOpponents(), gameId: g.id, mode: "game-invite", created: Date.now() }; try { await saveInviteToCF(currentInvite); } catch (e) { } addOpponent(opp); await showHeadsUp(iid, g, true); } else { currentInvite = null; if (opp) addOpponent(opp); await showHeadsUp(null, g, false); } }
       async function handleCreateInvitation() { let owner = getOwner(); if (!owner) { renderBoxes(); return; } let id = Date.now().toString(36) + Math.random().toString(36).slice(2, 7); let placeholder = fresh(owner, "Opponent"); await saveGameToCF(placeholder); initBroadcastChannel(placeholder.id); let inv = { id: id, invitedBy: owner, invitedByOpponents: getOpponents(), gameId: placeholder.id, mode: "unregistered-invite", created: Date.now() }; await saveInviteToCF(inv); currentInvite = inv; await showHeadsUp(id, placeholder, true); }
+      function equalizePills() { var pills = document.querySelectorAll('.btn-pill'), max = 0, i; for (i = 0; i < pills.length; i++) pills[i].style.width = 'max-content'; for (i = 0; i < pills.length; i++) max = Math.max(max, pills[i].offsetWidth); for (i = 0; i < pills.length; i++) pills[i].style.width = max + 'px'; }
       function fit() {
-        var boardEl = document.getElementById('board'); if (!boardEl) return;
-        var mastH = document.querySelector('.mast')?.offsetHeight || 56;
-        var belowH = document.querySelector('.below-board')?.offsetHeight || 112;
-        var h = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
-        var leftW = document.querySelector('.left-col')?.clientWidth || window.innerWidth;
-        var availH = h - mastH - belowH - 36; if (window.innerWidth <= 900) availH -= 20;
-        var size = Math.min(leftW - 8, availH); if (size < 200) size = 200; if (size > 820) size = 820;
-        boardEl.style.width = size + 'px'; boardEl.style.height = size + 'px';
+        var stage = document.querySelector('.stage'); if (!stage) return;
+        var vw = document.documentElement.clientWidth || window.innerWidth;
+        var vh = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+        var mastEl = document.querySelector('.mast'), mastH = (mastEl ? mastEl.offsetHeight : 56) + 8;
+        var stageW = stage.clientWidth || vw, stageH = stage.clientHeight || (vh - mastH - 32);
+        var board;
+        if (vw <= 900) { board = Math.min(stageW - 4, 820); }
+        else { board = Math.min((stageH - 46) / 1.07, stageW - 2 * 20 - 2 * 180, 900); }
+        board = Math.max(280, Math.floor(board));
+        document.documentElement.style.setProperty('--board-size', board + 'px');
+        var inp = $('wordInput'), inputH = inp ? inp.offsetHeight : 28, off = Math.max(0, (50 - inputH) / 2);
+        var stacks = document.querySelectorAll('.side-stack'); for (var i = 0; i < stacks.length; i++) stacks[i].style.bottom = off + 'px';
+        equalizePills();
       }
+
       function scheduleFit() { requestAnimationFrame(() => requestAnimationFrame(() => { fit(); setTimeout(fit, 80); setTimeout(fit, 300); })); }
       window.addEventListener('resize', scheduleFit);
       if (window.visualViewport) { window.visualViewport.addEventListener('resize', scheduleFit); window.visualViewport.addEventListener('scroll', scheduleFit); }
-      $('submitWord').onclick = commit; $('undo').onclick = undo; $('pass').onclick = pass; $('playWord').onclick = playTyped; $('shuffle').onclick = shuffleRack;
+      $('submitWord').onclick = commit; $('undo').onclick = undo; $('pass').onclick = pass; $('playWord').onclick = playTyped; $('shuffle').onclick = shuffleRack; $('exchg').onclick = exchange;
       $('wordInput').onkeydown = function (e) { if (e.key === 'Enter') { if (waiting) return; e.preventDefault(); playTyped(); } };
       $('wordInput').addEventListener('input', function () { if (waiting) return; if (!anchor) return; let raw = this.value; if (!raw) { if (pending.length) { let lr = getLocalRack(); for (let i = pending.length - 1; i >= 0; i--) { let x = pending[i]; state.board[x.r][x.c] = null; lr.push(x.tile.blank ? tile('?') : x.tile); } pending = []; render(); } return; } let parsed = parseEntry(raw); let word = parsed.word; if (!word) return; if (word.length >= 1) placeWordAtAnchor(word); });
-      $('help').onclick = function () { alert('Type word + Enter. Add 8,8,0 across / 8,8,1 down in any order (1-15). Or word alone then click board. Contestants decide first move by longest word.') };
+      (function () {
+        var d = $('instrPanel'); if (!d) return;
+        try { var s = localStorage.getItem('bt_instr_open'); if (s === '0' || (s === null && window.innerWidth <= 900)) d.open = false; } catch (e) { }
+        d.addEventListener('toggle', function () { try { localStorage.setItem('bt_instr_open', d.open ? '1' : '0'); } catch (e) { } scheduleFit(); });
+      })();
       $('btn-register').onclick = handleRegister; $('btn-begin').onclick = handleBegin; $('btn-invite').onclick = handleCreateInvitation;
       let _sc = document.getElementById('share-copy'); if (_sc) { _sc.onclick = function () { let u = document.getElementById('share-url').value; try { navigator.clipboard.writeText(u).catch(() => { }) } catch (e) { prompt("Copy:", u) } }; }
       $('btn-logout').onclick = function () { localStorage.removeItem("bt_owner"); $('setup').hidden = false; renderBoxes(); $('reg-user').value = ''; $('reg-pass').value = ''; $('reg-pass2').value = ''; $('nameB').value = ''; let sp = $('share-panel'); if (sp) sp.hidden = true; currentInvite = null; $('bt-headsup').hidden = true; pendingGameForHeadsUp = null; };
@@ -1381,7 +1341,7 @@
       })();
     }());
   </script>
-  </script>
+
 </body>
 
 </html>
