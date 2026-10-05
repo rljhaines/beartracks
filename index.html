@@ -100,7 +100,7 @@
     /* ===== page shell: same as boardBuild_pawSquares_Qwen.html (body centred, stage 16:9) ===== */ #game, .wrap { width: 100vw; height: 100vh; max-width: none; margin: 0; padding: 0; display: flex; align-items: center; justify-content: center; position: relative }
     .stage { width: min(1600px, 96vw); aspect-ratio: 16/9; background: var(--paper); display: grid; grid-template-columns: minmax(160px, 1fr) auto minmax(200px, 1fr); gap: clamp(10px, 1.2vw, 20px); align-items: center; padding: 0 8px }
     .panel { background: #fffef6; border: 1px solid var(--tile-edge); border-radius: 8px; box-shadow: 2px 2px 0 rgba(0, 0, 0, .06); display: flex; flex-direction: column; overflow: hidden }
-    .panel h3 { font-size: clamp(10px, .85vw, 12px); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 7px 10px; background: var(--cell-bg); color: #274336; border-bottom: 1px solid var(--tile-edge); flex: 0 0 auto; margin: 0 }
+    .panel h3 { font-size: clamp(10px, .85vw, 12px); font-weight: 700; letter-spacing: .06em; padding: 7px 10px; background: var(--cell-bg); color: #274336; border-bottom: 1px solid var(--tile-edge); flex: 0 0 auto; margin: 0 }
     .panel-body { padding: 10px; font-size: 12.5px; line-height: 1.4; color: #3a2f20; flex: 1; overflow-y: auto }
     .left-col { height: calc(var(--board-size) + var(--board-size)/15 + 50px); width: 60%; justify-self: start; align-self: center; display: flex; flex-direction: column; gap: 10px }
     .right-col { height: calc(var(--board-size) + var(--board-size)/15 + 50px); width: 60%; justify-self: end; display: flex; flex-direction: column; gap: 10px; align-self: center }
@@ -641,7 +641,7 @@
           </div>
         </div>
         <div class="panel talk-panel">
-          <h3>Table Talk</h3>
+          <h3>Convo-Ursidae</h3>
           <div
             class="panel-body talk-body"
             id="talkBody"
@@ -786,7 +786,7 @@
         create(by) {
           this.opponent = by || "opponent";
           const el = document.createElement('section'); el.className = 'card'; el.id = 'bt-comm-panel';
-          el.innerHTML = '<h2>Table Talk</h2><div id="comm-log" style="max-height:140px;overflow:auto;font-size:12px;margin-bottom:8px;border:1px solid var(--line);border-radius:8px;padding:6px;background:#fff"></div><div style="display:flex;gap:6px"><input id="comm-input" placeholder="Message..." maxlength="200" style="flex:1;border:1px solid #b7bcad;border-radius:8px;padding:8px"><button id="comm-send" class="action alt" style="padding:8px 10px">Send</button></div><div id="comm-status" class="help" style="margin-top:6px"></div>';
+	  el.innerHTML = '<h2>Convo-Ursidae</h2><div style="display:flex;gap:6px;margin-bottom:2px"><input id="comm-input" placeholder="Message..." maxlength="200" style="flex:1;border:1px solid #b7bcad;border-radius:8px;padding:8px"><button id="comm-send" class="action alt" style="padding:8px 10px">Send</button></div><div id="comm-status" class="help" style="margin-bottom:4px;font-size:10px;font-style:italic"></div><div id="comm-log" style="max-height:140px;overflow:auto;font-size:12px;border:1px solid var(--line);border-radius:8px;padding:6px;background:#fff"></div>';
           this.element = el;
           setTimeout(() => {
             const s = el.querySelector("#comm-send"); const inp = el.querySelector("#comm-input");
