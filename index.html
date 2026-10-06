@@ -666,7 +666,47 @@ body {
       return;  
     }  
     if (typeof g.moveCount === 'number' && typeof state.moveCount === 'number' && g.moveCount < state.moveCount) return;  
-    state = cloneRacks(g); pending = []; anchor = null; pendingWord = null; selected = -1; cancelExchange(); render();  
+
+    // A newer committed state (for example, the opponent pressing Pass) must
+    // update the shared game, but it must not erase this player's unsubmitted
+    // local draft. Preserve the draft and reapply it to the newer state.
+    var localIdx = getLocalIdx();
+    var draft = pending.map(function (x) {
+      return { r: x.r, c: x.c, tile: { l: x.tile.l, blank: !!x.tile.blank } };
+    });
+    var draftAnchor = anchor ? { r: anchor.r, c: anchor.c, d: anchor.d } : null;
+    var draftWord = pendingWord;
+
+    state = cloneRacks(g);
+    pending = [];
+    anchor = draftAnchor;
+    pendingWord = draftWord;
+    selected = -1;
+    cancelExchange();
+
+    var lp = state.players[localIdx];
+    var restored = [];
+    var restoreOK = true;
+    for (var di = 0; di < draft.length; di++) {
+      var d = draft[di];
+      if (state.board[d.r][d.c]) { restoreOK = false; break; }
+      var ri = d.tile.blank
+        ? lp.rack.findIndex(function (t) { return t.l === '?'; })
+        : lp.rack.findIndex(function (t) { return t.l === d.tile.l && !t.blank; });
+      if (ri < 0) { restoreOK = false; break; }
+      var rt = lp.rack.splice(ri, 1)[0];
+      var placed = d.tile.blank ? { l: d.tile.l, blank: true } : { l: rt.l, blank: !!rt.blank };
+      state.board[d.r][d.c] = placed;
+      restored.push({ r: d.r, c: d.c, tile: placed });
+    }
+    if (restoreOK) {
+      pending = restored;
+    } else {
+      pending = [];
+      anchor = null;
+      pendingWord = null;
+    }
+    render();
   }  
   function initBroadcastChannel(id) { if (location.protocol === 'file:') return; try { if (btChannel) btChannel.close(); btChannel = new BroadcastChannel('bt_' + id); btChannel.onmessage = function (e) { if (e.data && e.data.game) applyExternalState(e.data.game); }; } catch (e) { } }  
   function broadcastGame(g) { if (location.protocol === 'file:') return; try { if (btChannel) btChannel.postMessage({ game: g }); } catch (e) { } }  
