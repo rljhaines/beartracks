@@ -1026,7 +1026,7 @@ body {
   window.addEventListener('resize', scheduleFit);  
   if (window.visualViewport) { window.visualViewport.addEventListener('resize', scheduleFit); window.visualViewport.addEventListener('scroll', scheduleFit); }  
   $('submitWord').onclick = commit; $('undo').onclick = undo; $('pass').onclick = pass; $('playWord').onclick = playTyped; $('shuffle').onclick = shuffleRack; $('exchg').onclick = exchange;  
-  $('wordInput').onkeydown = function (e) { if (e.key === 'Enter') { if (waiting) return; e.preventDefault(); playTyped(); } };  
+  $('wordInput').onkeydown = function (e) { if (e.key === 'Tab' && !e.shiftKey) { e.preventDefault(); var play = $('playWord'); if (play && !play.disabled) play.focus(); return; } if (e.key === 'Enter') { if (waiting) return; e.preventDefault(); playTyped(); } };  
   $('wordInput').addEventListener('input', function () { if (waiting) return; if (!anchor) return; let raw = this.value; if (!raw) { if (pending.length) { let lr = getLocalRack(); for (let i = pending.length - 1; i >= 0; i--) { let x = pending[i]; state.board[x.r][x.c] = null; lr.push(x.tile.blank ? tile('?') : x.tile); } pending = []; render(); } return; } let parsed = parseEntry(raw); let word = parsed.word; if (!word) return; if (word.length >= 1) placeWordAtAnchor(word); });  
   (function () {  
     var p = $('instrPanel'), h = $('instrHead'); if (!p || !h) return;  
