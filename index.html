@@ -654,9 +654,16 @@ body {
     let newP1 = (g.players?.[1]?.name || "").toLowerCase();  
     let isPlaceholder = curP1 === "" || curP1.indexOf("opponent") === 0;  
     let newIsReal = newP1 !== "" && newP1.indexOf("opponent") !== 0;  
-    if (isPlaceholder && newIsReal && g.moveCount === state.moveCount) {  
-      state.players[1].name = g.players[1].name;  
-      render(); return;  
+    let sameMove = typeof g.moveCount === 'number' && typeof state.moveCount === 'number' && g.moveCount === state.moveCount;  
+    if (sameMove) {  
+      // A draft is local, uncommitted state.  An external snapshot at the same  
+      // move must not erase it.  The one legitimate same-move update is the  
+      // placeholder opponent becoming a real player.  Update only that name.  
+      if (isPlaceholder && newIsReal) {  
+        state.players[1].name = g.players[1].name;  
+        render();  
+      }  
+      return;  
     }  
     if (typeof g.moveCount === 'number' && typeof state.moveCount === 'number' && g.moveCount < state.moveCount) return;  
     state = cloneRacks(g); pending = []; anchor = null; pendingWord = null; selected = -1; cancelExchange(); render();  
@@ -1002,15 +1009,7 @@ body {
       let isPlaceholder = p1 === "" || p1.indexOf("opponent") === 0;  
       if (!isPlaceholder && !waiting) return;  
       let g = await loadGame(state.id);  
-      if (g) {  
-        let gp1 = (g.players?.[1]?.name || "").toLowerCase();  
-        let gIsPlaceholder = gp1 === "" || gp1.indexOf("opponent") === 0;  
-        /* A one-player game legitimately has a placeholder opponent.  Do not
-           replace the local draft with an identical server snapshot merely
-           because that placeholder is still waiting to be filled. */  
-        if (gIsPlaceholder && g.moveCount === state.moveCount) return;  
-        applyExternalState(g);  
-      }  
+      if (g) applyExternalState(g);  
     } catch (e) { }  
   }, 1000);  
   // END FIX
