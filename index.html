@@ -495,6 +495,7 @@ body {
       ></div>  
       <div class="entry-wrap"><input  
           id="wordInput"  
+          tabindex="1"  
           maxlength="30"  
           placeholder="Type word or word 8,8,0"  
           autocomplete="off"  
@@ -502,23 +503,23 @@ body {
         ></div>  
       <div class="side-stack left"><button  
           class="btn-pill"  
-          id="undo"  
+          id="undo" tabindex="4"  
         ><i>&#8617;</i> Undo</button><button  
           class="btn-pill"  
-          id="shuffle"  
+          id="shuffle" tabindex="5"  
         ><i>&#8644;</i> Shuffle</button><button  
           class="btn-pill"  
-          id="exchg"  
+          id="exchg" tabindex="7"  
         ><i>&#8646;</i> Exchg</button></div>  
       <div class="side-stack right"><button  
           class="btn-pill"  
-          id="playWord"  
+          id="playWord" tabindex="2"  
         ><i>&#9654;</i> Play</button><button  
           class="btn-pill"  
-          id="submitWord"  
+          id="submitWord" tabindex="3"  
         ><i>&#10003;</i> Submit</button><button  
           class="btn-pill"  
-          id="pass"  
+          id="pass" tabindex="6"  
         ><i>&#9197;</i> Pass</button></div>  
     </div>  
     <div  
@@ -792,10 +793,39 @@ body {
     if (!dragItem || dragItem.kind !== 'rack') return;  
     var targetI = Number(e.currentTarget.getAttribute('data-i'));  
     var rack = getLocalRack();  
-    if (targetI === dragItem.i) { dragItem = null; return; }  
-    var from = dragItem.i, moved = rack.splice(from, 1)[0];  
-    rack.splice(targetI, 0, moved);  
-    rackGap = from > targetI ? targetI + 1 : targetI; /* gap opens between the dropped tile and the tile it landed on */  
+    var from = dragItem.i;  
+    if (targetI === from) { dragItem = null; return; }  
+
+    /*
+       rackGap is the number of tiles before the visual gap.  The gap is a
+       separator between two groups, not a permanent slot.  A drag within
+       one side leaves the separator where it was.  A drag across the
+       separator carries the separator to immediately after the moved tile.
+
+       Thus, for example:
+         A | B C D  + move B to A  ->  B A | C D
+         A B | C D E + move C left ->  C A B | D E
+         A B | C D E + move A right -> B C A | D E
+
+       The same rule naturally continues at every gap position and in both
+       directions.
+    */
+    var g = Math.max(0, Math.min(rackGap, rack.length));
+    var crossed = (from < g && targetI >= g) || (from >= g && targetI < g);
+
+    var moved = rack.splice(from, 1)[0];
+    var insertI = targetI - (from < targetI ? 1 : 0);
+    rack.splice(insertI, 0, moved);
+
+    if (crossed) {
+      /* The moved tile and the tiles it crossed into now form one group. */
+      rackGap = insertI + 1;
+    } else {
+      /* A rearrangement wholly within one side does not move the separator. */
+      rackGap = g;
+    }
+    rackGap = Math.max(0, Math.min(rackGap, rack.length));
+
     dragItem = null; selected = -1;  
     renderRack();  
   }
@@ -1026,7 +1056,7 @@ body {
   window.addEventListener('resize', scheduleFit);  
   if (window.visualViewport) { window.visualViewport.addEventListener('resize', scheduleFit); window.visualViewport.addEventListener('scroll', scheduleFit); }  
   $('submitWord').onclick = commit; $('undo').onclick = undo; $('pass').onclick = pass; $('playWord').onclick = playTyped; $('shuffle').onclick = shuffleRack; $('exchg').onclick = exchange;  
-  $('wordInput').onkeydown = function (e) { if (e.key === 'Tab' && !e.shiftKey) { e.preventDefault(); var play = $('playWord'); if (play && !play.disabled) play.focus(); return; } if (e.key === 'Enter') { if (waiting) return; e.preventDefault(); playTyped(); } };  
+  $('wordInput').onkeydown = function (e) { if (e.key === 'Enter') { if (waiting) return; e.preventDefault(); playTyped(); } };  
   $('wordInput').addEventListener('input', function () { if (waiting) return; if (!anchor) return; let raw = this.value; if (!raw) { if (pending.length) { let lr = getLocalRack(); for (let i = pending.length - 1; i >= 0; i--) { let x = pending[i]; state.board[x.r][x.c] = null; lr.push(x.tile.blank ? tile('?') : x.tile); } pending = []; render(); } return; } let parsed = parseEntry(raw); let word = parsed.word; if (!word) return; if (word.length >= 1) placeWordAtAnchor(word); });  
   (function () {  
     var p = $('instrPanel'), h = $('instrHead'); if (!p || !h) return;  
