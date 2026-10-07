@@ -479,7 +479,7 @@ body {
 }  
 
 
-   </style>   </head> <body>     <main       class="wrap"       id="game"     >       <span id="turnPill" hidden></span>       <div class="stage">         <div class="left-col">           <div class="panel status-panel">             <h3>Play Status</h3>             <div               class="panel-body gameplay-box"               id="gameplayBox"             >               <div                 class="placement"                 id="placement"               ></div>               <div                 class="status"                 id="status"               ></div>             </div>           </div>           <div             class="panel instr-panel"             id="instrPanel"           >             <h3               id="instrHead"               role="button"               tabindex="0"               aria-expanded="true"             >Gameplay Instructions</h3>             <div class="panel-body">               <p>Type word or <em>word 8,8,0</em> format.<br><br>&bull; Undo: last move<br>&bull; Shuffle: rack<br>&bull; Exchg: exchange                 tiles<br>&bull; Play: preview<br>&bull; Submit: lock in<br>&bull; Pass: skip turn</p>             </div>           </div>         </div> 
+   </style>   </head> <body>     <main       class="wrap"       id="game"     >       <span id="turnPill" hidden></span>       <div class="stage">         <div class="left-col">           <div class="panel status-panel">             <h3>Play Status</h3>             <div               class="panel-body gameplay-box"               id="gameplayBox"             >               <div                 class="placement"                 id="placement"               ></div>               <div                 class="status"                 id="status"               ></div>             </div>           </div>           <div             class="panel instr-panel"             id="instrPanel"           >             <h3               id="instrHead"               role="button"               tabindex="0"               aria-expanded="true"             >Gameplay Instructions</h3>             <div class="panel-body">               <p>Type word or <em>word 8,8,0</em> format.<br><br>&bull; Drag rack letters to rearrange them. You can drag a letter across the gap to either side; the gap moves with the crossing.<br>&bull; Undo: last move<br>&bull; Shuffle: rack<br>&bull; Exchg: exchange tiles<br>&bull; Play: preview<br>&bull; Submit: lock in<br>&bull; Pass: skip turn</p>             </div>           </div>         </div> 
 
   <div  
     class="combo"  
@@ -744,7 +744,7 @@ body {
     return state.turn  
   }  
   function getLocalRack() { if (!state) return []; return state.players[getLocalIdx()].rack; }  
-  /* Rack: Qwen tile markup. The gap is the same margin Qwen puts after tile 5, but it now follows the player's last placement (rackGap = number of tiles before the gap). */  
+  /* Rack: the gap is a separator at rackGap, the number of tiles before it. It may be crossed in either direction by dragging a letter. */  
   function renderRack() {  
     if (!state) return;  
     var rack = getLocalRack(); if (waiting && waitingRack) { rack = waitingRack; }  
@@ -753,7 +753,7 @@ body {
       st = (g === 0 && i === 0) ? ' style="margin-left: calc(var(--board-size) * 0.7 / 15)"' : (i === g - 1 ? ' style="margin-right: calc(var(--board-size) * 0.7 / 15)"' : '');  
       rh += '<div draggable="true" class="rack-tile' + (i === selected ? ' selected' : '') + (exchSet.has(rack[i]) ? ' xsel' : '') + '" data-i="' + i + '"' + st + '>' + rack[i].l + '<b>' + V[rack[i].l] + '</b></div>';  
     }  
-    $('rack').innerHTML = rh; var rs = $('rack').children;  
+    $('rack').innerHTML = rh; var rs = $('rack').children; $('rack').ondragover = allowRackDrop; $('rack').ondrop = dropOnRack;  
     for (i = 0; i < rs.length; i++) { rs[i].onclick = pick; rs[i].ondragstart = dragRack; rs[i].ondragover = allowDrop; rs[i].ondrop = dropOnRackTile; }  
   }  
   function render() {  
@@ -786,58 +786,53 @@ body {
   function dragBoard(e) { if (waiting) return; let li = getLocalIdx(); let isMyTurn = (state.moveCount === 0) ? true : (state.turn === li); if (!isMyTurn) return; var r = Number(e.currentTarget.getAttribute('data-r')), c = Number(e.currentTarget.getAttribute('data-c')); if (!isNew(r, c)) { e.preventDefault(); return } dragItem = { kind: 'board', r: r, c: c }; }  
   function dropCell(e) { if (waiting) return; let li = getLocalIdx(); let isMyTurn = (state.moveCount === 0) ? true : (state.turn === li); if (!isMyTurn) return; e.preventDefault(); if (!dragItem) return; var r = Number(e.currentTarget.getAttribute('data-r')), c = Number(e.currentTarget.getAttribute('data-c')); if (state.board[r][c] && !(dragItem.kind === 'board' && dragItem.r === r && dragItem.c === c)) return; if (dragItem.kind === 'rack') { var q = getLocalRack().splice(dragItem.i, 1)[0]; putTile(r, c, q); } else { var idx = -1; for (var i = 0; i < pending.length; i++)if (pending[i].r === dragItem.r && pending[i].c === dragItem.c) idx = i; if (idx < 0) return; var t = state.board[dragItem.r][dragItem.c]; state.board[dragItem.r][dragItem.c] = null; state.board[r][c] = t; pending[idx].r = r; pending[idx].c = c; } dragItem = null; render(); }
 
-  function dropOnRackTile(e) {  
-    if (waiting) return;  
-    let li = getLocalIdx(); let isMyTurn = (state.moveCount === 0) ? true : (state.turn === li); if (!isMyTurn) return;  
-    e.preventDefault();  
-    if (!dragItem || dragItem.kind !== 'rack') return;  
-    var targetI = Number(e.currentTarget.getAttribute('data-i'));  
-    var rack = getLocalRack();  
-    var from = dragItem.i;  
-    if (targetI === from) { dragItem = null; return; }  
-
-    /*
-       rackGap is the number of tiles before the visual gap.  The gap is a
-       separator between two groups, not a permanent slot.  A drag within
-       one side leaves the separator where it was.  A drag across the
-       separator carries the separator to immediately after the moved tile.
-
-       Thus, for example:
-         A | B C D  + move B to A  ->  B A | C D
-         A B | C D E + move C left ->  C A B | D E
-         A B | C D E + move A right -> B C A | D E
-
-       The same rule naturally continues at every gap position and in both
-       directions.
-    */
-    var g = Math.max(0, Math.min(rackGap, rack.length));
-    var crossed = (from < g && targetI >= g) || (from >= g && targetI < g);
-
-    var moved = rack.splice(from, 1)[0];
-    var insertI = targetI - (from < targetI ? 1 : 0);
-    rack.splice(insertI, 0, moved);
-
-    if (crossed) {
-      /*
-         The gap is the boundary between the two groups.  Moving one tile
-         across that boundary changes the size of each group by exactly one;
-         it does NOT put the gap after the tile's drop position.
-
-         Left -> right: the left group loses one tile, so the gap moves left.
-         Right -> left: the left group gains one tile, so the gap moves right.
-         The other tiles stay in their existing order.
-      */
-      rackGap = from < g ? g - 1 : g + 1;
-    } else {
-      /* A rearrangement wholly within one side does not move the separator. */
-      rackGap = g;
+  function rackDropIndex(e) {
+    var rackEl = $('rack'), tiles = rackEl ? rackEl.children : [], x = e.clientX;
+    if (!tiles.length) return 0;
+    for (var i = 0; i < tiles.length; i++) {
+      var r = tiles[i].getBoundingClientRect();
+      if (x < r.left + r.width / 2) return i;
     }
-    rackGap = Math.max(0, Math.min(rackGap, rack.length));
-
-    dragItem = null; selected = -1;  
-    renderRack();  
+    return tiles.length;
   }
-
+  function allowRackDrop(e) {
+    if (waiting || !dragItem || dragItem.kind !== 'rack') return;
+    e.preventDefault();
+    if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+  }
+  function applyRackDrop(from, target) {
+    var rack = getLocalRack();
+    if (from < 0 || from >= rack.length) { dragItem = null; return; }
+    var rawTarget = target;
+    var g = Math.max(0, Math.min(rackGap, rack.length));
+    if (rawTarget === from || rawTarget === from + 1) { dragItem = null; return; }
+    var moved = rack.splice(from, 1)[0];
+    if (target > from) target--;
+    target = Math.max(0, Math.min(target, rack.length));
+    rack.splice(target, 0, moved);
+    var crossed = (from < g && rawTarget >= g) || (from >= g && rawTarget < g);
+    if (crossed) rackGap = from < g ? g - 1 : g + 1;
+    else rackGap = g;
+    rackGap = Math.max(0, Math.min(rackGap, rack.length));
+    dragItem = null; selected = -1; renderRack();
+  }
+  function dropOnRack(e) {
+    if (waiting) return;
+    let li = getLocalIdx(); let isMyTurn = (state.moveCount === 0) ? true : (state.turn === li); if (!isMyTurn) return;
+    e.preventDefault();
+    if (!dragItem || dragItem.kind !== 'rack') return;
+    applyRackDrop(dragItem.i, rackDropIndex(e));
+  }
+  function dropOnRackTile(e) {
+    if (waiting) return;
+    let li = getLocalIdx(); let isMyTurn = (state.moveCount === 0) ? true : (state.turn === li); if (!isMyTurn) return;
+    e.preventDefault();
+    if (!dragItem || dragItem.kind !== 'rack') return;
+    var tile = e.currentTarget, i = Number(tile.getAttribute('data-i'));
+    var r = tile.getBoundingClientRect();
+    var target = e.clientX < r.left + r.width / 2 ? i : i + 1;
+    applyRackDrop(dragItem.i, target);
+  }
   function dropRack(e) { if (waiting) return; e.preventDefault(); if (!dragItem || dragItem.kind !== 'board') return; for (var i = 0; i < pending.length; i++)if (pending[i].r === dragItem.r && pending[i].c === dragItem.c) { state.board[dragItem.r][dragItem.c] = null; getLocalRack().push(pending[i].tile.blank ? tile('?') : pending[i].tile); state.board[dragItem.r][dragItem.c] = null; pending.splice(i, 1); break; } dragItem = null; render(); }  
   function startGesture(e) { if (waiting) return; let li = getLocalIdx(); let isMyTurn = (state.moveCount === 0) ? true : (state.turn === li); if (!isMyTurn) return; if (selected >= 0 || state.board[Number(e.currentTarget.getAttribute('data-r'))][Number(e.currentTarget.getAttribute('data-c'))]) return; gesture = { r: Number(e.currentTarget.getAttribute('data-r')), c: Number(e.currentTarget.getAttribute('data-c')) } }  
   function endGesture(e) { if (waiting || !gesture) return; var r = Number(e.currentTarget.getAttribute('data-r')), c = Number(e.currentTarget.getAttribute('data-c')); if (r === gesture.r && c !== gesture.c) { anchor = { r: gesture.r, c: gesture.c, d: 'H' }; suppressClick = true; } else if (c === gesture.c && r !== gesture.r) { anchor = { r: gesture.r, c: gesture.c, d: 'V' }; suppressClick = true; } gesture = null; if (suppressClick) { render(); } }  
