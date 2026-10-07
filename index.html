@@ -787,33 +787,68 @@ body {
   function dropCell(e) { if (waiting) return; let li = getLocalIdx(); let isMyTurn = (state.moveCount === 0) ? true : (state.turn === li); if (!isMyTurn) return; e.preventDefault(); if (!dragItem) return; var r = Number(e.currentTarget.getAttribute('data-r')), c = Number(e.currentTarget.getAttribute('data-c')); if (state.board[r][c] && !(dragItem.kind === 'board' && dragItem.r === r && dragItem.c === c)) return; if (dragItem.kind === 'rack') { var q = getLocalRack().splice(dragItem.i, 1)[0]; putTile(r, c, q); } else { var idx = -1; for (var i = 0; i < pending.length; i++)if (pending[i].r === dragItem.r && pending[i].c === dragItem.c) idx = i; if (idx < 0) return; var t = state.board[dragItem.r][dragItem.c]; state.board[dragItem.r][dragItem.c] = null; state.board[r][c] = t; pending[idx].r = r; pending[idx].c = c; } dragItem = null; render(); }
 
   function rackDropIndex(e) {
-    var rackEl = $('rack'), tiles = rackEl ? rackEl.children : [], x = e.clientX;
-    if (!tiles.length) return 0;
-    for (var i = 0; i < tiles.length; i++) {
-      var r = tiles[i].getBoundingClientRect();
-      if (x < r.left + r.width / 2) return i;
-    }
-    return tiles.length;
+    var rackEl = $('rack');
+    if (!rackEl) return 0;
+    var rect = rackEl.getBoundingClientRect();
+    var tiles = rackEl.children;
+    var n = tiles.length;
+    if (!n) return 0;
+    var x = Math.max(rect.left, Math.min(rect.right, e.clientX));
+    var slotW = rect.width / 8;
+    var physical = Math.max(0, Math.min(7, Math.floor((x - rect.left) / slotW)));
+    return physical;
   }
   function allowRackDrop(e) {
     if (waiting || !dragItem || dragItem.kind !== 'rack') return;
     e.preventDefault();
     if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
   }
-  function applyRackDrop(from, target) {
+  function applyRackDrop(from, physicalTarget) {
     var rack = getLocalRack();
     if (from < 0 || from >= rack.length) { dragItem = null; return; }
-    var rawTarget = target;
-    var g = Math.max(0, Math.min(rackGap, rack.length));
-    if (rawTarget === from || rawTarget === from + 1) { dragItem = null; return; }
-    var moved = rack.splice(from, 1)[0];
-    if (target > from) target--;
-    target = Math.max(0, Math.min(target, rack.length));
-    rack.splice(target, 0, moved);
-    var crossed = (from < g && rawTarget >= g) || (from >= g && rawTarget < g);
-    if (crossed) rackGap = from < g ? g - 1 : g + 1;
-    else rackGap = g;
-    rackGap = Math.max(0, Math.min(rackGap, rack.length));
+    var n = rack.length;
+    var g = Math.max(0, Math.min(rackGap, 7));
+    var sourcePos = from < g ? from : from + 1;
+    var targetPos = Math.max(0, Math.min(7, physicalTarget));
+    if (targetPos === sourcePos) { dragItem = null; return; }
+
+    var moved = rack[from];
+    var slots = new Array(8);
+    var ri = 0;
+    for (var pos = 0; pos < 8; pos++) {
+      if (pos === g) slots[pos] = null;
+      else slots[pos] = rack[ri++];
+    }
+
+    // Remove the dragged tile and close the resulting opening by shifting the
+    // intervening physical positions toward the destination. This is an 8-slot
+    // model: the drop position is a physical position, not merely a rack index.
+    if (targetPos < sourcePos) {
+      for (var p = sourcePos; p > targetPos; p--) slots[p] = slots[p - 1];
+      slots[targetPos] = moved;
+    } else {
+      for (var q = sourcePos; q < targetPos; q++) slots[q] = slots[q + 1];
+      slots[targetPos] = moved;
+    }
+
+    // The resulting empty position is determined by the original gap and the
+    // direction in which the dragged tile crossed it. If the source was on one
+    // side and the destination on the other, the gap advances one physical slot
+    // toward the source. Otherwise it stays where it was.
+    var crossed = (sourcePos < g && targetPos > g) || (sourcePos > g && targetPos < g);
+    if (crossed) g = sourcePos < g ? g + 1 : g - 1;
+
+    // The shift above has already produced exactly one empty slot. Keep the
+    // calculated gap synchronized with that physical slot.
+    var actualGap = -1;
+    for (var z = 0; z < 8; z++) if (!slots[z]) { actualGap = z; break; }
+    if (actualGap >= 0) g = actualGap;
+
+    var rebuilt = [];
+    for (var r = 0; r < 8; r++) if (slots[r]) rebuilt.push(slots[r]);
+    if (rebuilt.length !== n) { dragItem = null; return; }
+    for (var j = 0; j < n; j++) rack[j] = rebuilt[j];
+    rackGap = g;
     dragItem = null; selected = -1; renderRack();
   }
   function dropOnRack(e) {
@@ -828,10 +863,7 @@ body {
     let li = getLocalIdx(); let isMyTurn = (state.moveCount === 0) ? true : (state.turn === li); if (!isMyTurn) return;
     e.preventDefault();
     if (!dragItem || dragItem.kind !== 'rack') return;
-    var tile = e.currentTarget, i = Number(tile.getAttribute('data-i'));
-    var r = tile.getBoundingClientRect();
-    var target = e.clientX < r.left + r.width / 2 ? i : i + 1;
-    applyRackDrop(dragItem.i, target);
+    applyRackDrop(dragItem.i, rackDropIndex(e));
   }
   function dropRack(e) { if (waiting) return; e.preventDefault(); if (!dragItem || dragItem.kind !== 'board') return; for (var i = 0; i < pending.length; i++)if (pending[i].r === dragItem.r && pending[i].c === dragItem.c) { state.board[dragItem.r][dragItem.c] = null; getLocalRack().push(pending[i].tile.blank ? tile('?') : pending[i].tile); state.board[dragItem.r][dragItem.c] = null; pending.splice(i, 1); break; } dragItem = null; render(); }  
   function startGesture(e) { if (waiting) return; let li = getLocalIdx(); let isMyTurn = (state.moveCount === 0) ? true : (state.turn === li); if (!isMyTurn) return; if (selected >= 0 || state.board[Number(e.currentTarget.getAttribute('data-r'))][Number(e.currentTarget.getAttribute('data-c'))]) return; gesture = { r: Number(e.currentTarget.getAttribute('data-r')), c: Number(e.currentTarget.getAttribute('data-c')) } }  
