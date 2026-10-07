@@ -794,45 +794,38 @@ body {
     var n = tiles.length;
     if (!n) return 0;
 
-    /*
-     * For the ordinary gap positions, retain the existing physical-slot
-     * calculation exactly as before.  The special problem is when all seven
-     * letters are contiguous at one end: there are then two visually distinct
-     * destinations at the outside edge of that group, and dividing the rack
-     * into eight equal widths cannot reliably distinguish them.
-     *
-     * At gap 0, physical position 0 is the space immediately before the first
-     * tile; positions 1..7 are the seven tile positions.
-     * At gap 7, positions 0..6 are the seven tile positions and position 7 is
-     * the space immediately after the last tile.  Use the actual tile centers
-     * and the actual outside space for those two cases.  This changes only the
-     * destination mapping; applyRackDrop() continues to do the letter movement.
-     */
     var g = Math.max(0, Math.min(rackGap, 7));
-    if (g === 0 || g === 7) {
-      var centers = new Array(8);
-      var i, r, first, last;
-      if (g === 0) {
-        first = tiles[0].getBoundingClientRect();
-        centers[0] = rect.left + Math.max(0, first.left - rect.left) / 2;
-        for (i = 0; i < n; i++) {
-          r = tiles[i].getBoundingClientRect();
-          centers[i + 1] = (r.left + r.right) / 2;
-        }
-      } else {
-        for (i = 0; i < n; i++) {
-          r = tiles[i].getBoundingClientRect();
-          centers[i] = (r.left + r.right) / 2;
-        }
-        last = tiles[n - 1].getBoundingClientRect();
-        centers[7] = last.right + Math.max(0, rect.right - last.right) / 2;
+
+    /*
+     * The ordinary eight-position calculation is deliberately unchanged.
+     * At an extreme gap, however, the two physical destinations nearest the
+     * outside edge of the contiguous seven-letter group both need to be
+     * reachable.  Treat the outside tile as two drop halves:
+     *
+     *   gap 0:  [target 0 | target 1] tile 0, then targets 2..7 = tiles 1..6
+     *   gap 7:  targets 0..5 = tiles 0..5, then [target 6 | target 7] tile 6
+     *
+     * This leaves the existing applyRackDrop() model intact.  In particular,
+     * target 0 at gap 0 and target 7 at gap 7 are the far-side moves, while
+     * target 1 / target 6 remain the corresponding near-side destinations.
+     */
+    if (g === 0) {
+      var first = tiles[0].getBoundingClientRect();
+      if (e.clientX < first.left + first.width / 2) return 0;
+      for (var li = 1; li < n; li++) {
+        var lr = tiles[li].getBoundingClientRect();
+        if (e.clientX < lr.left + lr.width / 2) return li + 1;
       }
-      var best = 0, bestDist = Infinity;
-      for (i = 0; i < 8; i++) {
-        var dist = Math.abs(e.clientX - centers[i]);
-        if (dist < bestDist) { bestDist = dist; best = i; }
+      return 7;
+    }
+
+    if (g === 7) {
+      for (var ri = 0; ri < n - 1; ri++) {
+        var rr = tiles[ri].getBoundingClientRect();
+        if (e.clientX < rr.left + rr.width / 2) return ri;
       }
-      return best;
+      var last = tiles[n - 1].getBoundingClientRect();
+      return e.clientX < last.left + last.width / 2 ? 6 : 7;
     }
 
     var x = Math.max(rect.left, Math.min(rect.right, e.clientX));
