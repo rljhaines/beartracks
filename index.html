@@ -479,7 +479,7 @@ body {
 }  
 
 
-   </style>   </head> <body>     <main       class="wrap"       id="game"     >       <span id="turnPill" hidden></span>       <div class="stage">         <div class="left-col">           <div class="panel status-panel">             <h3>Play Status</h3>             <div               class="panel-body gameplay-box"               id="gameplayBox"             >               <div                 class="placement"                 id="placement"               ></div>               <div                 class="status"                 id="status"               ></div>             </div>           </div>           <div             class="panel instr-panel"             id="instrPanel"           >             <h3               id="instrHead"               role="button"               tabindex="0"               aria-expanded="true"             >Gameplay Instructions</h3>             <div class="panel-body">               <p>Type word or <em>word 8,8,0</em> format.<br><br>&bull; Drag rack letters to rearrange them. You can drag a letter across the gap to either side; the gap moves with the crossing.<br>&bull; Undo: last move<br>&bull; Shuffle: rack<br>&bull; Exchg: exchange tiles<br>&bull; Play: preview<br>&bull; Submit: lock in<br>&bull; Pass: skip turn</p>             </div>           </div>         </div> 
+   </style>   </head> <body>     <main       class="wrap"       id="game"     >       <span id="turnPill" hidden></span>       <div class="stage">         <div class="left-col">           <div class="panel status-panel">             <h3>Play Status</h3>             <div               class="panel-body gameplay-box"               id="gameplayBox"             >               <div                 class="placement"                 id="placement"               ></div>               <div                 class="status"                 id="status"               ></div>             </div>           </div>           <div             class="panel instr-panel"             id="instrPanel"           >             <h3               id="instrHead"               role="button"               tabindex="0"               aria-expanded="true"             >Gameplay Instructions</h3>             <div class="panel-body">               <p>Type word or <em>word 8,8,0</em> format.<br><br>&bull; Drag rack letters to rearrange them. Drag rack letters to rearrange them. When all seven letters are together at an end, you can also drop a letter outside the group to bring the gap back into it.<br>&bull; Undo: last move<br>&bull; Shuffle: rack<br>&bull; Exchg: exchange tiles<br>&bull; Play: preview<br>&bull; Submit: lock in<br>&bull; Pass: skip turn</p>             </div>           </div>         </div> 
 
   <div  
     class="combo"  
@@ -793,10 +793,51 @@ body {
     var tiles = rackEl.children;
     var n = tiles.length;
     if (!n) return 0;
+
+    /*
+     * For the ordinary gap positions, retain the existing physical-slot
+     * calculation exactly as before.  The special problem is when all seven
+     * letters are contiguous at one end: there are then two visually distinct
+     * destinations at the outside edge of that group, and dividing the rack
+     * into eight equal widths cannot reliably distinguish them.
+     *
+     * At gap 0, physical position 0 is the space immediately before the first
+     * tile; positions 1..7 are the seven tile positions.
+     * At gap 7, positions 0..6 are the seven tile positions and position 7 is
+     * the space immediately after the last tile.  Use the actual tile centers
+     * and the actual outside space for those two cases.  This changes only the
+     * destination mapping; applyRackDrop() continues to do the letter movement.
+     */
+    var g = Math.max(0, Math.min(rackGap, 7));
+    if (g === 0 || g === 7) {
+      var centers = new Array(8);
+      var i, r, first, last;
+      if (g === 0) {
+        first = tiles[0].getBoundingClientRect();
+        centers[0] = rect.left + Math.max(0, first.left - rect.left) / 2;
+        for (i = 0; i < n; i++) {
+          r = tiles[i].getBoundingClientRect();
+          centers[i + 1] = (r.left + r.right) / 2;
+        }
+      } else {
+        for (i = 0; i < n; i++) {
+          r = tiles[i].getBoundingClientRect();
+          centers[i] = (r.left + r.right) / 2;
+        }
+        last = tiles[n - 1].getBoundingClientRect();
+        centers[7] = last.right + Math.max(0, rect.right - last.right) / 2;
+      }
+      var best = 0, bestDist = Infinity;
+      for (i = 0; i < 8; i++) {
+        var dist = Math.abs(e.clientX - centers[i]);
+        if (dist < bestDist) { bestDist = dist; best = i; }
+      }
+      return best;
+    }
+
     var x = Math.max(rect.left, Math.min(rect.right, e.clientX));
     var slotW = rect.width / 8;
-    var physical = Math.max(0, Math.min(7, Math.floor((x - rect.left) / slotW)));
-    return physical;
+    return Math.max(0, Math.min(7, Math.floor((x - rect.left) / slotW)));
   }
   function allowRackDrop(e) {
     if (waiting || !dragItem || dragItem.kind !== 'rack') return;
