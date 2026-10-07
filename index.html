@@ -818,8 +818,16 @@ body {
     rack.splice(insertI, 0, moved);
 
     if (crossed) {
-      /* The moved tile and the tiles it crossed into now form one group. */
-      rackGap = insertI + 1;
+      /*
+         The gap is the boundary between the two groups.  Moving one tile
+         across that boundary changes the size of each group by exactly one;
+         it does NOT put the gap after the tile's drop position.
+
+         Left -> right: the left group loses one tile, so the gap moves left.
+         Right -> left: the left group gains one tile, so the gap moves right.
+         The other tiles stay in their existing order.
+      */
+      rackGap = from < g ? g - 1 : g + 1;
     } else {
       /* A rearrangement wholly within one side does not move the separator. */
       rackGap = g;
