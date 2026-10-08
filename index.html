@@ -75,6 +75,8 @@ body {
 .instr-panel.collapsed { flex: 0 0 auto }  
 .instr-panel.collapsed .panel-body { display: none }  
 .instr-panel.collapsed h3 { border-bottom: 0 }  
+.instr-panel.collapsed .two-letter { display: none }
+.two-letter { flex: 0 0 auto; display: grid; grid-auto-flow: column; grid-template-rows: repeat(18, auto); grid-template-columns: repeat(6, minmax(0, 1fr)); column-gap: 4px; padding: 6px 10px 8px; border-top: 1px solid var(--tile-edge); font-size: clamp(8px, min(.82vw, 1.25vh), 12px); line-height: 1.28; color: #3a2f20 }  
 #instrHead { cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none }  
 #instrHead::after { content: "\25BE"; transition: transform .15s }  
 .instr-panel.collapsed #instrHead::after { transform: rotate(-90deg) }  
@@ -494,7 +496,8 @@ body {
 }  
 
 
-   </style>   </head> <body>     <main       class="wrap"       id="game"     >       <span id="turnPill" hidden></span>       <div class="stage">         <div class="left-col">           <div class="panel status-panel">             <h3>Play Status</h3>             <div               class="panel-body gameplay-box"               id="gameplayBox"             >               <div                 class="placement"                 id="placement"               ></div>               <div                 class="status"                 id="status"               ></div>             </div>           </div>           <div             class="panel instr-panel"             id="instrPanel"           >             <h3               id="instrHead"               role="button"               tabindex="0"               aria-expanded="true"             >Gameplay Instructions</h3>             <div class="panel-body">               <p>Type word or <em>word 8,8,0</em> format.<br><br>&bull; Drag rack letters to rearrange them. Drag rack letters to rearrange them. When all seven letters are together at an end, you can also drop a letter outside the group to bring the gap back into it.<br>&bull; Undo: last move<br>&bull; Shuffle: rack<br>&bull; Exchg: exchange tiles<br>&bull; Play: preview<br>&bull; Submit: lock in<br>&bull; Pass: skip turn</p>             </div>           </div>         </div> 
+   </style>   </head> <body>     <main       class="wrap"       id="game"     >       <span id="turnPill" hidden></span>       <div class="stage">         <div class="left-col">           <div class="panel status-panel">             <h3>Play Status</h3>             <div               class="panel-body gameplay-box"               id="gameplayBox"             >               <div                 class="placement"                 id="placement"               ></div>               <div                 class="status"                 id="status"               ></div>             </div>           </div>           <div             class="panel instr-panel"             id="instrPanel"           >             <h3               id="instrHead"               role="button"               tabindex="0"               aria-expanded="true"             >Gameplay Instructions</h3>             <div class="panel-body">               <p>Type word or <em>word 8,8,0</em> format.<br><br>&bull; Drag rack letters to rearrange them. When all seven letters are together at an end, you can also drop a letter outside the group to bring the gap back into it. Drag a staged letter from the board back to the rack to unstage it.<br>&bull; Undo: last move<br>&bull; Shuffle: rack<br>&bull; Exchg: exchange tiles<br>&bull; Play: preview<br>&bull; Submit: lock in<br>&bull; Pass: skip turn</p>             </div>
+            <div class="two-letter" id="twoLetter" aria-label="Two-letter words"><span>aa</span><span>ab</span><span>ad</span><span>ae</span><span>ag</span><span>ah</span><span>ai</span><span>al</span><span>am</span><span>an</span><span>ar</span><span>as</span><span>at</span><span>aw</span><span>ax</span><span>ay</span><span>ba</span><span>be</span><span>bi</span><span>bo</span><span>by</span><span>da</span><span>de</span><span>do</span><span>ed</span><span>ef</span><span>eh</span><span>el</span><span>em</span><span>en</span><span>er</span><span>es</span><span>et</span><span>ew</span><span>ex</span><span>fa</span><span>fe</span><span>gi</span><span>go</span><span>ha</span><span>he</span><span>hi</span><span>hm</span><span>ho</span><span>id</span><span>if</span><span>in</span><span>is</span><span>it</span><span>jo</span><span>ka</span><span>ki</span><span>la</span><span>li</span><span>lo</span><span>ma</span><span>me</span><span>mi</span><span>mm</span><span>mo</span><span>mu</span><span>my</span><span>na</span><span>ne</span><span>no</span><span>nu</span><span>od</span><span>oe</span><span>of</span><span>oh</span><span>oi</span><span>ok</span><span>om</span><span>on</span><span>op</span><span>or</span><span>os</span><span>ow</span><span>ox</span><span>oy</span><span>pa</span><span>pe</span><span>pi</span><span>po</span><span>qi</span><span>re</span><span>sh</span><span>si</span><span>so</span><span>ta</span><span>te</span><span>ti</span><span>to</span><span>uh</span><span>um</span><span>un</span><span>up</span><span>us</span><span>ut</span><span>we</span><span>wo</span><span>xi</span><span>xu</span><span>ya</span><span>ye</span><span>yo</span><span>za</span></div>           </div>         </div> 
 
   <div  
     class="combo"  
@@ -877,7 +880,7 @@ body {
     return Math.max(0, Math.min(7, Math.floor((x - rect.left) / slotW)));
   }
   function allowRackDrop(e) {
-    if (waiting || !dragItem || dragItem.kind !== 'rack') return;
+    if (waiting || !dragItem || (dragItem.kind !== 'rack' && dragItem.kind !== 'board')) return;
     e.preventDefault();
     if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
   }
@@ -933,17 +936,37 @@ body {
     if (waiting) return;
     let li = getLocalIdx(); let isMyTurn = (state.moveCount === 0) ? true : (state.turn === li); if (!isMyTurn) return;
     e.preventDefault();
-    if (!dragItem || dragItem.kind !== 'rack') return;
+    if (!dragItem) return;
+    if (dragItem.kind === 'board') { returnBoardTileToRack(e); return; }
+    if (dragItem.kind !== 'rack') return;
     applyRackDrop(dragItem.i, rackDropIndex(e));
   }
   function dropOnRackTile(e) {
     if (waiting) return;
     let li = getLocalIdx(); let isMyTurn = (state.moveCount === 0) ? true : (state.turn === li); if (!isMyTurn) return;
     e.preventDefault();
-    if (!dragItem || dragItem.kind !== 'rack') return;
+    if (!dragItem) return;
+    if (dragItem.kind === 'board') { returnBoardTileToRack(e); return; }
+    if (dragItem.kind !== 'rack') return;
     applyRackDrop(dragItem.i, rackDropIndex(e));
   }
-  function dropRack(e) { if (waiting) return; e.preventDefault(); if (!dragItem || dragItem.kind !== 'board') return; for (var i = 0; i < pending.length; i++)if (pending[i].r === dragItem.r && pending[i].c === dragItem.c) { state.board[dragItem.r][dragItem.c] = null; getLocalRack().push(pending[i].tile.blank ? tile('?') : pending[i].tile); state.board[dragItem.r][dragItem.c] = null; pending.splice(i, 1); break; } dragItem = null; render(); }  
+  // A staged (not yet submitted) tile dragged from the board goes back into the rack at the drop position.
+  function returnBoardTileToRack(e) {
+    var found = -1, i;
+    for (i = 0; i < pending.length; i++) if (pending[i].r === dragItem.r && pending[i].c === dragItem.c) found = i;
+    if (found < 0) { dragItem = null; return; }
+    var rack = getLocalRack();
+    var gEff = Math.min(rackGap, rack.length);
+    var t = rackDropIndex(e);                       // physical slot 0..7; slot gEff is the gap itself
+    var idx = Math.max(0, Math.min(rack.length, t <= gEff ? t : t - 1));
+    var x = pending[found];
+    state.board[x.r][x.c] = null;
+    rack.splice(idx, 0, x.tile.blank ? tile('?') : x.tile);
+    pending.splice(found, 1);
+    // Inserting ahead of the separator must not push a tile across it.
+    if (idx < rackGap && rack.length - 1 >= rackGap) rackGap = Math.min(7, rackGap + 1);
+    dragItem = null; selected = -1; render();
+  }
   function startGesture(e) { if (waiting) return; let li = getLocalIdx(); let isMyTurn = (state.moveCount === 0) ? true : (state.turn === li); if (!isMyTurn) return; if (selected >= 0 || state.board[Number(e.currentTarget.getAttribute('data-r'))][Number(e.currentTarget.getAttribute('data-c'))]) return; gesture = { r: Number(e.currentTarget.getAttribute('data-r')), c: Number(e.currentTarget.getAttribute('data-c')) } }  
   function endGesture(e) { if (waiting || !gesture) return; var r = Number(e.currentTarget.getAttribute('data-r')), c = Number(e.currentTarget.getAttribute('data-c')); if (r === gesture.r && c !== gesture.c) { anchor = { r: gesture.r, c: gesture.c, d: 'H' }; suppressClick = true; } else if (c === gesture.c && r !== gesture.r) { anchor = { r: gesture.r, c: gesture.c, d: 'V' }; suppressClick = true; } gesture = null; if (suppressClick) { render(); } }  
   function undo() { if (waiting) return; if (exchangeMode) { cancelExchange(); render(); return; } let li = getLocalIdx(); let isMyTurn = (state.moveCount === 0) ? true : (state.turn === li); if (!isMyTurn) return; var lr = getLocalRack(); for (var i = 0; i < pending.length; i++) { var x = pending[i]; state.board[x.r][x.c] = null; lr.push(x.tile.blank ? tile('?') : x.tile); } pending = []; selected = -1; anchor = null; pendingWord = null; $('wordInput').value = ''; clearPrompt(); render(); }  
@@ -1147,6 +1170,25 @@ body {
   function scheduleFit() { requestAnimationFrame(() => requestAnimationFrame(() => { fit(); setTimeout(fit, 80); setTimeout(fit, 300); })); }  
   window.addEventListener('resize', scheduleFit);  
   if (window.visualViewport) { window.visualViewport.addEventListener('resize', scheduleFit); window.visualViewport.addEventListener('scroll', scheduleFit); }  
+  // Shuffling, rearranging and clicking rack tiles must not pull the cursor out of the word-entry field.
+  (function () {
+    var inp = $('wordInput'), keep = false, selS = 0, selE = 0;
+    function arm() {
+      if (document.activeElement !== inp) return;
+      keep = true; selS = inp.selectionStart; selE = inp.selectionEnd;
+      setTimeout(function () { keep = false; }, 0);
+    }
+    ['rack', 'shuffle'].forEach(function (id) { var el = $(id); if (el) el.addEventListener('mousedown', arm, true); });
+    inp.addEventListener('blur', function () {
+      if (!keep) return;
+      keep = false;
+      setTimeout(function () {
+        if (inp.disabled) return;
+        inp.focus();
+        try { inp.setSelectionRange(selS, selE); } catch (_) { }
+      }, 0);
+    });
+  })();
   $('submitWord').onclick = commit; $('undo').onclick = undo; $('pass').onclick = pass; $('playWord').onclick = playTyped; $('shuffle').onclick = shuffleRack; $('exchg').onclick = exchange;  
   $('wordInput').onkeydown = function (e) { if (e.key === 'Enter') { if (waiting) return; e.preventDefault(); playTyped(); } };  
   $('wordInput').addEventListener('input', function () { if (waiting) return; if (!anchor) return; let raw = this.value; if (!raw) { if (pending.length) { let lr = getLocalRack(); for (let i = pending.length - 1; i >= 0; i--) { let x = pending[i]; state.board[x.r][x.c] = null; lr.push(x.tile.blank ? tile('?') : x.tile); } pending = []; render(); } return; } let parsed = parseEntry(raw); let word = parsed.word; if (!word) return; if (word.length >= 1) placeWordAtAnchor(word); });  
