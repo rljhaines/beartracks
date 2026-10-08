@@ -755,8 +755,22 @@ body {
      bt_seats (localStorage) = { gameId: { 0: token, 1: token } }.  The tab's own seat is the p= URL
      parameter, which is only a hint; the token is what the worker actually checks. */
   function seatVault() { try { return JSON.parse(localStorage.getItem('bt_seats') || '{}') || {}; } catch (e) { return {}; } }
-  function getSeatToken(gid, seat) { let v = seatVault(); return (v[gid] && v[gid][seat]) || null; }
-  function setSeatToken(gid, seat, tok) { if (!gid || !tok || (seat !== 0 && seat !== 1)) return; let v = seatVault(); v[gid] = v[gid] || {}; v[gid][seat] = tok; try { localStorage.setItem('bt_seats', JSON.stringify(v)); } catch (e) { } }
+  // A per-tab copy (sessionStorage) rides along so that clearing localStorage in another tab of the
+  // same browser cannot strand this tab's seat.  It dies with the tab, so closing and reopening a tab
+  // after a clear really is a fresh start.
+  function sessVault() { try { return JSON.parse(sessionStorage.getItem('bt_seats_tab') || '{}') || {}; } catch (e) { return {}; } }
+  function putSess(gid, seat, tok) { try { let v = sessVault(); v[gid] = v[gid] || {}; v[gid][seat] = tok; sessionStorage.setItem('bt_seats_tab', JSON.stringify(v)); } catch (e) { } }
+  function getSeatToken(gid, seat) {
+    let v = seatVault(), t = (v[gid] && v[gid][seat]) || null;
+    if (t) { putSess(gid, seat, t); return t; }
+    let sv = sessVault(); t = (sv[gid] && sv[gid][seat]) || null;
+    if (t) setSeatToken(gid, seat, t);
+    return t;
+  }
+  function setSeatToken(gid, seat, tok) { if (!gid || !tok || (seat !== 0 && seat !== 1)) return; let v = seatVault(); v[gid] = v[gid] || {}; v[gid][seat] = tok; try { localStorage.setItem('bt_seats', JSON.stringify(v)); } catch (e) { } putSess(gid, seat, tok); }
+  // Seat-1 tabs keep the invite id in the address bar so that reopening the tab (or registering after a
+  // clear) can get back into this same game through the invite.
+  function keepInviteInUrl(id) { try { if (!id) return; let u = new URL(location.href); u.searchParams.set('invite', id); history.replaceState(null, '', u.pathname + u.search + u.hash); } catch (e) { } }
   function seatHeaders(gid, seat, extra) { let h = Object.assign({}, extra || {}); let t = getSeatToken(gid, seat); if (t) h['X-Seat-Token'] = t; return h; }
   function makeSeatUrl(gid, seat) { let t = getSeatToken(gid, seat); if (!t) return null; return LIVE_SITE + '?game=' + encodeURIComponent(gid) + '&p=' + seat + '#k=' + encodeURIComponent(t); }
   function randomId() { let b = crypto.getRandomValues(new Uint8Array(16)), s2 = ''; for (let i = 0; i < b.length; i++) s2 += String.fromCharCode(b[i]); return btoa(s2).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
@@ -1112,12 +1126,16 @@ body {
   async function linkGameViaInvite(inviteId, newUsername) {
     let inv = null; for (let a = 0; a < 5; a++) { inv = await loadInvite(inviteId); if (inv) break; await new Promise(r => setTimeout(r, 500)); }
     if (!inv) return null;
+    // Seat is decided by the key, not the name.  If this browser's name is the host's (same-browser testing),
+    // seat 1 gets a distinguishable display name instead of showing the host's name twice.
+    let claimName = newUsername;
+    if (inv.invitedBy && String(newUsername).toLowerCase() === String(inv.invitedBy).toLowerCase()) claimName = newUsername + ' (2)';
     if (inv.gameId) {
       // The worker claims seat 1 atomically-enough, burns the invite, and hands back seat 1's key.
       // A browser that already holds that key is simply let back in.
       for (let a = 0; a < 5; a++) {
         try {
-          let r = await fetch(API + "/invites/" + encodeURIComponent(inviteId) + "/claim", { method: "POST", headers: seatHeaders(inv.gameId, 1, { "Content-Type": "application/json" }), body: JSON.stringify({ name: newUsername }) });
+          let r = await fetch(API + "/invites/" + encodeURIComponent(inviteId) + "/claim", { method: "POST", headers: seatHeaders(inv.gameId, 1, { "Content-Type": "application/json" }), body: JSON.stringify({ name: claimName }) });
           if (r.status === 409) { try { message('This invitation has already been used.'); } catch (e) { } return null; }
           if (!r.ok) { await new Promise(r => setTimeout(r, 400)); continue; }
           let j = await r.json(); if (!j || !j.game) return null;
@@ -1144,7 +1162,9 @@ body {
       if (!res || !res.game) return false;
       currentInvite = res.invite || inv;
       forgetPendingInvite(inv.id);
-      return await enterGameDirect(res.game, 1);
+      let entered = await enterGameDirect(res.game, 1);
+      keepInviteInUrl(inv.id);
+      return entered;
     } catch (e) { return false; }
   }
   async function showHeadsUp(inviteId, gameObj, isInvite) {  
@@ -1192,7 +1212,7 @@ body {
       } catch (e) { }  
     })();  
   }  
-  async function handleRegister() { let uEl = $('reg-user'), pEl = $('reg-pass'), p2El = $('reg-pass2'), errEl = $('reg-error'); let u = uEl ? uEl.value.trim() : '', p = pEl ? pEl.value : '', p2 = p2El ? p2El.value : ''; if (errEl) errEl.textContent = ''; if (!u || !p) { if (errEl) errEl.textContent = 'Fill username and password'; return; } if (p !== p2) { if (errEl) errEl.textContent = 'Passwords do not match'; return; } let users = []; try { users = JSON.parse(localStorage.getItem("bt_users") || "[]") } catch (e) { users = [] } if (users.some(x => x.toLowerCase() === u.toLowerCase())) { if (errEl) errEl.textContent = 'Username taken'; return; } localStorage.setItem("bt_owner", u); try { localStorage.removeItem("bt_pass_" + u.toLowerCase()); } catch (e) { } users.push(u); localStorage.setItem("bt_users", JSON.stringify(users)); let inviteParam = null; try { inviteParam = new URLSearchParams(location.search).get("invite"); } catch (e) { } if (inviteParam) { try { let res = await linkGameViaInvite(inviteParam, u); if (res && res.game) { forgetPendingInvite(inviteParam); currentInvite = res.invite || currentInvite; await enterGameDirect(res.game, 1); return; } } catch (e) { } } renderBoxes(); }  
+  async function handleRegister() { let uEl = $('reg-user'), pEl = $('reg-pass'), p2El = $('reg-pass2'), errEl = $('reg-error'); let u = uEl ? uEl.value.trim() : '', p = pEl ? pEl.value : '', p2 = p2El ? p2El.value : ''; if (errEl) errEl.textContent = ''; if (!u || !p) { if (errEl) errEl.textContent = 'Fill username and password'; return; } if (p !== p2) { if (errEl) errEl.textContent = 'Passwords do not match'; return; } let users = []; try { users = JSON.parse(localStorage.getItem("bt_users") || "[]") } catch (e) { users = [] } if (users.some(x => x.toLowerCase() === u.toLowerCase())) { if (errEl) errEl.textContent = 'Username taken'; return; } localStorage.setItem("bt_owner", u); try { localStorage.removeItem("bt_pass_" + u.toLowerCase()); } catch (e) { } users.push(u); localStorage.setItem("bt_users", JSON.stringify(users)); let inviteParam = null; try { inviteParam = new URLSearchParams(location.search).get("invite"); } catch (e) { } if (inviteParam) { try { let res = await linkGameViaInvite(inviteParam, u); if (res && res.game) { forgetPendingInvite(inviteParam); currentInvite = res.invite || currentInvite; await enterGameDirect(res.game, 1); keepInviteInUrl(inviteParam); return; } } catch (e) { } } renderBoxes(); }  
   async function handleBegin() { let owner = getOwner(); if (!owner) { renderBoxes(); return; } let opp = ($('nameB') ? $('nameB').value.trim() : ''); let g = fresh(owner, opp || "Opponent"); await saveGameToCF(g, { withSeat1: !!opp }); initBroadcastChannel(g.id); if (!opp) { let iid = randomId(); currentInvite = { id: iid, invitedBy: owner, invitedByOpponents: getOpponents(), gameId: g.id, mode: "game-invite", created: Date.now() }; try { await saveInviteToCF(currentInvite); } catch (e) { } addOpponent(opp); await showHeadsUp(iid, g, true); } else { currentInvite = null; if (opp) addOpponent(opp); await showHeadsUp(null, g, false); } }  
   async function handleCreateInvitation() { let owner = getOwner(); if (!owner) { renderBoxes(); return; } let id = randomId(); let placeholder = fresh(owner, "Opponent"); await saveGameToCF(placeholder); initBroadcastChannel(placeholder.id); let inv = { id: id, invitedBy: owner, invitedByOpponents: getOpponents(), gameId: placeholder.id, mode: "unregistered-invite", created: Date.now() }; await saveInviteToCF(inv); currentInvite = inv; await showHeadsUp(id, placeholder, true); }  
   function equalizePills() { const pills = document.querySelectorAll('.btn-pill'); pills.forEach(p => p.style.width = 'max-content'); let max = 0; pills.forEach(p => { max = Math.max(max, p.offsetWidth); }); pills.forEach(p => p.style.width = max + 'px'); }  
