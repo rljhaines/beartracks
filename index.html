@@ -1368,7 +1368,9 @@ body {
   // A tab that was open before the second player joined was never locked when it was left.  It learns about the
   // second player the moment the shared flag is written (storage events reach background tabs), and checks again on return.
   function gateLeave() { gateLeft = true; try { mirrorPassword(gateName()); } catch (e) { } lockGate(); }
-  function gateReturn() { if (gateLeft && gateArmed()) lockGate(); else if (!gateLocked) gateLeft = false; }
+  // A tab locked while it was in the background could not take focus then; put the cursor in the password field as the person comes back.
+  function focusUnlock() { [0, 60, 250].forEach(function (d) { setTimeout(function () { try { if (gateLocked && document.visibilityState !== 'hidden') $('unlock-pass').focus(); } catch (e) { } }, d); }); }
+  function gateReturn() { if (gateLocked) { focusUnlock(); return; } if (gateLeft && gateArmed()) { lockGate(); focusUnlock(); } else gateLeft = false; }
   window.addEventListener('storage', function (e) {
     // Another player registering in this browser (a changed owner name) makes this a shared browser: this tab's player gets a lock.
     if (e.key === 'bt_owner' && e.newValue && state && state.id) {
