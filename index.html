@@ -619,17 +619,7 @@ body {
       </div>
     </div>
 
-    <div       class="modal"       id="setup"       hidden     >       <section class="dialog">         <div           id="box-register"           class="start-game-box"         >           <h1>BearTracks Registration</h1>           <p>Register to play.</p><label>Username<input               id="reg-user"               placeholder="Username"               autofocus               autocomplete="username"             ></label><label>Password<input               id="reg-pass"               type="password"             ></label><label>Confirm password<input               id="reg-pass2"               type="password"             ></label><button id="btn-register">Register</button>           <div             id="reg-error"             class="error"           ></div>         </div>         <div           id="box-start"           class="start-game-box"           hidden         ><button             id="btn-logout"             class="logout-link"           >Log out</button>           <h1>Start a game</h1>           <div><strong id="owner-name"></strong></div><label>Opponent's name (optional)<input               id="nameB"               maxlength="28"               placeholder="Opponent username"             ></label>           <div style="display:flex;gap:8px;margin-top:10px"><button id="btn-begin">Begin Game</button><button               id="btn-invite"               class="action alt"             >Create Invitation</button></div>         </div>
-        <div id="box-unlock" class="start-game-box" hidden>
-          <h1>Welcome back</h1>
-          <div><strong id="unlock-name"></strong></div>
-          <p>Enter your password to continue.</p>
-          <label>Password<input id="unlock-pass" type="password" autocomplete="current-password"></label>
-          <button id="btn-unlock">Continue</button>
-          <div id="unlock-error" class="error"></div>
-          <a href="#" id="unlock-forgot" style="display:inline-block;margin-top:10px;font-size:.85em;color:inherit;text-decoration:underline">Forgot password</a>
-        </div>
-      </section>     </div>     <div       id="bt-headsup"       hidden     >       <div id="bt-headsup-box">         <div id="bt-headsup-left">           <div id="bt-headsup-help">Join me in a scrabble-like game on BearTracks:</div><textarea             id="bt-headsup-input"             readonly           ></textarea>         </div>         <div id="bt-headsup-right"><button             id="bt-headsup-copy-msg"             disabled           >Message copied</button><button id="bt-headsup-copy-link">Copy link instead</button><button             id="bt-headsup-continue"           >Continue to game</button></div>       </div>     </div>     <script       id="game-state"       type="application/json"     >null</script>     <script>       (function () {         'use strict';         var N = 15, C = 7, V = { A: 1, B: 3, C: 3, D: 2, E: 1, F: 4, G: 2, H: 4, I: 1, J: 8, K: 5, L: 1, M: 3, N: 1, O: 1, P: 3, Q: 10, R: 1, S: 1, T: 1, U: 1, V: 4, W: 4, X: 8, Y: 4, Z: 10, "?": 0 };         var D = { A: 9, B: 2, C: 2, D: 4, E: 12, F: 2, G: 3, H: 2, I: 9, J: 1, K: 1, L: 4, M: 2, N: 6, O: 8, P: 2, Q: 1, R: 6, S: 4, T: 6, U: 4, V: 2, W: 2, X: 1, Y: 2, Z: 1, "?": 2 };         var TW = [[0, 0], [0, 7], [0, 14], [7, 0], [7, 14], [14, 0], [14, 7], [14, 14]], DW = [[1, 1], [2, 2], [3, 3], [4, 4], [10, 10], [11, 11], [12, 12], [13, 13], [1, 13], [2, 12], [3, 11], [4, 10], [10, 4], [11, 3], [12, 2], [13, 1], [7, 7]], TL = [[1, 5], [1, 9], [5, 1], [5, 5], [5, 9], [5, 13], [9, 1], [9, 5], [9, 9], [9, 13], [13, 5], [13, 9]], DL = [[0, 3], [0, 11], [2, 6], [2, 8], [3, 0], [3, 7], [3, 14], [6, 2], [6, 6], [6, 8], [6, 12], [7, 3], [7, 11], [8, 2], [8, 6], [8, 8], [8, 12], [11, 0], [11, 7], [11, 14], [12, 6], [12, 8], [14, 3], [14, 11]];         var state = null, pending = [], selected = -1, anchor = null, dragItem = null, gesture = null, suppressClick = false, waiting = false, waitingRack = null, waitingOpp = null, pendingWord = null;         var rackGap = 5, exchangeMode = false, exchSet = new Set();         const API = "https://beartracks-cfdurable-tt.beartracksgames.workers.dev"; const LIVE_SITE = "https://rljhaines.github.io/beartracks/";         let currentInvite = null; let btChannel = null; 
+    <div       class="modal"       id="setup"       hidden     >       <section class="dialog">         <div           id="box-register"           class="start-game-box"         >           <h1>BearTracks Registration</h1>           <p>Register to play.</p><label>Username<input               id="reg-user"               placeholder="Username"               autofocus               autocomplete="username"             ></label><label>Password<input               id="reg-pass"               type="password"             ></label><label>Confirm password<input               id="reg-pass2"               type="password"             ></label><button id="btn-register">Register</button>           <div             id="reg-error"             class="error"           ></div>         </div>         <div           id="box-start"           class="start-game-box"           hidden         ><button             id="btn-logout"             class="logout-link"           >Log out</button>           <h1>Start a game</h1>           <div><strong id="owner-name"></strong></div><label>Opponent's name (optional)<input               id="nameB"               maxlength="28"               placeholder="Opponent username"             ></label>           <div style="display:flex;gap:8px;margin-top:10px"><button id="btn-begin">Begin Game</button><button               id="btn-invite"               class="action alt"             >Create Invitation</button></div>         </div>       </section>     </div>     <div       id="bt-headsup"       hidden     >       <div id="bt-headsup-box">         <div id="bt-headsup-left">           <div id="bt-headsup-help">Join me in a scrabble-like game on BearTracks:</div><textarea             id="bt-headsup-input"             readonly           ></textarea>         </div>         <div id="bt-headsup-right"><button             id="bt-headsup-copy-msg"             disabled           >Message copied</button><button id="bt-headsup-copy-link">Copy link instead</button><button             id="bt-headsup-continue"           >Continue to game</button></div>       </div>     </div>     <script       id="game-state"       type="application/json"     >null</script>     <script>       (function () {         'use strict';         var N = 15, C = 7, V = { A: 1, B: 3, C: 3, D: 2, E: 1, F: 4, G: 2, H: 4, I: 1, J: 8, K: 5, L: 1, M: 3, N: 1, O: 1, P: 3, Q: 10, R: 1, S: 1, T: 1, U: 1, V: 4, W: 4, X: 8, Y: 4, Z: 10, "?": 0 };         var D = { A: 9, B: 2, C: 2, D: 4, E: 12, F: 2, G: 3, H: 2, I: 9, J: 1, K: 1, L: 4, M: 2, N: 6, O: 8, P: 2, Q: 1, R: 6, S: 4, T: 6, U: 4, V: 2, W: 2, X: 1, Y: 2, Z: 1, "?": 2 };         var TW = [[0, 0], [0, 7], [0, 14], [7, 0], [7, 14], [14, 0], [14, 7], [14, 14]], DW = [[1, 1], [2, 2], [3, 3], [4, 4], [10, 10], [11, 11], [12, 12], [13, 13], [1, 13], [2, 12], [3, 11], [4, 10], [10, 4], [11, 3], [12, 2], [13, 1], [7, 7]], TL = [[1, 5], [1, 9], [5, 1], [5, 5], [5, 9], [5, 13], [9, 1], [9, 5], [9, 9], [9, 13], [13, 5], [13, 9]], DL = [[0, 3], [0, 11], [2, 6], [2, 8], [3, 0], [3, 7], [3, 14], [6, 2], [6, 6], [6, 8], [6, 12], [7, 3], [7, 11], [8, 2], [8, 6], [8, 8], [8, 12], [11, 0], [11, 7], [11, 14], [12, 6], [12, 8], [14, 3], [14, 11]];         var state = null, pending = [], selected = -1, anchor = null, dragItem = null, gesture = null, suppressClick = false, waiting = false, waitingRack = null, waitingOpp = null, pendingWord = null;         var rackGap = 5, exchangeMode = false, exchSet = new Set();         const API = "https://beartracks-cfdurable-tt.beartracksgames.workers.dev"; const LIVE_SITE = "https://rljhaines.github.io/beartracks/";         let currentInvite = null; let btChannel = null; 
 
   let commChannel = null;  
   let commGameId = null;  
@@ -806,48 +796,14 @@ body {
       Object.keys(inc).forEach(function (gid) { if (!/^[A-Za-z0-9_-]{4,64}$/.test(gid) || !inc[gid] || typeof inc[gid] !== 'object') return; [0, 1].forEach(function (seat) { let t = inc[gid][seat]; if (typeof t === 'string' && t && t.length < 200 && !(cur[gid] && cur[gid][seat])) { cur[gid] = cur[gid] || {}; cur[gid][seat] = t; added.seats++; } }); });
       localStorage.setItem('bt_seats', JSON.stringify(cur));
     }
-    if (typeof d['bt_shared'] === 'string') { let inc = jparse(d['bt_shared'], {}), cur = sharedMap(); Object.keys(inc).forEach(function (g) { if (/^[A-Za-z0-9_-]{4,64}$/.test(g) && inc[g] === true) cur[g] = true; }); localStorage.setItem('bt_shared', JSON.stringify(cur)); }
     Object.keys(d).forEach(function (k) {
       if (typeof d[k] !== 'string' || d[k].length > 500000) return;
-      if (k === 'bt_owner' || k === 'username' || k.indexOf('bt_pw_') === 0 || k.indexOf('bt_pending_invite_') === 0 || k.indexOf('bt_pending_game_') === 0) { if (k !== 'bt_pending_invite_ids' && localStorage.getItem(k) === null) localStorage.setItem(k, d[k]); }
+      if (k === 'bt_owner' || k === 'username' || k.indexOf('bt_pending_invite_') === 0 || k.indexOf('bt_pending_game_') === 0) { if (k !== 'bt_pending_invite_ids' && localStorage.getItem(k) === null) localStorage.setItem(k, d[k]); }
     });
     return added;
   }
   // Ask the browser not to evict this site's storage.  Returns true / false / null (unsupported).
   async function requestPersistence() { try { if (!navigator.storage || !navigator.storage.persist) return null; if (await navigator.storage.persisted()) return true; return !!(await navigator.storage.persist()); } catch (e) { return null; } }
-  /* ---- shared-browser gate ----
-     Only when a second player has claimed a seat in a browser that already holds the first player's seat.
-     Leaving the tab or the window locks it behind the splash screen; coming back asks for that tab's player's
-     password.  This is a courtesy between two people at one device, not protection against someone who knows
-     how to open the browser's storage. */
-  function pwHex(u8) { let o = ''; for (let i = 0; i < u8.length; i++) o += u8[i].toString(16).padStart(2, '0'); return o; }
-  function pwUnhex(h) { let o = new Uint8Array(h.length / 2); for (let i = 0; i < o.length; i++) o[i] = parseInt(h.substr(i * 2, 2), 16); return o; }
-  async function pwDerive(password, salt) { let km = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']); return pwHex(new Uint8Array(await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: salt, iterations: 100000, hash: 'SHA-256' }, km, 256))); }
-  function pwKey(name) { return 'bt_pw_' + String(name || '').trim().toLowerCase(); }
-  function hasPassword(name) { try { return !!localStorage.getItem(pwKey(name)); } catch (e) { return false; } }
-  async function storePassword(name, password) { let salt = crypto.getRandomValues(new Uint8Array(16)); localStorage.setItem(pwKey(name), pwHex(salt) + ':' + await pwDerive(password, salt)); }
-  async function checkPassword(name, password) { let rec = null; try { rec = localStorage.getItem(pwKey(name)); } catch (e) { } if (!rec) return true; let parts = rec.split(':'); return (await pwDerive(password, pwUnhex(parts[0]))) === parts[1]; }
-  function sharedMap() { try { return JSON.parse(localStorage.getItem('bt_shared') || '{}') || {}; } catch (e) { return {}; } }
-  function markShared(gid) { try { let m = sharedMap(); m[gid] = true; localStorage.setItem('bt_shared', JSON.stringify(m)); } catch (e) { } }
-  function isShared(gid) { return !!sharedMap()[gid]; }
-  let gateLocked = false, gateFresh = false, gateSeen = false;  // gateSeen: this tab has been inside the gate at least once
-  function gateName() { try { return state.players[getLocalIdx()].name; } catch (e) { return ''; } }
-  function gateArmed() { try { return !!(state && state.id && isShared(state.id) && hasPassword(gateName())); } catch (e) { return false; } }
-  function lockGate() {
-    if (gateLocked || !gateArmed()) return;
-    gateLocked = true; gateSeen = true;
-    $('unlock-name').textContent = gateName(); $('unlock-pass').value = ''; $('unlock-error').textContent = '';
-    $('box-register').hidden = true; $('box-start').hidden = true; $('bt-headsup').hidden = true; $('box-unlock').hidden = false; $('setup').hidden = false;
-    setTimeout(function () { try { $('unlock-pass').focus(); } catch (e) { } }, 30);
-  }
-  function unlockGate() {
-    gateLocked = false; gateSeen = true; $('box-unlock').hidden = true; $('setup').hidden = true; $('unlock-pass').value = '';
-    setTimeout(function () { try { $('wordInput').focus(); } catch (e) { } }, 0);
-  }
-  async function tryUnlock() {
-    let ok = false; try { ok = await checkPassword(gateName(), $('unlock-pass').value); } catch (e) { }
-    if (ok) unlockGate(); else { $('unlock-error').textContent = 'That password is not right.'; $('unlock-pass').select(); }
-  }
   // Seat-1 tabs keep the invite id in the address bar so that reopening the tab (or registering after a
   // clear) can get back into this same game through the invite.
   function keepInviteInUrl(id) { try { if (!id) return; let u = new URL(location.href); u.searchParams.set('invite', id); history.replaceState(null, '', u.pathname + u.search + u.hash); } catch (e) { } }
@@ -1220,7 +1176,6 @@ body {
           if (!r.ok) { await new Promise(r => setTimeout(r, 400)); continue; }
           let j = await r.json(); if (!j || !j.game) return null;
           if (j.token) setSeatToken(j.game.id, 1, j.token);
-          if (j.token && getSeatToken(j.game.id, 0)) { markShared(j.game.id); gateFresh = true; gateSeen = true; }
           let g = cloneRacks(j.game);
           try { initBroadcastChannel(g.id); broadcastGame(g); } catch (e) { }
           addOpponent(g.players[0].name); addOpponent(g.players[1].name); addGameId(g.id);
@@ -1293,7 +1248,7 @@ body {
       } catch (e) { }  
     })();  
   }  
-  async function handleRegister() { let uEl = $('reg-user'), pEl = $('reg-pass'), p2El = $('reg-pass2'), errEl = $('reg-error'); let u = uEl ? uEl.value.trim() : '', p = pEl ? pEl.value : '', p2 = p2El ? p2El.value : ''; if (errEl) errEl.textContent = ''; if (!u || !p) { if (errEl) errEl.textContent = 'Fill username and password'; return; } if (p !== p2) { if (errEl) errEl.textContent = 'Passwords do not match'; return; } let users = []; try { users = JSON.parse(localStorage.getItem("bt_users") || "[]") } catch (e) { users = [] } if (users.some(x => x.toLowerCase() === u.toLowerCase())) { if (errEl) errEl.textContent = 'Username taken'; return; } localStorage.setItem("bt_owner", u); try { localStorage.removeItem("bt_pass_" + u.toLowerCase()); } catch (e) { } try { await storePassword(u, p); } catch (e) { } users.push(u); localStorage.setItem("bt_users", JSON.stringify(users)); let inviteParam = null; try { inviteParam = new URLSearchParams(location.search).get("invite"); } catch (e) { } if (inviteParam) { try { let res = await linkGameViaInvite(inviteParam, u); if (res && res.game) { forgetPendingInvite(inviteParam); currentInvite = res.invite || currentInvite; await enterGameDirect(res.game, 1); keepInviteInUrl(inviteParam); return; } } catch (e) { } } renderBoxes(); }  
+  async function handleRegister() { let uEl = $('reg-user'), pEl = $('reg-pass'), p2El = $('reg-pass2'), errEl = $('reg-error'); let u = uEl ? uEl.value.trim() : '', p = pEl ? pEl.value : '', p2 = p2El ? p2El.value : ''; if (errEl) errEl.textContent = ''; if (!u || !p) { if (errEl) errEl.textContent = 'Fill username and password'; return; } if (p !== p2) { if (errEl) errEl.textContent = 'Passwords do not match'; return; } let users = []; try { users = JSON.parse(localStorage.getItem("bt_users") || "[]") } catch (e) { users = [] } if (users.some(x => x.toLowerCase() === u.toLowerCase())) { if (errEl) errEl.textContent = 'Username taken'; return; } localStorage.setItem("bt_owner", u); try { localStorage.removeItem("bt_pass_" + u.toLowerCase()); } catch (e) { } users.push(u); localStorage.setItem("bt_users", JSON.stringify(users)); let inviteParam = null; try { inviteParam = new URLSearchParams(location.search).get("invite"); } catch (e) { } if (inviteParam) { try { let res = await linkGameViaInvite(inviteParam, u); if (res && res.game) { forgetPendingInvite(inviteParam); currentInvite = res.invite || currentInvite; await enterGameDirect(res.game, 1); keepInviteInUrl(inviteParam); return; } } catch (e) { } } renderBoxes(); }  
   async function handleBegin() { let owner = getOwner(); if (!owner) { renderBoxes(); return; } let opp = ($('nameB') ? $('nameB').value.trim() : ''); let g = fresh(owner, opp || "Opponent"); await saveGameToCF(g, { withSeat1: !!opp }); initBroadcastChannel(g.id); if (!opp) { let iid = randomId(); currentInvite = { id: iid, invitedBy: owner, invitedByOpponents: getOpponents(), gameId: g.id, mode: "game-invite", created: Date.now() }; try { await saveInviteToCF(currentInvite); } catch (e) { } addOpponent(opp); await showHeadsUp(iid, g, true); } else { currentInvite = null; if (opp) addOpponent(opp); await showHeadsUp(null, g, false); } }  
   async function handleCreateInvitation() { let owner = getOwner(); if (!owner) { renderBoxes(); return; } let id = randomId(); let placeholder = fresh(owner, "Opponent"); await saveGameToCF(placeholder); initBroadcastChannel(placeholder.id); let inv = { id: id, invitedBy: owner, invitedByOpponents: getOpponents(), gameId: placeholder.id, mode: "unregistered-invite", created: Date.now() }; await saveInviteToCF(inv); currentInvite = inv; await showHeadsUp(id, placeholder, true); }  
   function equalizePills() { const pills = document.querySelectorAll('.btn-pill'); pills.forEach(p => p.style.width = 'max-content'); let max = 0; pills.forEach(p => { max = Math.max(max, p.offsetWidth); }); pills.forEach(p => p.style.width = max + 'px'); }  
@@ -1332,21 +1287,6 @@ body {
       }, 0);
     });
   })();
-  // Shared-browser lock: leaving the tab or the window locks it; returning asks for the password.
-  // A tab that was open before the second player joined was never locked when it was left.  It learns about the
-  // second player the moment the shared flag is written (storage events reach background tabs), and checks again on return.
-  function gateCatchUp() { if (!gateSeen && gateArmed()) lockGate(); }
-  window.addEventListener('storage', function (e) { if (e.key === 'bt_shared' || e.key === null) gateCatchUp(); });
-  window.addEventListener('focus', gateCatchUp);
-  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') lockGate(); else gateCatchUp(); });
-  window.addEventListener('blur', function () { setTimeout(function () { if (!document.hasFocus()) lockGate(); }, 0); });
-  try { new MutationObserver(function () { if (gateLocked && $('setup').hidden) $('setup').hidden = false; }).observe($('setup'), { attributes: true, attributeFilter: ['hidden'] }); } catch (e) { }
-  $('btn-unlock').onclick = tryUnlock;
-  $('unlock-pass').onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); tryUnlock(); } };
-  $('unlock-forgot').onclick = function (ev) {
-    ev.preventDefault(); var nm = gateName();
-    if (window.confirm('Remove the password prompt for ' + nm + ' on this browser?')) { try { localStorage.removeItem(pwKey(nm)); } catch (e) { } unlockGate(); }
-  };
   // Backup / restore controls on the entry page.
   (function () {
     var ex = $('backup-export'), im = $('backup-import'), file = $('backup-file'), note = $('backup-note');
@@ -1474,8 +1414,7 @@ body {
         } catch (e) { }  
       } else { $('setup').hidden = false; renderBoxes(); }  
     } else if (!iid && !gid && !hasState) { showEntryPage(); initEntryPaws(); await populateEntryGames(); scheduleFit(); }  
-    scheduleFit(); try { new ResizeObserver(scheduleFit).observe(document.getElementById('game')); } catch (e) { }
-    if (gateFresh) gateFresh = false; else lockGate();  
+    scheduleFit(); try { new ResizeObserver(scheduleFit).observe(document.getElementById('game')); } catch (e) { }  
   })();  
 }());  
 
