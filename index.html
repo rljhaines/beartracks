@@ -824,33 +824,41 @@ body {
   function pwUnhex(h) { let o = new Uint8Array(h.length / 2); for (let i = 0; i < o.length; i++) o[i] = parseInt(h.substr(i * 2, 2), 16); return o; }
   async function pwDerive(password, salt) { let km = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']); return pwHex(new Uint8Array(await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: salt, iterations: 100000, hash: 'SHA-256' }, km, 256))); }
   function pwKey(name) { return 'bt_pw_' + String(name || '').trim().toLowerCase(); }
-  function hasPassword(name) { try { return !!localStorage.getItem(pwKey(name)); } catch (e) { return false; } }
+  function pwTabMap() { try { return JSON.parse(sessionStorage.getItem('bt_pw_tab') || '{}') || {}; } catch (e) { return {}; } }
+  function pwRecord(name) { let k = pwKey(name), r = null; try { r = localStorage.getItem(k); } catch (e) { } if (!r) r = pwTabMap()[k] || null; return r; }
+  // This tab keeps its own player's password record in its own memory, so another tab clearing storage cannot strip the lock.
+  function mirrorPassword(name) { try { let k = pwKey(name), r = localStorage.getItem(k); if (!r) return; let m = pwTabMap(); m[k] = r; sessionStorage.setItem('bt_pw_tab', JSON.stringify(m)); } catch (e) { } }
+  function forgetPassword(name) { try { localStorage.removeItem(pwKey(name)); } catch (e) { } try { let m = pwTabMap(); delete m[pwKey(name)]; sessionStorage.setItem('bt_pw_tab', JSON.stringify(m)); } catch (e) { } }
+  function hasPassword(name) { return !!pwRecord(name); }
   async function storePassword(name, password) { let salt = crypto.getRandomValues(new Uint8Array(16)); localStorage.setItem(pwKey(name), pwHex(salt) + ':' + await pwDerive(password, salt)); }
-  async function checkPassword(name, password) { let rec = null; try { rec = localStorage.getItem(pwKey(name)); } catch (e) { } if (!rec) return true; let parts = rec.split(':'); return (await pwDerive(password, pwUnhex(parts[0]))) === parts[1]; }
+  async function checkPassword(name, password) { let rec = pwRecord(name); if (!rec) return true; let parts = rec.split(':'); return (await pwDerive(password, pwUnhex(parts[0]))) === parts[1]; }
   function sharedMap() { try { return JSON.parse(localStorage.getItem('bt_shared') || '{}') || {}; } catch (e) { return {}; } }
   function markShared(gid) { try { let m = sharedMap(); m[gid] = true; localStorage.setItem('bt_shared', JSON.stringify(m)); } catch (e) { } }
-  function isShared(gid) { return !!sharedMap()[gid]; }
-  let gateLocked = false, gateFresh = false, gateSeen = false;  // gateSeen: this tab has been inside the gate at least once
+  function tabSharedMap() { try { return JSON.parse(sessionStorage.getItem('bt_shared_tab') || '{}') || {}; } catch (e) { return {}; } }
+  function isShared(gid) { return !!sharedMap()[gid] || !!tabSharedMap()[gid]; }
+  function markTabShared(gid) { try { let m = tabSharedMap(); m[gid] = true; sessionStorage.setItem('bt_shared_tab', JSON.stringify(m)); } catch (e) { } markShared(gid); }
+  // Which seat this tab plays. Per tab, so two players in one browser each keep their own seat without any p= in the address.
+  function tabSeatMap() { try { return JSON.parse(sessionStorage.getItem('bt_tab_seat') || '{}') || {}; } catch (e) { return {}; } }
+  function getTabSeat(gid) { let v = tabSeatMap()[gid]; return (v === 0 || v === 1) ? v : null; }
+  function setTabSeat(gid, seat) { try { if (!gid || (seat !== 0 && seat !== 1)) return; let m = tabSeatMap(); m[gid] = seat; sessionStorage.setItem('bt_tab_seat', JSON.stringify(m)); } catch (e) { } }
+  let gateLocked = false, gateFresh = false, gateLeft = false;  // gateLeft: this tab has been left (hidden / window blurred) and not yet returned to
   function gateName() { try { return state.players[getLocalIdx()].name; } catch (e) { return ''; } }
   function gateArmed() { try { return !!(state && state.id && isShared(state.id) && hasPassword(gateName())); } catch (e) { return false; } }
   function lockGate() {
     if (gateLocked || !gateArmed()) return;
-    gateLocked = true; gateSeen = true;
+    gateLocked = true;
     $('unlock-name').textContent = gateName(); $('unlock-pass').value = ''; $('unlock-error').textContent = '';
     $('box-register').hidden = true; $('box-start').hidden = true; $('bt-headsup').hidden = true; $('box-unlock').hidden = false; $('setup').hidden = false;
     setTimeout(function () { try { $('unlock-pass').focus(); } catch (e) { } }, 30);
   }
   function unlockGate() {
-    gateLocked = false; gateSeen = true; $('box-unlock').hidden = true; $('setup').hidden = true; $('unlock-pass').value = '';
+    gateLocked = false; gateLeft = false; $('box-unlock').hidden = true; $('setup').hidden = true; $('unlock-pass').value = '';
     setTimeout(function () { try { $('wordInput').focus(); } catch (e) { } }, 0);
   }
   async function tryUnlock() {
     let ok = false; try { ok = await checkPassword(gateName(), $('unlock-pass').value); } catch (e) { }
     if (ok) unlockGate(); else { $('unlock-error').textContent = 'That password is not right.'; $('unlock-pass').select(); }
   }
-  // Seat-1 tabs keep the invite id in the address bar so that reopening the tab (or registering after a
-  // clear) can get back into this same game through the invite.
-  function keepInviteInUrl(id) { try { if (!id) return; let u = new URL(location.href); u.searchParams.set('invite', id); history.replaceState(null, '', u.pathname + u.search + u.hash); } catch (e) { } }
   function seatHeaders(gid, seat, extra) { let h = Object.assign({}, extra || {}); let t = getSeatToken(gid, seat); if (t) h['X-Seat-Token'] = t; return h; }
   function makeSeatUrl(gid, seat) { let t = getSeatToken(gid, seat); if (!t) return null; return LIVE_SITE + '?game=' + encodeURIComponent(gid) + '&p=' + seat + '#k=' + encodeURIComponent(t); }
   function randomId() { let b = crypto.getRandomValues(new Uint8Array(16)), s2 = ''; for (let i = 0; i < b.length; i++) s2 += String.fromCharCode(b[i]); return btoa(s2).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
@@ -894,7 +902,7 @@ body {
   function hideEntryPage() { let el = $('entry-home'); if (el) el.hidden = true; }
   function entryWordage() { hideEntryPage(); let owner = getOwner(); if (owner) handleBegin(); else { $('setup').hidden = false; renderBoxes(); } }
   function entryCribbage() { alert('Future Feature'); }
-  async function enterGameDirect(gameObj, playerIndex) { if (!gameObj) return false; let g = cloneRacks(gameObj); let li = (playerIndex === 0 || playerIndex === 1) ? playerIndex : null; if (li === null) { li = 0; let owner = (getOwner() || '').toLowerCase(); for (let i = 0; i < g.players.length; i++) if ((g.players[i].name || '').toLowerCase() === owner) li = i; } $('bt-headsup').hidden = true; state = g; initBroadcastChannel(g.id); initComm(g.id); $('setup').hidden = true; hideEntryPage(); render(); ensureCommPanel(); pendingGameForHeadsUp = null; scheduleFit(); try { let url = new URL(location.href); url.searchParams.set('game', g.id); url.searchParams.set('p', String(li)); url.searchParams.delete('invite'); history.replaceState(null, '', url.pathname + url.search + url.hash); } catch (e) { } return true; }
+  async function enterGameDirect(gameObj, playerIndex) { if (!gameObj) return false; let g = cloneRacks(gameObj); let li = (playerIndex === 0 || playerIndex === 1) ? playerIndex : null; if (li === null) { li = 0; let owner = (getOwner() || '').toLowerCase(); for (let i = 0; i < g.players.length; i++) if ((g.players[i].name || '').toLowerCase() === owner) li = i; } $('bt-headsup').hidden = true; state = g; setTabSeat(g.id, li); mirrorPassword(gateName()); initBroadcastChannel(g.id); initComm(g.id); $('setup').hidden = true; hideEntryPage(); render(); ensureCommPanel(); pendingGameForHeadsUp = null; scheduleFit(); try { let url = new URL(location.href); url.searchParams.set('game', g.id); url.searchParams.delete('p'); url.searchParams.delete('invite'); history.replaceState(null, '', url.pathname + url.search + url.hash); } catch (e) { } return true; }
   async function openPendingInvite(inv) { if (!inv || !inv.id) return; rememberPendingInvite(inv); try { let owner = getOwner(); if (!owner) { let url = new URL(location.href); url.searchParams.set('invite', inv.id); history.replaceState(null, '', url.pathname + url.search + url.hash); hideEntryPage(); $('setup').hidden = false; renderBoxes(); return; } currentInvite = inv; hideEntryPage(); if (!(await joinViaInvite(inv, owner))) showEntryPage(); } catch (e) { } }
   async function populateEntryGames() { let owner = getOwner(), underwayEl = $('underway-games'), pendingEl = $('pending-games'); if (!underwayEl || !pendingEl) return; underwayEl.innerHTML = ''; pendingEl.innerHTML = ''; if (!owner) { underwayEl.innerHTML = '<div class="entry-empty"><a href="#" id="entry-register-link" style="color:inherit;text-decoration:underline;cursor:pointer">Register</a> to see your games.</div>'; { let rl = $('entry-register-link'); if (rl) rl.onclick = function (ev) { ev.preventDefault(); hideEntryPage(); $('setup').hidden = false; renderBoxes(); }; } } else { let ids = getAllGameIds(), games = []; for (let i = 0; i < ids.length; i++) { try { let g = await loadGame(ids[i]); if (!g || !g.players) continue; let mine = g.players.some(p => (p.name || '').toLowerCase() === owner.toLowerCase()); if (mine) games.push(g); } catch (e) { } } if (!games.length) underwayEl.innerHTML = '<div class="entry-empty">No underway games.</div>'; games.forEach(g => { let my = g.players.findIndex(p => (p.name || '').toLowerCase() === owner.toLowerCase()); let opp = g.players[1 - my]?.name || 'Opponent'; let b = document.createElement('button'); b.className = 'entry-game'; b.textContent = opp; b.onclick = () => enterGameDirect(g, my); underwayEl.appendChild(b); }); }
     let pids = getPendingInviteIds(); if (!pids.length) pendingEl.innerHTML = '<div class="entry-empty">No pending games.</div>'; else { let found = 0; for (let i = 0; i < pids.length; i++) { try { let inv = await loadInvite(pids[i]); if (!inv) { forgetPendingInvite(pids[i]); continue; } let b = document.createElement('button'); b.className = 'entry-game'; b.textContent = inv.invitedBy || 'Pending game'; b.onclick = () => openPendingInvite(inv); pendingEl.appendChild(b); found++; } catch (e) { } } if (!found) pendingEl.innerHTML = '<div class="entry-empty">No pending games.</div>'; }
@@ -913,9 +921,12 @@ body {
   function clearPrompt() { var el = $('status'); el.classList.remove('prompt'); }  
   function getLocalIdx() {  
     let q; try { q = new URLSearchParams(location.search) } catch (e) { q = { get: () => null } }  
-    if (q.get('p') === '0' || q.get('p') === '1') return Number(q.get('p'))  
-    let owner = (getOwner() || "").toLowerCase()  
     if (!state) return 0  
+    let ts = getTabSeat(state.id); if (ts !== null) return ts  
+    if (q.get('p') === '0' || q.get('p') === '1') return Number(q.get('p'))  
+    let held = [0, 1].filter(function (k) { return !!getSeatToken(state.id, k); });  
+    if (held.length === 1) return held[0]  
+    let owner = (getOwner() || "").toLowerCase()  
     for (let i = 0; i < state.players.length; i++) if ((state.players[i].name || "").toLowerCase() === owner) return i  
     return state.turn  
   }  
@@ -1220,7 +1231,7 @@ body {
           if (!r.ok) { await new Promise(r => setTimeout(r, 400)); continue; }
           let j = await r.json(); if (!j || !j.game) return null;
           if (j.token) setSeatToken(j.game.id, 1, j.token);
-          if (j.token && getSeatToken(j.game.id, 0)) { markShared(j.game.id); gateFresh = true; gateSeen = true; }
+          if (j.token && getSeatToken(j.game.id, 0)) { markShared(j.game.id); gateFresh = true; }
           let g = cloneRacks(j.game);
           try { initBroadcastChannel(g.id); broadcastGame(g); } catch (e) { }
           addOpponent(g.players[0].name); addOpponent(g.players[1].name); addGameId(g.id);
@@ -1252,7 +1263,6 @@ body {
       currentInvite = res.invite || inv;
       forgetPendingInvite(inv.id);
       let entered = await enterGameDirect(res.game, 1);
-      keepInviteInUrl(inv.id);
       return entered;
     } catch (e) { return false; }
   }
@@ -1284,24 +1294,24 @@ body {
       let g = pendingGameForHeadsUp;  
       if (!g) return;  
       let li = getLocalIdx();  
-      if (!new URLSearchParams(location.search).get('p')) {  
+      if (getTabSeat(gid) === null && !new URLSearchParams(location.search).get('p')) {  
         li = 0;  
         let owner = (getOwner() || "").toLowerCase();  
         for (let i = 0; i < g.players.length; i++) if ((g.players[i].name || "").toLowerCase() === owner) li = i;  
       }  
       $('bt-headsup').hidden = true;  
-      state = g; initBroadcastChannel(g.id); initComm(g.id);  
+      state = g; setTabSeat(g.id, li); mirrorPassword(gateName()); initBroadcastChannel(g.id); initComm(g.id);  
       $('setup').hidden = true; render(); ensureCommPanel(); pendingGameForHeadsUp = null; scheduleFit();  
       try {  
         let url = new URL(location.href);  
         url.searchParams.set('game', gid);  
-        url.searchParams.set('p', String(li));  
+        setTabSeat(gid, li); url.searchParams.delete('p');  
         url.searchParams.delete('invite');  
         history.replaceState(null, '', url.pathname + url.search + location.hash);  
       } catch (e) { }  
     })();  
   }  
-  async function handleRegister() { let uEl = $('reg-user'), pEl = $('reg-pass'), p2El = $('reg-pass2'), errEl = $('reg-error'); let u = uEl ? uEl.value.trim() : '', p = pEl ? pEl.value : '', p2 = p2El ? p2El.value : ''; if (errEl) errEl.textContent = ''; if (!u || !p) { if (errEl) errEl.textContent = 'Fill username and password'; return; } if (p !== p2) { if (errEl) errEl.textContent = 'Passwords do not match'; return; } let users = []; try { users = JSON.parse(localStorage.getItem("bt_users") || "[]") } catch (e) { users = [] } if (users.some(x => x.toLowerCase() === u.toLowerCase())) { if (errEl) errEl.textContent = 'Username taken'; return; } localStorage.setItem("bt_owner", u); try { localStorage.removeItem("bt_pass_" + u.toLowerCase()); } catch (e) { } try { await storePassword(u, p); } catch (e) { } users.push(u); localStorage.setItem("bt_users", JSON.stringify(users)); let inviteParam = null; try { inviteParam = new URLSearchParams(location.search).get("invite"); } catch (e) { } if (inviteParam) { try { let res = await linkGameViaInvite(inviteParam, u); if (res && res.game) { forgetPendingInvite(inviteParam); currentInvite = res.invite || currentInvite; await enterGameDirect(res.game, 1); keepInviteInUrl(inviteParam); return; } } catch (e) { } } renderBoxes(); }  
+  async function handleRegister() { let uEl = $('reg-user'), pEl = $('reg-pass'), p2El = $('reg-pass2'), errEl = $('reg-error'); let u = uEl ? uEl.value.trim() : '', p = pEl ? pEl.value : '', p2 = p2El ? p2El.value : ''; if (errEl) errEl.textContent = ''; if (!u || !p) { if (errEl) errEl.textContent = 'Fill username and password'; return; } if (p !== p2) { if (errEl) errEl.textContent = 'Passwords do not match'; return; } let users = []; try { users = JSON.parse(localStorage.getItem("bt_users") || "[]") } catch (e) { users = [] } if (users.some(x => x.toLowerCase() === u.toLowerCase())) { if (errEl) errEl.textContent = 'Username taken'; return; } localStorage.setItem("bt_owner", u); try { localStorage.removeItem("bt_pass_" + u.toLowerCase()); } catch (e) { } try { await storePassword(u, p); mirrorPassword(u); } catch (e) { } users.push(u); localStorage.setItem("bt_users", JSON.stringify(users)); let inviteParam = null; try { inviteParam = new URLSearchParams(location.search).get("invite"); } catch (e) { } if (inviteParam) { try { let res = await linkGameViaInvite(inviteParam, u); if (res && res.game) { forgetPendingInvite(inviteParam); currentInvite = res.invite || currentInvite; await enterGameDirect(res.game, 1); return; } } catch (e) { } } renderBoxes(); }  
   async function handleBegin() { let owner = getOwner(); if (!owner) { renderBoxes(); return; } let opp = ($('nameB') ? $('nameB').value.trim() : ''); let g = fresh(owner, opp || "Opponent"); await saveGameToCF(g, { withSeat1: !!opp }); initBroadcastChannel(g.id); if (!opp) { let iid = randomId(); currentInvite = { id: iid, invitedBy: owner, invitedByOpponents: getOpponents(), gameId: g.id, mode: "game-invite", created: Date.now() }; try { await saveInviteToCF(currentInvite); } catch (e) { } addOpponent(opp); await showHeadsUp(iid, g, true); } else { currentInvite = null; if (opp) addOpponent(opp); await showHeadsUp(null, g, false); } }  
   async function handleCreateInvitation() { let owner = getOwner(); if (!owner) { renderBoxes(); return; } let id = randomId(); let placeholder = fresh(owner, "Opponent"); await saveGameToCF(placeholder); initBroadcastChannel(placeholder.id); let inv = { id: id, invitedBy: owner, invitedByOpponents: getOpponents(), gameId: placeholder.id, mode: "unregistered-invite", created: Date.now() }; await saveInviteToCF(inv); currentInvite = inv; await showHeadsUp(id, placeholder, true); }  
   function equalizePills() { const pills = document.querySelectorAll('.btn-pill'); pills.forEach(p => p.style.width = 'max-content'); let max = 0; pills.forEach(p => { max = Math.max(max, p.offsetWidth); }); pills.forEach(p => p.style.width = max + 'px'); }  
@@ -1343,17 +1353,24 @@ body {
   // Shared-browser lock: leaving the tab or the window locks it; returning asks for the password.
   // A tab that was open before the second player joined was never locked when it was left.  It learns about the
   // second player the moment the shared flag is written (storage events reach background tabs), and checks again on return.
-  function gateCatchUp() { if (!gateSeen && gateArmed()) lockGate(); }
-  window.addEventListener('storage', function (e) { if (e.key === 'bt_shared' || e.key === null) gateCatchUp(); });
-  window.addEventListener('focus', gateCatchUp);
-  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') lockGate(); else gateCatchUp(); });
-  window.addEventListener('blur', function () { setTimeout(function () { if (!document.hasFocus()) lockGate(); }, 0); });
+  function gateLeave() { gateLeft = true; try { mirrorPassword(gateName()); } catch (e) { } lockGate(); }
+  function gateReturn() { if (gateLeft && gateArmed()) lockGate(); else if (!gateLocked) gateLeft = false; }
+  window.addEventListener('storage', function (e) {
+    // Another player registering in this browser (a changed owner name) makes this a shared browser: this tab's player gets a lock.
+    if (e.key === 'bt_owner' && e.newValue && state && state.id) {
+      let me = gateName();
+      if (me && String(e.newValue).toLowerCase() !== String(me).toLowerCase()) { mirrorPassword(me); markTabShared(state.id); if (gateLeft) gateReturn(); }
+    } else if (e.key === 'bt_shared') { if (gateLeft) gateReturn(); }
+  });
+  window.addEventListener('focus', gateReturn);
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') gateLeave(); else gateReturn(); });
+  window.addEventListener('blur', function () { setTimeout(function () { if (!document.hasFocus()) gateLeave(); }, 0); });
   try { new MutationObserver(function () { if (gateLocked && $('setup').hidden) $('setup').hidden = false; }).observe($('setup'), { attributes: true, attributeFilter: ['hidden'] }); } catch (e) { }
   $('btn-unlock').onclick = tryUnlock;
   $('unlock-pass').onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); tryUnlock(); } };
   $('unlock-forgot').onclick = function (ev) {
     ev.preventDefault(); var nm = gateName();
-    if (window.confirm('Remove the password prompt for ' + nm + ' on this browser?')) { try { localStorage.removeItem(pwKey(nm)); } catch (e) { } unlockGate(); }
+    if (window.confirm('Remove the password prompt for ' + nm + ' on this browser?')) { try { forgetPassword(nm); } catch (e) { } unlockGate(); }
   };
   // Backup / restore controls on the entry page.
   (function () {
@@ -1473,10 +1490,9 @@ body {
         $('setup').hidden = true; $('bt-headsup').hidden = true; initBroadcastChannel(state.id); render(); scheduleFit();  
         try {  
           let url = new URL(location.href);  
-          if (!url.searchParams.get('p')) {  
-            let li = getLocalIdx();  
-            url.searchParams.set('p', String(li));  
-          }  
+          if (pParam === '0' || pParam === '1') setTabSeat(state.id, Number(pParam));  
+          setTabSeat(state.id, getLocalIdx()); mirrorPassword(gateName());  
+          url.searchParams.delete('p'); url.searchParams.delete('invite');  
           if (!url.searchParams.get('game')) url.searchParams.set('game', state.id);  
           history.replaceState(null, '', url.pathname + url.search + location.hash);  
         } catch (e) { }  
