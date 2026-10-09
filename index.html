@@ -865,11 +865,21 @@ body {
   // Pull a seat key out of the URL hash (#k=TOKEN, or #s=STATE&p=N&k=TOKEN), store it, and remove it from the address bar.
   function absorbSeatKey(gid, queryP) {
     try {
-      let h = location.hash || ''; let m = h.match(/[#&]k=([^&]+)/); if (!m) return;
-      let tok = decodeURIComponent(m[1]); let pm = h.match(/[#&]p=([01])(?=&|$)/);
-      let seat = pm ? Number(pm[1]) : (queryP === '0' ? 0 : queryP === '1' ? 1 : null);
-      if (gid && seat !== null) setSeatToken(gid, seat, tok);
-      let rest = h.replace(/([#&])k=[^&]*/, '$1').replace(/([#&])p=[01](?=&|$)/, '$1').replace(/&&+/g, '&').replace(/[#&]+$/, '').replace(/^#&/, '#');
+      let h = location.hash || ''; let m = h.match(/[#&]k=([^&]+)/), wm = h.match(/[#&]w=([^&]+)/); if (!m && !wm) return;
+      if (m) {
+        let tok = decodeURIComponent(m[1]); let pm = h.match(/[#&]p=([01])(?=&|$)/);
+        let seat = pm ? Number(pm[1]) : (queryP === '0' ? 0 : queryP === '1' ? 1 : null);
+        if (gid && seat !== null) setSeatToken(gid, seat, tok);
+      }
+      if (wm) {  // a player's password record handed over from the local-file page: name|salt:hash.  Kept only if this browser has none yet.
+        let w = decodeURIComponent(wm[1]), i = w.indexOf('|');
+        if (i > 0) {
+          let nm = w.slice(0, i), rec = w.slice(i + 1);
+          if (/^[0-9a-f]+:[0-9a-f]+$/.test(rec) && !localStorage.getItem(pwKey(nm))) localStorage.setItem(pwKey(nm), rec);
+          try { let us = JSON.parse(localStorage.getItem('bt_users') || '[]'); if (!us.some(function (x) { return String(x).toLowerCase() === nm.toLowerCase(); })) { us.push(nm); localStorage.setItem('bt_users', JSON.stringify(us)); } } catch (e) { }
+        }
+      }
+      let rest = h.replace(/([#&])k=[^&]*/, '$1').replace(/([#&])w=[^&]*/, '$1').replace(/([#&])p=[01](?=&|$)/, '$1').replace(/&&+/g, '&').replace(/[#&]+$/, '').replace(/^#&/, '#');
       history.replaceState(null, '', location.pathname + location.search + (rest === '#' ? '' : rest));
     } catch (e) { }
   }
@@ -1283,7 +1293,11 @@ body {
     let gid = pendingGameForHeadsUp?.id || currentInvite?.gameId;  
     if (!gid) return;  
     if (location.protocol === 'file:') {  
-      location.href = LIVE_SITE + "?game=" + encodeURIComponent(gid) + "&p=0";  
+      // A page opened from a local file has its own private storage. Carry P0's seat key and password record across to the live site,
+      // otherwise the live page would have no key (no saves, no chat) and no password.
+      let hop = makeSeatUrl(gid, 0) || (LIVE_SITE + "?game=" + encodeURIComponent(gid) + "&p=0");
+      try { let me0 = (pendingGameForHeadsUp && pendingGameForHeadsUp.players && pendingGameForHeadsUp.players[0].name) || getOwner(); let rec0 = me0 && pwRecord(me0); if (rec0) hop += (hop.indexOf('#') < 0 ? '#' : '&') + 'w=' + encodeURIComponent(me0 + '|' + rec0); } catch (e) { }
+      location.href = hop;  
       return;  
     }  
     (async () => {  
