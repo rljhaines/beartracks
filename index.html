@@ -1,3 +1,4 @@
+<!-- P1 handling good; pre- import/export/persist & 2-tab-play locks -->
 <!doctype html>   <html lang="en"> <head>     <meta charset="utf-8">     <meta       name="viewport"       content="width=device-width,initial-scale=1"     >     <title>BearTracks</title>     <!--link       rel="icon"       type="image/png"       sizes="128x128"       href="data:image/png;base64,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"   -->     <style>       :root {         --ink: #23392f;         --paper: #f6f0e4;         --tile: #f8e5af;         --line: #d7cfbd;         --green: #28604b;         --orange: #d66f42;         --muted: #65756b;         --gap: 2px;         --pad: var(--gap);         --board-bg: #315647;         --cell-bg: #e7d9bd;         --tw: #c94a3c;         --dw: #e68a82;         --tl: #2e8aa8;         --dl: #86c2cc;         --rack-bg: #fbf2c0;         --tile-edge: #d9c99a;         --board-size: min(92vw, 78vh)       } 
 
 * {  
@@ -215,9 +216,6 @@ body {
 .entry-game { width: 100%; border: 1px solid #c7baa4; border-radius: 8px; background: #fffef6; color: var(--ink); padding: 10px 12px; text-align: left; font: inherit; cursor: pointer; }
 .entry-game:hover { background: #f8e5af; }
 .entry-empty { color: var(--muted); text-align: center; line-height: 1.4; }
-#entry-backup { margin-top: 18px; text-align: center; font-size: 13px; color: var(--muted); }
-#entry-backup a { color: inherit; text-decoration: underline; cursor: pointer; }
-#backup-note { margin-top: 6px; min-height: 1.2em; }
 @media (max-width: 850px) { #entry-content { padding: 4vh 4vw; } #entry-boxes { width: 92%; min-width: 0; grid-template-columns: 1fr; gap: 12px; } .entry-box { min-height: 0; padding: 15px; } .entry-box h2 { margin-bottom: 10px; } }
 
 .modal {  
@@ -615,7 +613,6 @@ body {
           <section class="entry-box"><h2>Pending-Games</h2><div id="pending-games" class="entry-games"><div class="entry-empty">Loading games...</div></div></section>
           <section class="entry-box"><h2>Start-a-Game</h2><div class="entry-list"><button class="entry-choice" id="entry-wordage">Wordage</button><button class="entry-choice" id="entry-cribbage">Cribbage</button></div></section>
         </div>
-        <div id="entry-backup"><a href="#" id="backup-export">Back up my games</a> &middot; <a href="#" id="backup-import">Restore from backup</a><input type="file" id="backup-file" accept="application/json,.json" hidden><div id="backup-note"></div></div>
       </div>
     </div>
 
@@ -772,38 +769,6 @@ body {
     return t;
   }
   function setSeatToken(gid, seat, tok) { if (!gid || !tok || (seat !== 0 && seat !== 1)) return; let v = seatVault(); v[gid] = v[gid] || {}; v[gid][seat] = tok; try { localStorage.setItem('bt_seats', JSON.stringify(v)); } catch (e) { } putSess(gid, seat, tok); }
-  /* ---- backup: everything this browser knows (who you are, your games, your seat keys) in one file ----
-     The games themselves live on the server; what is lost when browser data is cleared is the list of
-     your games and the keys that let you play them.  The file contains those keys, so keep it private. */
-  function backupKeys() { let out = {}; try { for (let i = 0; i < localStorage.length; i++) { let k = localStorage.key(i); if (k && (k.indexOf('bt_') === 0 || k === 'username')) out[k] = localStorage.getItem(k); } } catch (e) { } return out; }
-  function exportBackup() {
-    let data = backupKeys();
-    let blob = new Blob([JSON.stringify({ app: 'beartracks-backup', version: 1, exportedAt: new Date().toISOString(), data: data }, null, 2)], { type: 'application/json' });
-    let a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'beartracks-backup-' + new Date().toISOString().slice(0, 10) + '.json';
-    document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
-    return Object.keys(data).length;
-  }
-  // Merge, never overwrite: lists are unioned, seat keys fill gaps, existing values win.
-  function importBackup(text) {
-    let doc; try { doc = JSON.parse(text); } catch (e) { throw new Error('That file is not a BearTracks backup.'); }
-    if (!doc || doc.app !== 'beartracks-backup' || !doc.data || typeof doc.data !== 'object') throw new Error('That file is not a BearTracks backup.');
-    let added = { games: 0, seats: 0 }, d = doc.data;
-    let jparse = function (v, dflt) { try { let x = JSON.parse(v); return x == null ? dflt : x; } catch (e) { return dflt; } };
-    let union = function (k) { if (typeof d[k] !== 'string') return; let inc = jparse(d[k], []), cur = jparse(localStorage.getItem(k), []); if (!Array.isArray(inc) || !Array.isArray(cur)) return; let n = 0; inc.forEach(function (x) { if (typeof x === 'string' && cur.indexOf(x) === -1) { cur.push(x); n++; } }); localStorage.setItem(k, JSON.stringify(cur)); if (k === 'bt_all_game_ids') added.games += n; };
-    ['bt_all_game_ids', 'bt_users', 'bt_opponents', 'bt_pending_invite_ids'].forEach(union);
-    if (typeof d['bt_seats'] === 'string') {
-      let inc = jparse(d['bt_seats'], {}), cur = seatVault();
-      Object.keys(inc).forEach(function (gid) { if (!/^[A-Za-z0-9_-]{4,64}$/.test(gid) || !inc[gid] || typeof inc[gid] !== 'object') return; [0, 1].forEach(function (seat) { let t = inc[gid][seat]; if (typeof t === 'string' && t && t.length < 200 && !(cur[gid] && cur[gid][seat])) { cur[gid] = cur[gid] || {}; cur[gid][seat] = t; added.seats++; } }); });
-      localStorage.setItem('bt_seats', JSON.stringify(cur));
-    }
-    Object.keys(d).forEach(function (k) {
-      if (typeof d[k] !== 'string' || d[k].length > 500000) return;
-      if (k === 'bt_owner' || k === 'username' || k.indexOf('bt_pending_invite_') === 0 || k.indexOf('bt_pending_game_') === 0) { if (k !== 'bt_pending_invite_ids' && localStorage.getItem(k) === null) localStorage.setItem(k, d[k]); }
-    });
-    return added;
-  }
-  // Ask the browser not to evict this site's storage.  Returns true / false / null (unsupported).
-  async function requestPersistence() { try { if (!navigator.storage || !navigator.storage.persist) return null; if (await navigator.storage.persisted()) return true; return !!(await navigator.storage.persist()); } catch (e) { return null; } }
   // Seat-1 tabs keep the invite id in the address bar so that reopening the tab (or registering after a
   // clear) can get back into this same game through the invite.
   function keepInviteInUrl(id) { try { if (!id) return; let u = new URL(location.href); u.searchParams.set('invite', id); history.replaceState(null, '', u.pathname + u.search + u.hash); } catch (e) { } }
@@ -1287,27 +1252,6 @@ body {
       }, 0);
     });
   })();
-  // Backup / restore controls on the entry page.
-  (function () {
-    var ex = $('backup-export'), im = $('backup-import'), file = $('backup-file'), note = $('backup-note');
-    if (!ex || !im || !file || !note) return;
-    var say = function (t) { note.textContent = t; };
-    var showPersist = async function () { var ok = await requestPersistence(); return ok === true ? ' This browser has been asked to keep your data.' : ok === false ? ' This browser may still clear your data on its own, so keep your backup file.' : ''; };
-    ex.addEventListener('click', async function (ev) { ev.preventDefault(); var n = exportBackup(); say('Backup saved. It contains your seat keys, so keep it private.' + (await showPersist())); });
-    im.addEventListener('click', function (ev) { ev.preventDefault(); file.value = ''; file.click(); });
-    file.addEventListener('change', function () {
-      var f = file.files && file.files[0]; if (!f) return;
-      if (f.size > 2000000) { say('That file is too large to be a BearTracks backup.'); return; }
-      var rd = new FileReader();
-      rd.onload = async function () {
-        try { var a = importBackup(String(rd.result)); say('Restored ' + a.games + ' game' + (a.games === 1 ? '' : 's') + ' and ' + a.seats + ' seat key' + (a.seats === 1 ? '' : 's') + '.'); try { await populateEntryGames(); } catch (e) { } try { var w = $('entry-welcome'), o = getOwner(); if (w) w.textContent = o ? 'Welcome, ' + o : 'Welcome'; } catch (e) { } }
-        catch (e) { say(e && e.message ? e.message : 'Could not read that file.'); }
-      };
-      rd.onerror = function () { say('Could not read that file.'); };
-      rd.readAsText(f);
-    });
-  })();
-  requestPersistence();
   // The seat link is this seat's secret key: it lets the same seat resume the game from any browser.
   (function () {
     var a = $('seatLink'); if (!a) return;
