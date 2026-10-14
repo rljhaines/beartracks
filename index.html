@@ -1951,7 +1951,7 @@ body {
   $('reg-user').onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); handleRegister(); } };  
   $('reg-pass').onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); handleRegister(); } };  
   $('reg-pass2').onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); handleRegister(); } };  
-  $('nameB').onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); handleBegin(); } };  
+  $('nameB').onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); if (postRegisterTarget === 'cribbage') cribHandleBegin(); else handleBegin(); } };  
   $('bt-headsup-copy-msg').onclick = handleHeadsUpCopyMsg; $('bt-headsup-copy-link').onclick = handleHeadsUpCopyLink; $('bt-headsup-continue').onclick = handleHeadsUpContinue;  
   // BEGIN FIX opponent-name  
   setInterval(async () => {  
