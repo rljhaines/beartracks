@@ -2193,7 +2193,8 @@ body {
     $('bt-headsup-copy-msg').onclick = function () { $('bt-headsup-input').value = msg; try { navigator.clipboard.writeText(msg); } catch (e) { } };
     $('bt-headsup-copy-link').disabled = false; $('bt-headsup-copy-link').textContent = 'Copy link instead';
     $('bt-headsup-copy-link').onclick = function () { $('bt-headsup-input').value = url; try { navigator.clipboard.writeText(url); } catch (e) { } };
-    $('setup').hidden = true;
+    // Leave #setup showing (with its bear-cribbage-board background already applied by
+    // renderBoxes()) so the heads-up box overlays the Cribbage splash, not a blank/Wordage one.
     $('bt-headsup').hidden = false;
     cribPendingHeadsUp = gameObj;
     $('bt-headsup-continue').onclick = function () { $('bt-headsup').hidden = true; cribEnterGame(cribPendingHeadsUp, 0); };
