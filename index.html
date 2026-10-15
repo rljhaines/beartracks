@@ -537,6 +537,47 @@ body {
 #crib-game-inner { display: none !important; }
 .crib-card-slot, .crib-flipall-text { cursor: pointer; }
 .crib-card-slot { touch-action: none; }
+
+/* ===== groupWords ===== */
+#setup.gw-bg { background-color: #f6f0e4; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 600' preserveAspectRatio='xMidYMid slice'%3E%3Cdefs%3E%3Cpattern id='p' width='14' height='14' patternUnits='userSpaceOnUse' patternTransform='rotate(45)'%3E%3Crect width='14' height='14' fill='%237b3a2e'/%3E%3Crect width='7' height='14' fill='%238f4636'/%3E%3C/pattern%3E%3C/defs%3E%3Crect x='185' y='40' width='170' height='238' rx='12' fill='url(%23p)' stroke='%23f6f0e4' stroke-width='3'/%3E%3Crect x='195' y='50' width='150' height='218' rx='8' fill='none' stroke='%23f6f0e4' stroke-width='2' opacity='.8'/%3E%3Crect x='415' y='40' width='170' height='238' rx='12' fill='url(%23p)' stroke='%23f6f0e4' stroke-width='3'/%3E%3Crect x='425' y='50' width='150' height='218' rx='8' fill='none' stroke='%23f6f0e4' stroke-width='2' opacity='.8'/%3E%3Crect x='645' y='40' width='170' height='238' rx='12' fill='url(%23p)' stroke='%23f6f0e4' stroke-width='3'/%3E%3Crect x='655' y='50' width='150' height='218' rx='8' fill='none' stroke='%23f6f0e4' stroke-width='2' opacity='.8'/%3E%3Crect x='185' y='322' width='170' height='238' rx='12' fill='url(%23p)' stroke='%23f6f0e4' stroke-width='3'/%3E%3Crect x='195' y='332' width='150' height='218' rx='8' fill='none' stroke='%23f6f0e4' stroke-width='2' opacity='.8'/%3E%3Crect x='415' y='322' width='170' height='238' rx='12' fill='url(%23p)' stroke='%23f6f0e4' stroke-width='3'/%3E%3Crect x='425' y='332' width='150' height='218' rx='8' fill='none' stroke='%23f6f0e4' stroke-width='2' opacity='.8'/%3E%3Crect x='645' y='322' width='170' height='238' rx='12' fill='url(%23p)' stroke='%23f6f0e4' stroke-width='3'/%3E%3Crect x='655' y='332' width='150' height='218' rx='8' fill='none' stroke='%23f6f0e4' stroke-width='2' opacity='.8'/%3E%3C/svg%3E"); background-size: cover; background-position: center; background-repeat: no-repeat; }
+#setup.gw-nodlg .dialog { display: none; }
+#gw-pick { display: none; margin: 6px 0; }
+#bt-headsup.gw-pick #gw-pick { display: block; }
+#bt-headsup.gw-pick #bt-headsup-input { display: none; }
+#gw-n { width: 1.3em; border: 0; border-bottom: 2px solid currentColor; background: transparent; font: inherit; text-align: center; color: inherit; outline: none; }
+#gw-save { margin-left: .4em; cursor: pointer; }
+#gw-game { position: fixed; inset: 0; z-index: 6; background: var(--paper, #f6f0e4); color: #2b2620; overflow: hidden; display: flex; flex-direction: column; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); font-family: Georgia, "Times New Roman", serif; }
+#gw-game[hidden] { display: none; }
+#gw-msg { position: absolute; top: 6px; left: 0; right: 0; text-align: center; font-size: 14px; pointer-events: none; z-index: 2; }
+#gw-table { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px; gap: var(--gwgap, 10px); }
+.gw-row { display: flex; justify-content: center; gap: var(--gwgap, 10px); }
+.gw-card { width: var(--gwcw); height: calc(var(--gwcw) * 1.4); perspective: 1200px; --t: calc(var(--gwcw) * .165); --g: calc(var(--gwcw) * .015); user-select: none; -webkit-user-select: none; }
+.gw-card.can { cursor: pointer; }
+.gw-inner { position: relative; width: 100%; height: 100%; transition: transform .6s; transform-style: preserve-3d; }
+.gw-card.down .gw-inner { transform: rotateY(180deg); }
+.gw-face { position: absolute; inset: 0; box-sizing: border-box; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: calc(var(--gwcw) * .05); border: 1px solid #cfc4ad; box-shadow: 0 2px 8px rgba(43,38,32,.18); }
+.gw-front { background: #fffdf7; padding: calc(var(--gwcw) * .05); display: flex; flex-direction: column; align-items: center; }
+.gw-card.mine .gw-front { outline: 3px solid #8a3b2e; outline-offset: 2px; }
+.gw-hd { width: 100%; height: calc(var(--gwcw) * .2); display: flex; justify-content: space-between; align-items: center; font-size: calc(var(--gwcw) * .07); letter-spacing: .04em; gap: .5em; }
+.gw-hd b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gw-hd span { white-space: nowrap; }
+.gw-link { color: #8a3b2e; text-decoration: underline; cursor: pointer; }
+.gw-rows { display: grid; gap: var(--g); }
+.gw-r { display: grid; grid-template-columns: repeat(5, var(--t)); gap: var(--g); }
+.gw-t { width: var(--t); height: var(--t); box-sizing: border-box; border: 2px solid #cfc4ad; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: calc(var(--gwcw) * .1); color: #fff; }
+.gw-t.f { border-color: #2b2620; color: #2b2620; }
+.gw-t.c0 { background: #8d867a; border-color: #8d867a; }
+.gw-t.c1 { background: #d6a33a; border-color: #d6a33a; }
+.gw-t.c2 { background: #5a8f5a; border-color: #5a8f5a; }
+.gw-back { transform: rotateY(180deg); background: repeating-linear-gradient(45deg, #7b3a2e 0 7px, #8f4636 7px 14px); display: flex; align-items: center; justify-content: center; }
+.gw-back::before { content: ""; position: absolute; inset: calc(var(--gwcw) * .05); border: 2px solid #f6f0e4; border-radius: calc(var(--gwcw) * .03); opacity: .8; }
+.gw-lab { position: relative; background: #f6f0e4; padding: .4em .9em; border-radius: 99px; font-size: calc(var(--gwcw) * .09); max-width: 80%; overflow: hidden; text-overflow: ellipsis; white-space: pre; }
+.gw-lab:empty { display: none; }
+.gw-pass { position: absolute; top: calc(var(--gwcw) * .08); right: calc(var(--gwcw) * .1); color: #f6f0e4; font-size: calc(var(--gwcw) * .07); letter-spacing: .06em; }
+#gw-inp { position: fixed; top: 0; left: 0; width: 1px; height: 1px; opacity: 0; font-size: 16px; border: 0; padding: 0; }
+#gw-notice { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 30; background: #f6f0e4; border: 1px solid #cfc4ad; border-radius: 10px; padding: 18px 22px; text-align: center; box-shadow: 0 6px 24px rgba(0,0,0,.3); color: #2b2620; max-width: 86vw; }
+#gw-notice p { margin: 0 0 12px; }
+#gw-notice button { margin: 0 4px; }
 </style>   </head> <body>     <main       class="wrap"       id="game"     >       <span id="turnPill" hidden></span>       <div class="stage">         <div class="left-col">           <div class="panel status-panel">             <h3>Play Status</h3>             <div               class="panel-body gameplay-box"               id="gameplayBox"             >               <div                 class="placement"                 id="placement"               ></div>               <div                 class="status"                 id="status"               ></div><a href="#" id="seatLink" hidden style="display:inline-block;margin-top:6px;font-size:.8em;color:inherit;text-decoration:underline">Copy my seat link</a>             </div>           </div>           <div             class="panel instr-panel"             id="instrPanel"           >             <h3               id="instrHead"               role="button"               tabindex="0"               aria-expanded="true"             >Gameplay Instructions</h3>             <div class="panel-body">               <p>Type word or <em>word 8,8,0</em> format.<br><br>&bull; Drag rack letters to rearrange them. When all seven letters are together at an end, you can also drop a letter outside the group to bring the gap back into it. Drag a staged letter from the board back to the rack to unstage it.<br>&bull; Undo: last move<br>&bull; Shuffle: rack<br>&bull; Exchg: exchange tiles<br>&bull; Play: preview<br>&bull; Submit: lock in<br>&bull; Pass: skip turn</p>             </div>
             <div class="two-letter" id="twoLetter" aria-label="Two-letter words"><span>aa</span><span>ab</span><span>ad</span><span>ae</span><span>ag</span><span>ah</span><span>ai</span><span>al</span><span>am</span><span>an</span><span>ar</span><span>as</span><span>at</span><span>aw</span><span>ax</span><span>ay</span><span>ba</span><span>be</span><span>bi</span><span>bo</span><span>by</span><span>da</span><span>de</span><span>do</span><span>ed</span><span>ef</span><span>eh</span><span>el</span><span>em</span><span>en</span><span>er</span><span>es</span><span>et</span><span>ew</span><span>ex</span><span>fa</span><span>fe</span><span>gi</span><span>go</span><span>ha</span><span>he</span><span>hi</span><span>hm</span><span>ho</span><span>id</span><span>if</span><span>in</span><span>is</span><span>it</span><span>jo</span><span>ka</span><span>ki</span><span>la</span><span>li</span><span>lo</span><span>ma</span><span>me</span><span>mi</span><span>mm</span><span>mo</span><span>mu</span><span>my</span><span>na</span><span>ne</span><span>no</span><span>nu</span><span>od</span><span>oe</span><span>of</span><span>oh</span><span>oi</span><span>ok</span><span>om</span><span>on</span><span>op</span><span>or</span><span>os</span><span>ow</span><span>ox</span><span>oy</span><span>pa</span><span>pe</span><span>pi</span><span>po</span><span>qi</span><span>re</span><span>sh</span><span>si</span><span>so</span><span>ta</span><span>te</span><span>ti</span><span>to</span><span>uh</span><span>um</span><span>un</span><span>up</span><span>us</span><span>ut</span><span>we</span><span>wo</span><span>xi</span><span>xu</span><span>ya</span><span>ye</span><span>yo</span><span>za</span></div>           </div>         </div> 
 
@@ -651,7 +692,7 @@ body {
         <div id="entry-boxes">
           <section class="entry-box"><h2>Underway-Games</h2><div id="underway-games" class="entry-games"><div class="entry-empty">Loading games...</div></div></section>
           <section class="entry-box"><h2>Pending-Games</h2><div id="pending-games" class="entry-games"><div class="entry-empty">Loading games...</div></div></section>
-          <section class="entry-box"><h2>Start-a-Game</h2><div class="entry-list"><button class="entry-choice" id="entry-wordage">Wordage</button><button class="entry-choice" id="entry-cribbage">Cribbage</button></div></section>
+          <section class="entry-box"><h2>Start-a-Game</h2><div class="entry-list"><button class="entry-choice" id="entry-wordage">Wordage</button><button class="entry-choice" id="entry-cribbage">Cribbage</button><button class="entry-choice" id="entry-groupwords">groupWords</button></div></section>
         </div>
         <div id="entry-backup"><a href="#" id="backup-export">Back up my games</a> &middot; <a href="#" id="backup-import">Restore from backup</a><input type="file" id="backup-file" accept="application/json,.json" hidden><div id="backup-note"></div></div>
       </div>
@@ -1420,11 +1461,11 @@ body {
     }
   }
 
-  function renderBoxes() { let setupEl = document.getElementById('setup'); if (setupEl) { if (postRegisterTarget === 'cribbage') { setupEl.classList.add('crib-bg'); if (!setupEl.style.backgroundImage) { let art = document.getElementById('crib-landing-art'); if (art && art.src) setupEl.style.backgroundImage = "url('" + art.src + "')"; } } else { setupEl.classList.remove('crib-bg'); setupEl.style.backgroundImage = ''; } } let owner = getOwner(); let br = document.getElementById("box-register"), bs = document.getElementById("box-start"); if (!br || !bs) return; if (!owner) { br.hidden = false; bs.hidden = true; let sp = document.getElementById("share-panel"); if (sp) sp.hidden = true; requestAnimationFrame(() => { setTimeout(() => { let f = document.getElementById("reg-user"); if (f) { f.focus(); f.select(); } }, 50); }); } else { br.hidden = true; bs.hidden = false; let on = document.getElementById("owner-name"); if (on) on.textContent = owner; setTimeout(() => { let f = document.getElementById("nameB"); if (f) f.focus(); }, 0); } }  
+  function renderBoxes() { let setupEl = document.getElementById('setup'); if (setupEl) { setupEl.classList.toggle('gw-bg', postRegisterTarget === 'groupwords'); setupEl.classList.remove('gw-nodlg'); if (postRegisterTarget === 'cribbage') { setupEl.classList.add('crib-bg'); if (!setupEl.style.backgroundImage) { let art = document.getElementById('crib-landing-art'); if (art && art.src) setupEl.style.backgroundImage = "url('" + art.src + "')"; } } else { setupEl.classList.remove('crib-bg'); setupEl.style.backgroundImage = ''; } } let owner = getOwner(); let br = document.getElementById("box-register"), bs = document.getElementById("box-start"); if (!br || !bs) return; if (!owner) { br.hidden = false; bs.hidden = true; let sp = document.getElementById("share-panel"); if (sp) sp.hidden = true; requestAnimationFrame(() => { setTimeout(() => { let f = document.getElementById("reg-user"); if (f) { f.focus(); f.select(); } }, 50); }); } else { br.hidden = true; bs.hidden = false; let on = document.getElementById("owner-name"); if (on) on.textContent = owner; setTimeout(() => { let f = document.getElementById("nameB"); if (f) f.focus(); }, 0); } }  
   function getPendingInviteIds() { try { return JSON.parse(localStorage.getItem("bt_pending_invite_ids") || "[]"); } catch (e) { return []; } }
   function rememberPendingInvite(inv) { if (!inv || !inv.id) return; try { let ids = getPendingInviteIds(); if (ids.indexOf(inv.id) === -1) ids.push(inv.id); localStorage.setItem("bt_pending_invite_ids", JSON.stringify(ids)); } catch (e) { } }
   function forgetPendingInvite(id) { if (!id) return; try { localStorage.setItem("bt_pending_invite_ids", JSON.stringify(getPendingInviteIds().filter(x => x !== id))); } catch (e) { } }
-  function showEntryPage() { let el = $('entry-home'); if (!el) return; el.hidden = false; $('setup').hidden = true; $('bt-headsup').hidden = true; let owner = getOwner(); $('entry-welcome').textContent = owner ? 'Welcome, ' + owner : 'Welcome'; }
+  function showEntryPage() { let el = $('entry-home'); if (!el) return; try { $('bt-headsup').classList.remove('gw-pick'); $('setup').classList.remove('gw-nodlg'); } catch (e) { } el.hidden = false; $('setup').hidden = true; $('bt-headsup').hidden = true; let owner = getOwner(); $('entry-welcome').textContent = owner ? 'Welcome, ' + owner : 'Welcome'; }
   function hideEntryPage() { let el = $('entry-home'); if (el) el.hidden = true; }
   function entryWordage() { postRegisterTarget = 'wordage'; hideEntryPage(); let owner = getOwner(); if (owner) handleBegin(); else { $('setup').hidden = false; renderBoxes(); } }
   function entryCribbage() { postRegisterTarget = 'cribbage'; hideEntryPage(); $('setup').hidden = false; renderBoxes(); }
@@ -1841,7 +1882,7 @@ body {
       } catch (e) { }  
     })();  
   }  
-  async function handleRegister() { let uEl = $('reg-user'), pEl = $('reg-pass'), p2El = $('reg-pass2'), errEl = $('reg-error'); let u = uEl ? uEl.value.trim() : '', p = pEl ? pEl.value : '', p2 = p2El ? p2El.value : ''; if (errEl) errEl.textContent = ''; if (!u || !p) { if (errEl) errEl.textContent = 'Fill username and password'; return; } if (p !== p2) { if (errEl) errEl.textContent = 'Passwords do not match'; return; } let users = []; try { users = JSON.parse(localStorage.getItem("bt_users") || "[]") } catch (e) { users = [] } if (users.some(x => x.toLowerCase() === u.toLowerCase())) { if (errEl) errEl.textContent = 'Username taken'; return; } localStorage.setItem("bt_owner", u); try { localStorage.removeItem("bt_pass_" + u.toLowerCase()); } catch (e) { } try { await storePassword(u, p); mirrorPassword(u); } catch (e) { } users.push(u); localStorage.setItem("bt_users", JSON.stringify(users)); let inviteParam = null; try { inviteParam = new URLSearchParams(location.search).get("invite"); } catch (e) { } if (inviteParam) { if (postRegisterTarget === 'cribbage') { try { let inv = await cribLoadInvite(inviteParam); if (inv) { forgetPendingInvite(inviteParam); currentInvite = inv; if (await cribJoinViaInvite(inv, u)) return; } } catch (e) { } } else { try { let res = await linkGameViaInvite(inviteParam, u); if (res && res.game) { forgetPendingInvite(inviteParam); currentInvite = res.invite || currentInvite; await enterGameDirect(res.game, 1); return; } } catch (e) { } } } if (postRegisterTarget === 'cribbage') { showCribbageLanding(); } else { renderBoxes(); } }
+  async function handleRegister() { let uEl = $('reg-user'), pEl = $('reg-pass'), p2El = $('reg-pass2'), errEl = $('reg-error'); let u = uEl ? uEl.value.trim() : '', p = pEl ? pEl.value : '', p2 = p2El ? p2El.value : ''; if (errEl) errEl.textContent = ''; if (!u || !p) { if (errEl) errEl.textContent = 'Fill username and password'; return; } if (p !== p2) { if (errEl) errEl.textContent = 'Passwords do not match'; return; } let users = []; try { users = JSON.parse(localStorage.getItem("bt_users") || "[]") } catch (e) { users = [] } if (users.some(x => x.toLowerCase() === u.toLowerCase())) { if (errEl) errEl.textContent = 'Username taken'; return; } localStorage.setItem("bt_owner", u); try { localStorage.removeItem("bt_pass_" + u.toLowerCase()); } catch (e) { } try { await storePassword(u, p); mirrorPassword(u); } catch (e) { } users.push(u); localStorage.setItem("bt_users", JSON.stringify(users)); let inviteParam = null; try { inviteParam = new URLSearchParams(location.search).get("invite"); } catch (e) { } if (inviteParam) { if (postRegisterTarget === 'cribbage') { try { let inv = await cribLoadInvite(inviteParam); if (inv) { forgetPendingInvite(inviteParam); currentInvite = inv; if (await cribJoinViaInvite(inv, u)) return; } } catch (e) { } } else { try { let res = await linkGameViaInvite(inviteParam, u); if (res && res.game) { forgetPendingInvite(inviteParam); currentInvite = res.invite || currentInvite; await enterGameDirect(res.game, 1); return; } } catch (e) { } } } if (postRegisterTarget === 'groupwords') { gwAfterRegister(); return; } if (postRegisterTarget === 'cribbage') { showCribbageLanding(); } else { renderBoxes(); } }
   async function handleBegin() { let owner = getOwner(); if (!owner) { renderBoxes(); return; } let opp = ($('nameB') ? $('nameB').value.trim() : ''); let g = fresh(owner, opp || "Opponent"); await saveGameToCF(g, { withSeat1: !!opp }); initBroadcastChannel(g.id); if (!opp) { let iid = randomId(); currentInvite = { id: iid, invitedBy: owner, invitedByOpponents: getOpponents(), gameId: g.id, mode: "game-invite", created: Date.now() }; try { await saveInviteToCF(currentInvite); } catch (e) { } addOpponent(opp); await showHeadsUp(iid, g, true); } else { currentInvite = null; if (opp) addOpponent(opp); await showHeadsUp(null, g, false); } }  
   async function handleCreateInvitation() { let owner = getOwner(); if (!owner) { renderBoxes(); return; } let id = randomId(); let placeholder = fresh(owner, "Opponent"); await saveGameToCF(placeholder); initBroadcastChannel(placeholder.id); let inv = { id: id, invitedBy: owner, invitedByOpponents: getOpponents(), gameId: placeholder.id, mode: "unregistered-invite", created: Date.now() }; await saveInviteToCF(inv); currentInvite = inv; await showHeadsUp(id, placeholder, true); }  
   function equalizePills() { const pills = document.querySelectorAll('.btn-pill'); pills.forEach(p => p.style.width = 'max-content'); let max = 0; pills.forEach(p => { max = Math.max(max, p.offsetWidth); }); pills.forEach(p => p.style.width = max + 'px'); }  
@@ -1944,7 +1985,7 @@ body {
     function tg() { var c = p.classList.toggle('collapsed'); h.setAttribute('aria-expanded', c ? 'false' : 'true'); }  
     h.onclick = tg; h.onkeydown = function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tg(); } };  
   })();  
-  $('btn-register').onclick = handleRegister; $('btn-begin').onclick = function () { if (postRegisterTarget === 'cribbage') cribHandleBegin(); else handleBegin(); }; $('btn-invite').onclick = function () { if (postRegisterTarget === 'cribbage') cribHandleCreateInvitation(); else handleCreateInvitation(); }; $('entry-wordage').onclick = entryWordage; $('entry-cribbage').onclick = entryCribbage;
+  $('btn-register').onclick = handleRegister; $('btn-begin').onclick = function () { if (postRegisterTarget === 'cribbage') cribHandleBegin(); else handleBegin(); }; $('btn-invite').onclick = function () { if (postRegisterTarget === 'cribbage') cribHandleCreateInvitation(); else handleCreateInvitation(); }; $('entry-wordage').onclick = entryWordage; $('entry-cribbage').onclick = entryCribbage; $('entry-groupwords').onclick = entryGroupWords;
   $('crib-discard-btn').onclick = cribConfirmDiscard; $('crib-go-btn').onclick = cribSayGo; $('crib-game-back-btn').onclick = cribBackToFoyer;
   let _sc = document.getElementById('share-copy'); if (_sc) { _sc.onclick = function () { let u = document.getElementById('share-url').value; try { navigator.clipboard.writeText(u).catch(() => { }) } catch (e) { prompt("Copy:", u) } }; }  
   $('btn-logout').onclick = function () { localStorage.removeItem("bt_owner"); $('setup').hidden = true; $('reg-user').value = ''; $('reg-pass').value = ''; $('reg-pass2').value = ''; $('nameB').value = ''; let sp = $('share-panel'); if (sp) sp.hidden = true; currentInvite = null; $('bt-headsup').hidden = true; pendingGameForHeadsUp = null; showEntryPage(); initEntryPaws(); populateEntryGames(); };  
@@ -2407,6 +2448,216 @@ body {
     try { let url = new URL(location.href); url.searchParams.delete('game'); url.searchParams.delete('kind'); url.searchParams.delete('p'); history.replaceState(null, '', url.pathname + url.search + url.hash); } catch (e) { }
     showEntryPage(); initEntryPaws(); populateEntryGames();
   }
+  // ================= groupWords MODULE (additive) =================
+  let gw = { gid: null, token: null, seat: null, st: null, shown: {}, cur: '', items: [], ids: '', ws: null, poll: null };
+  let gwPassArmed = 0, gwMsgTimer = null;
+  function GW_TZ() { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; } catch (e) { return 'UTC'; } }
+  function gwKeys() { try { return JSON.parse(localStorage.getItem('bt_gw') || '{}'); } catch (e) { return {}; } }
+  function gwSaveKey(gid, token, seat) { let k = gwKeys(); k[gid] = { token: token, seat: seat }; localStorage.setItem('bt_gw', JSON.stringify(k)); }
+  async function gwApi(method, act, body, gid, token) {
+    gid = gid || gw.gid; token = token === undefined ? gw.token : token;
+    let url = act === 'games' ? API + '/gw/games' : API + '/gw/' + encodeURIComponent(gid) + '/' + act + (method === 'GET' ? '?tz=' + encodeURIComponent(GW_TZ()) : '');
+    let h = {}; if (token) h['X-Seat-Token'] = token; if (body) h['Content-Type'] = 'application/json';
+    try { let r = await fetch(url, { method: method, headers: h, body: body ? JSON.stringify(body) : undefined, cache: 'no-store' }); return { s: r.status, j: await r.json().catch(function () { return {}; }) }; }
+    catch (e) { return { s: 0, j: { error: 'offline' } }; }
+  }
+  function gwMsg(t) { let m = $('gw-msg'); if (!m) return; m.textContent = t; clearTimeout(gwMsgTimer); gwMsgTimer = setTimeout(function () { m.textContent = ''; }, 3500); }
+
+  // ---- Foyer -> registration (groupWords background) -> HeadsUp with the player-count picker ----
+  function entryGroupWords() { postRegisterTarget = 'groupwords'; hideEntryPage(); $('setup').hidden = false; renderBoxes(); if (getOwner()) gwShowSetup(); }
+  function gwAfterRegister() { let g = null; try { g = new URLSearchParams(location.search).get('gw'); } catch (e) { } if (g) gwBoot(g); else gwShowSetup(); }
+  function gwShowSetup() {
+    if (!$('gw-pick')) {
+      let d = document.createElement('div'); d.id = 'gw-pick';
+      d.innerHTML = '<input id="gw-n" inputmode="numeric" maxlength="1" autocomplete="off" aria-label="Number of players"> <a href="#" id="gw-save">(click to save)</a>';
+      $('bt-headsup-left').insertBefore(d, $('bt-headsup-input'));
+      $('gw-save').onclick = function (e) { e.preventDefault(); gwSaveCount(); };
+      $('gw-n').onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); gwSaveCount(); } };
+    }
+    $('box-start').hidden = true; $('box-register').hidden = true; $('setup').classList.add('gw-nodlg');
+    let hu = $('bt-headsup'); hu.classList.add('gw-pick'); hu.hidden = false;
+    $('bt-headsup-help').textContent = 'Set up a guess-the-word game for how many players (up to six):';
+    $('gw-n').value = ''; $('gw-save').textContent = '(click to save)';
+    $('bt-headsup-copy-msg').disabled = true; $('bt-headsup-copy-link').disabled = true; $('bt-headsup-continue').disabled = true;
+    $('bt-headsup-copy-msg').textContent = 'Message copied'; $('bt-headsup-copy-link').textContent = 'Copy link instead';
+    setTimeout(function () { $('gw-n').focus(); }, 50);
+  }
+  async function gwSaveCount() {
+    let n = parseInt($('gw-n').value, 10), owner = getOwner();
+    if (!(n >= 2 && n <= 6) || !owner) { $('gw-n').focus(); return; }
+    $('gw-save').textContent = 'saving...';
+    let r = await gwApi('POST', 'games', { name: owner, tz: GW_TZ(), seats: n }, null, null);
+    if (r.s !== 201 || !r.j.token) { $('gw-save').textContent = "(couldn't save - click to retry)"; return; }
+    gw.gid = r.j.gid; gw.token = r.j.token; gw.seat = 0; gwSaveKey(gw.gid, gw.token, 0);
+    let url = LIVE_SITE + '?kind=groupwords&gw=' + encodeURIComponent(gw.gid), msg = 'Join me for a game of groupWords on BearTracks: ' + url, first = r.j;
+    $('bt-headsup').classList.remove('gw-pick');
+    $('bt-headsup-help').textContent = 'Join me for a game of groupWords on BearTracks:';
+    $('bt-headsup-input').value = msg; try { navigator.clipboard.writeText(msg).catch(function () { }); } catch (e) { }
+    $('bt-headsup-copy-msg').disabled = true; $('bt-headsup-copy-msg').textContent = 'Message copied';
+    $('bt-headsup-copy-msg').onclick = function () { $('bt-headsup-input').value = msg; try { navigator.clipboard.writeText(msg).catch(function () { }); } catch (e) { } };
+    $('bt-headsup-copy-link').disabled = false; $('bt-headsup-copy-link').textContent = 'Copy link instead';
+    $('bt-headsup-copy-link').onclick = function () { $('bt-headsup-input').value = url; try { navigator.clipboard.writeText(url).catch(function () { }); } catch (e) { } };
+    $('bt-headsup-continue').disabled = false;
+    $('bt-headsup-continue').onclick = function () { $('bt-headsup').hidden = true; gwEnter(first); };
+  }
+
+  // ---- joining by the shared link ----
+  async function gwBoot(gid) {
+    let rec = gwKeys()[gid], owner = getOwner();
+    hideEntryPage(); $('bt-headsup').hidden = true;
+    if (rec && rec.token) { gw.gid = gid; gw.token = rec.token; gw.seat = rec.seat; return gwEnter(); }
+    if (!owner) { postRegisterTarget = 'groupwords'; $('setup').hidden = false; renderBoxes(); return; }
+    return gwJoin(gid, owner, false);
+  }
+  async function gwJoin(gid, owner, restore) {
+    gwNoticeClose(); $('setup').hidden = false; $('box-start').hidden = true; $('box-register').hidden = true; $('setup').classList.add('gw-nodlg');
+    let r = await gwApi('POST', 'join', { name: owner, tz: GW_TZ(), restore: !!restore }, gid, null);
+    if (r.s === 200 || r.s === 201) {
+      if (r.j.token) gwSaveKey(gid, r.j.token, r.j.seat);
+      gw.gid = gid; gw.token = r.j.token || (gwKeys()[gid] || {}).token; gw.seat = r.j.seat; return gwEnter();
+    }
+    let back = ['Back to Foyer', gwLeave];
+    if (r.s === 409 && /taken/.test(r.j.error || '')) return gwNotice('This game already has a player named ' + owner + '.', [['Restore my seat', function () { gwJoin(gid, owner, true); }], back]);
+    if (r.s === 409) return gwNotice('This game is full.', [back]);
+    if (r.s === 404) return gwNotice(restore ? 'No seat with that name was found.' : 'That game was not found.', [back]);
+    gwNotice('Could not join right now. Please try again.', [back]);
+  }
+  function gwNotice(text, buttons) {
+    gwNoticeClose();
+    let d = document.createElement('div'); d.id = 'gw-notice'; let p = document.createElement('p'); p.textContent = text; d.appendChild(p);
+    buttons.forEach(function (b) { let x = document.createElement('button'); x.textContent = b[0]; x.onclick = b[1]; d.appendChild(x); });
+    document.body.appendChild(d);
+  }
+  function gwNoticeClose() { let d = $('gw-notice'); if (d) d.remove(); }
+  function gwLeave() { gwNoticeClose(); $('setup').hidden = true; showEntryPage(); try { initEntryPaws(); } catch (e) { } try { populateEntryGames(); } catch (e) { } }
+
+  // ---- the game screen ----
+  function gwBuild() {
+    if ($('gw-game')) return;
+    let g = document.createElement('div'); g.id = 'gw-game'; g.hidden = true;
+    g.innerHTML = '<div id="gw-msg"></div><div id="gw-table"></div><input id="gw-inp" maxlength="5" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" aria-label="Guess">';
+    document.body.appendChild(g);
+    let inp = $('gw-inp');
+    inp.addEventListener('input', function () { let me = gw.st && gw.st.me; if (!me || me.status !== 'playing') { inp.value = ''; return; } inp.value = inp.value.replace(/[^a-z]/gi, '').toUpperCase().slice(0, 5); gw.cur = inp.value; gwRender(); });
+    inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); gwGuess(); } });
+    document.addEventListener('keydown', function (e) { if (!g.hidden && e.target.tagName !== 'INPUT') inp.focus({ preventScroll: true }); });
+    addEventListener('resize', gwLayout); addEventListener('orientationchange', function () { setTimeout(gwLayout, 200); });
+  }
+  async function gwEnter(first) {
+    hideEntryPage(); $('setup').hidden = true; $('bt-headsup').hidden = true; gwNoticeClose(); gwBuild(); $('gw-game').hidden = false;
+    try { let u = new URL(location.href); u.searchParams.set('kind', 'groupwords'); u.searchParams.set('gw', gw.gid); u.searchParams.delete('invite'); history.replaceState(null, '', u.pathname + u.search + u.hash); } catch (e) { }
+    if (first && first.me) { gw.st = first; gwRender(); }
+    await gwRefresh(); gwConnect();
+    clearInterval(gw.poll); gw.poll = setInterval(function () { if (!document.hidden) gwRefresh(); }, 30000);
+    $('gw-inp').focus({ preventScroll: true });
+  }
+  function gwConnect() {
+    try { if (gw.ws) { let o = gw.ws; gw.ws = null; o.close(); } } catch (e) { }
+    try {
+      let ws = new WebSocket(API.replace(/^http/, 'ws') + '/gw/' + encodeURIComponent(gw.gid) + '/ws', ['bt.' + gw.token]);
+      ws.onmessage = function () { gwRefresh(); };
+      ws.onclose = function () { if (gw.ws === ws && !$('gw-game').hidden) setTimeout(function () { if (gw.ws === ws) gwConnect(); }, 8000); };
+      gw.ws = ws;
+    } catch (e) { }
+  }
+  async function gwRefresh() {
+    if (!gw.gid) return;
+    let r = await gwApi('GET', 'status');
+    if (r.s === 401) { gwMsg('This device does not hold a seat in this game.'); return; }
+    if (r.s !== 200) return;
+    gw.st = r.j;
+    Object.keys(gw.shown).forEach(function (n) { let s = r.j.seats.find(function (x) { return String(x.n) === n; }); if (!s || !s.flip || s.day !== gw.shown[n].day) delete gw.shown[n]; });
+    if (r.j.me.status !== 'playing') { gw.cur = ''; $('gw-inp').value = ''; }
+    gwRender();
+  }
+  async function gwGuess() {
+    let me = gw.st && gw.st.me; if (!me || me.status !== 'playing' || gw.cur.length < 5) return;
+    let g = gw.cur; gw.cur = ''; $('gw-inp').value = '';
+    let r = await gwApi('POST', 'guess', { guess: g, tz: GW_TZ() });
+    if (r.s === 200) { gw.st = r.j; gwRender(); return; }
+    if (r.s === 422 || r.s === 400) { gw.cur = g; $('gw-inp').value = g; gwMsg(r.j.error === 'not in word list' ? 'Not in the word list' : 'Five letters, please'); gwRender(); return; }
+    gwMsg('That guess could not be sent'); gwRefresh();
+  }
+  async function gwPass() {
+    if (Date.now() - gwPassArmed > 3000) { gwPassArmed = Date.now(); gwMsg("Tap Pass again to give up today's word"); return; }
+    gwPassArmed = 0; let r = await gwApi('POST', 'pass', { tz: GW_TZ() }); if (r.s === 200) { gw.st = r.j; gwRender(); } else gwRefresh();
+  }
+  async function gwNewDay() {
+    let r = await gwApi('POST', 'newday', { tz: GW_TZ() }); if (r.s === 200) { gw.st = r.j; gw.cur = ''; gw.shown = {}; gwRender(); } else gwRefresh();
+  }
+  async function gwClick(it) {
+    let me = gw.st && gw.st.me; if (!me || it.empty) return;
+    if (it.n === me.n) { $('gw-inp').focus({ preventScroll: true }); return; }
+    if (gw.shown[it.n]) { delete gw.shown[it.n]; gwRender(); return; }
+    if (!it.flip) { gwMsg(it.done ? "You can't flip a player who has moved on to a newer day" : 'That player has not finished yet'); return; }
+    let r = await gwApi('POST', it.reveal ? 'reveal' : 'flip', { target: it.n, tz: GW_TZ() });
+    if (r.s === 200) { gw.shown[it.n] = r.j; gwRender(); } else gwRefresh();
+  }
+  function gwLink(text, fn) { let a = document.createElement('a'); a.href = '#'; a.className = 'gw-link'; a.textContent = text; a.onclick = function (e) { e.preventDefault(); e.stopPropagation(); fn(); }; return a; }
+  function gwMakeCard(it) {
+    let c = document.createElement('div'); c.className = 'gw-card';
+    c.innerHTML = '<div class="gw-inner"><div class="gw-face gw-front"><div class="gw-hd"><b></b><span></span></div><div class="gw-rows"></div></div><div class="gw-face gw-back"><div class="gw-lab"></div><div class="gw-pass"></div></div></div>';
+    c.onclick = function () { let cur = gw.items.find(function (x) { return x.n === it.n; }); if (cur) gwClick(cur); };
+    return c;
+  }
+  function gwRowsHtml(rows, cur, letters) {
+    let h = '';
+    for (let r = 0; r < 6; r++) {
+      let x = rows[r], cr = (!x && r === rows.length) ? cur : '';
+      h += '<div class="gw-r">';
+      for (let k = 0; k < 5; k++) { let ch = x ? (x.g ? x.g[k] : '') : (cr[k] || ''), cl = x ? ' c' + x.c[k] : (cr[k] ? ' f' : ''); h += '<div class="gw-t' + cl + '">' + (letters ? ch : '') + '</div>'; }
+      h += '</div>';
+    }
+    return h;
+  }
+  function gwFill(it) {
+    let me = gw.st.me, el = it.el;
+    if (it.empty) { el.classList.add('down'); el.classList.remove('can', 'mine'); el.querySelector('.gw-lab').textContent = ''; el.querySelector('.gw-pass').textContent = ''; return; }
+    let mine = it.n === me.n, shown = gw.shown[it.n];
+    el.classList.toggle('down', !mine && !shown);
+    el.classList.toggle('mine', mine && me.status === 'playing');
+    el.classList.toggle('can', mine || !!it.flip);
+    el.querySelector('.gw-lab').textContent = it.name + (it.score != null ? '   ' + it.score : '');
+    el.querySelector('.gw-pass').textContent = it.pass ? 'Pass' : '';
+    el.querySelector('.gw-hd b').textContent = it.name;
+    let sp = el.querySelector('.gw-hd span'), rows = [], letters = false, cur = '';
+    sp.textContent = '';
+    if (mine) {
+      rows = me.rows; letters = true;
+      if (me.status === 'playing') { cur = gw.cur; sp.appendChild(gwLink('Pass', gwPass)); }
+      else { sp.appendChild(document.createTextNode((me.status === 'pass' ? 'Pass' : me.score) + ' ')); if (me.canNewDay) sp.appendChild(gwLink('New word', gwNewDay)); }
+    } else if (shown) {
+      letters = shown.word !== undefined;
+      rows = shown.rows.map(function (x) { return Array.isArray(x) ? { g: '', c: x } : x; });
+      sp.textContent = it.pass ? 'Pass' : (it.score != null ? String(it.score) : '');
+    }
+    el.querySelector('.gw-rows').innerHTML = gwRowsHtml(rows, cur, letters);
+  }
+  function gwRender() {
+    let st = gw.st; if (!st) return;
+    let seats = st.seats, ord = st.order.map(function (nm) { return seats.find(function (s) { return s.name === nm; }); }).filter(Boolean);
+    seats.forEach(function (s) { if (ord.indexOf(s) < 0) ord.push(s); });
+    let items = ord.map(function (s) { return Object.assign({}, s); });
+    for (let k = 0; items.length < (st.max || 6); k++) items.push({ n: -1 - k, empty: true });
+    let ids = items.map(function (i) { return i.n; }).join();
+    if (ids !== gw.ids) { gw.ids = ids; items.forEach(function (i) { i.el = gwMakeCard(i); }); gw.items = items; gwLayout(); }
+    else { items.forEach(function (i, k) { i.el = gw.items[k].el; }); gw.items = items; }
+    items.forEach(gwFill);
+  }
+  function gwLayout() {
+    let t = $('gw-table'); if (!t || !gw.items.length) return;
+    let n = gw.items.length, Wd = t.clientWidth - 16, Ht = t.clientHeight - 16, gap = Math.max(8, Math.min(Wd, Ht) * 0.02), best = { w: 0, c: 1 };
+    for (let c = 1; c <= n; c++) {
+      if (n === 5 && c !== 2 && c !== 3) continue; // five players: three up, two down (two across when the screen is upright)
+      let r = Math.ceil(n / c), w = Math.min((Wd - gap * (c - 1)) / c, (Ht - gap * (r - 1)) / r / 1.4);
+      if (w > best.w) best = { w: w, c: c };
+    }
+    let w = Math.max(60, best.w);
+    document.documentElement.style.setProperty('--gwcw', w + 'px'); t.style.setProperty('--gwgap', gap + 'px'); t.innerHTML = '';
+    for (let i = 0; i < n; i += best.c) { let row = document.createElement('div'); row.className = 'gw-row'; gw.items.slice(i, i + best.c).forEach(function (it) { row.appendChild(it.el); }); t.appendChild(row); }
+  }
+  // ================= END groupWords MODULE =================
+
   // ================= END CRIBBAGE MODULE =================
 
   (async () => {
@@ -2437,6 +2688,7 @@ body {
         }
       }
     }    
+    if (kindParam === 'groupwords' && params.get("gw")) { await gwBoot(params.get("gw")); return; }
     let sState = tryLoadFromHash(); absorbSeatKey(sState ? sState.id : gid, pParam); if (sState) { state = sState; hasState = true; if (state) initBroadcastChannel(state.id); }  
     if (!hasState && gid) {  
       let g = await loadGame(gid);  
