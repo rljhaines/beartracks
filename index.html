@@ -1057,11 +1057,13 @@ body {
     }
     defs.appendChild(patDef);
     const sym = document.createElementNS(NS, 'symbol');
-    sym.setAttribute('id', 'crib-cardback-scene'); sym.setAttribute('viewBox', '0 0 74 94');
+    const SW = CRIB_CARD_W - 8, SH = CRIB_CARD_H - 8; // art area: equal 4px inset on all four sides
+    sym.setAttribute('id', 'crib-cardback-scene'); sym.setAttribute('viewBox', '0 0 ' + SW + ' ' + SH);
+    sym.setAttribute('preserveAspectRatio', 'none');
     sym.innerHTML =
-      '<rect x="0" y="0" width="74" height="94" rx="4" fill="url(#crib-cardback-pattern)"/>' +
-      '<rect x="5" y="5" width="64" height="84" rx="3" fill="none" stroke="' + light + '" stroke-width="1.5"/>' +
-      '<rect x="1" y="1" width="72" height="92" rx="4" fill="none" stroke="' + color + '" stroke-width="2"/>';
+      '<rect x="0" y="0" width="' + SW + '" height="' + SH + '" rx="4" fill="url(#crib-cardback-pattern)"/>' +
+      '<rect x="5" y="5" width="' + (SW - 10) + '" height="' + (SH - 10) + '" rx="3" fill="none" stroke="' + light + '" stroke-width="1.5"/>' +
+      '<rect x="1" y="1" width="' + (SW - 2) + '" height="' + (SH - 2) + '" rx="4" fill="none" stroke="' + color + '" stroke-width="2"/>';
     defs.appendChild(sym);
   }
   function cribBuildCardCorner(NS, rank, suit) {
@@ -1305,7 +1307,7 @@ body {
       back.appendChild(backRect);
       const backUse = document.createElementNS(NS, 'use');
       backUse.setAttribute('href', '#crib-cardback-scene'); backUse.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', '#crib-cardback-scene');
-      backUse.setAttribute('x', 3); backUse.setAttribute('y', 3); backUse.setAttribute('width', cardW - 6); backUse.setAttribute('height', cardH - 6);
+      backUse.setAttribute('x', 4); backUse.setAttribute('y', 4); backUse.setAttribute('width', cardW - 8); backUse.setAttribute('height', cardH - 8);
       back.appendChild(backUse);
       flip.appendChild(back);
 
@@ -1410,13 +1412,13 @@ body {
     try {
       const r1 = colRuns.querySelectorAll('text')[1];
       const ext = r1.getExtentOfChar(1);
-      flushX = ext.x + ext.width / 2;
+      flushX = ext.x;
     } catch (e) { }
     const flushY = is10Y - 2;
     {
       const t = document.createElementNS(NS, 'text');
       t.setAttribute('x', flushX); t.setAttribute('y', flushY);
-      t.setAttribute('text-anchor', 'middle');
+      t.setAttribute('text-anchor', 'start');
       t.setAttribute('font-size', 12.5); t.setAttribute('font-weight', '700');
       t.textContent = 'Flush';
       colFlush.appendChild(t);
@@ -1425,10 +1427,10 @@ body {
     const colNobs = document.getElementById('crib-colnobs');
     {
       const flushBBox = colFlush.querySelector('text').getBBox();
-      const flushCenterX = flushBBox.x + flushBBox.width / 2;
+      const flushCenterX = flushX;
       const t = document.createElementNS(NS, 'text');
       t.setAttribute('x', flushCenterX); t.setAttribute('y', flushY);
-      t.setAttribute('text-anchor', 'middle');
+      t.setAttribute('text-anchor', 'start');
       t.setAttribute('font-size', 12.5); t.setAttribute('font-weight', '700');
       t.textContent = 'Nobs';
       colNobs.appendChild(t);
@@ -1457,7 +1459,7 @@ body {
       let spaceW = 3.5;
       try { const cx = document.createElement('canvas').getContext('2d'); cx.font = '12.5px sans-serif'; spaceW = cx.measureText('  ').width; } catch (e) { }
       const fo = document.createElementNS(NS, 'foreignObject');
-      fo.setAttribute('x', lb.x + lb.width + spaceW); fo.setAttribute('y', lb.y - 1);
+      fo.setAttribute('x', lb.x + lb.width + spaceW); fo.setAttribute('y', lb.y - 3);
       fo.setAttribute('width', 36); fo.setAttribute('height', lb.height + 2);
       const inp = document.createElementNS('http://www.w3.org/1999/xhtml', 'input');
       inp.type = 'text'; inp.setAttribute('inputmode', 'numeric'); inp.maxLength = 2;
@@ -1472,6 +1474,9 @@ body {
       });
       fo.appendChild(inp);
       hc.appendChild(fo);
+      // keep the cursor in the entry field
+      inp.addEventListener('blur', () => { setTimeout(() => { try { if (!document.getElementById('cribbage-game').hidden && document.activeElement !== inp) inp.focus({ preventScroll: true }); } catch (e) { } }, 0); });
+      setTimeout(() => { try { inp.focus({ preventScroll: true }); } catch (e) { } }, 0);
 
       const mkOutline = () => {
         const r = document.createElementNS(NS, 'rect');
@@ -1492,6 +1497,7 @@ body {
   // The a-Pair rows read as (selected 15s value + pair value), so the remembered pair row re-labels itself
   // whenever the 15s selection changes.
   const CRIB_IMPOSSIBLE_COUNTS = [19, 25, 26, 27];
+  const CRIB_RUN_DEFAULTS = ['## ## ##', '## ## # ##', '## ## ## ## ##'];
   let cribSel = { f15: null, pair: null, runs: null }, cribCountRefs = null;
   function cribCountRefresh() {
     const R = cribCountRefs; if (!R) return;
@@ -1505,6 +1511,13 @@ body {
         rect.removeAttribute('display');
       } catch (e) { }
     };
+    const pairVal = cribSel.pair != null ? (cribSel.pair + 1) * 2 : 0;
+    const runBase = offset + pairVal;
+    R.runTexts.forEach((t, i) => {
+      if (!runBase) { t.textContent = CRIB_RUN_DEFAULTS[i]; return; }
+      const nums = []; for (let k = 1; k <= 3 + i; k++) nums.push(runBase + k);
+      t.textContent = nums.join(' ');
+    });
     place(R.outlines.f15, cribSel.f15 != null ? R.f15Texts[cribSel.f15] : null);
     place(R.outlines.pair, cribSel.pair != null ? R.pairTexts[cribSel.pair] : null);
     place(R.outlines.runs, cribSel.runs != null ? R.runTexts[cribSel.runs] : null);
