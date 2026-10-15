@@ -1498,8 +1498,10 @@ body {
       flushText.style.cursor = 'pointer'; nobsText.style.cursor = 'pointer';
       flushText.addEventListener('click', () => {
         if (flushText.dataset.cribOff === '1') return;
-        const next = cribSel.flush == null ? 4 : (cribSel.flush === 4 ? 5 : null);
-        if (next != null && !cribFeasible(Object.assign({}, cribSel, { flush: next }))) cribSel.flush = null; else cribSel.flush = next;
+        // off -> 4 -> 5 -> off, skipping any value no real hand allows with the other claims
+        // (e.g. a 4-card flush can't coexist with Nobs, but a 5-card flush can).
+        const order = cribSel.flush == null ? [4, 5] : (cribSel.flush === 4 ? [5] : []);
+        cribSel.flush = order.find(v => cribFeasible(Object.assign({}, cribSel, { flush: v }))) || null;
         cribCountRefresh();
       });
       nobsText.addEventListener('click', () => {
