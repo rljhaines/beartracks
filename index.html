@@ -1535,15 +1535,11 @@ body {
         });
       });
       wire(f15Texts, 'f15'); wire(pairTexts, 'pair'); wire(runTexts, 'runs');
-      // Flush cycles off -> 4 -> 5 -> off (a 5-card flush needs the starter too); Nobs toggles.
+      // Flush and Nobs each simply toggle on/off like the other scoring elements.
       flushText.style.cursor = 'pointer'; nobsText.style.cursor = 'pointer';
       flushText.addEventListener('click', () => {
         if (flushText.dataset.cribOff === '1') return;
-        // off -> 4 -> 5 -> off, skipping any value no real hand allows with the other claims
-        // (e.g. a 4-card flush can't coexist with Nobs, but a 5-card flush can).
-        const order = cribSel.flush == null ? [4, 5] : (cribSel.flush === 4 ? [5] : []);
-        cribSel.flush = order.find(v => cribFeasible(Object.assign({}, cribSel, { flush: v }))) || null;
-        cribCountRefresh();
+        cribSel.flush = cribSel.flush == null ? 4 : null; cribCountRefresh();
       });
       nobsText.addEventListener('click', () => {
         if (nobsText.dataset.cribOff === '1') return;
@@ -1567,7 +1563,7 @@ body {
   function cribFeasible(s) {
     const n = s.f15 != null ? s.f15 + 1 : null, p = s.pair != null ? CRIB_PAIR_COUNTS[s.pair] : null, r = s.runs != null ? 3 + s.runs : null;
     const f = s.flush != null ? s.flush : null, b = s.nobs ? 1 : null;
-    return CRIB_COMBOS.some(t => (n == null || t[0] === n) && (p == null || t[1] === p) && (r == null || t[2] === r) && (f == null || t[3] === f) && (b == null || t[4] === b));
+    return CRIB_COMBOS.some(t => (n == null || t[0] === n) && (p == null || t[1] === p) && (r == null || t[2] === r) && (f == null || t[3] > 0) && (b == null || t[4] === b));
   }
   function cribCountRefresh() {
     const R = cribCountRefs; if (!R) return;
@@ -1595,7 +1591,7 @@ body {
     R.f15Texts.forEach((t, i) => gray(t, cribSel.f15 === i || cribFeasible(Object.assign({}, cribSel, { f15: i }))));
     R.pairTexts.forEach((t, i) => gray(t, cribSel.pair === i || cribFeasible(Object.assign({}, cribSel, { pair: i }))));
     R.runTexts.forEach((t, i) => gray(t, cribSel.runs === i || cribFeasible(Object.assign({}, cribSel, { runs: i }))));
-    gray(R.flushText, cribSel.flush != null || cribFeasible(Object.assign({}, cribSel, { flush: 4 })) || cribFeasible(Object.assign({}, cribSel, { flush: 5 })));
+    gray(R.flushText, cribSel.flush != null || cribFeasible(Object.assign({}, cribSel, { flush: 4 })));
     gray(R.nobsText, cribSel.nobs || cribFeasible(Object.assign({}, cribSel, { nobs: true })));
     place(R.outlines.f15, cribSel.f15 != null ? R.f15Texts[cribSel.f15] : null);
     place(R.outlines.pair, cribSel.pair != null ? R.pairTexts[cribSel.pair] : null);
@@ -1603,9 +1599,17 @@ body {
     place(R.outlines.flush, cribSel.flush != null ? R.flushText : null);
     place(R.outlines.nobs, cribSel.nobs ? R.nobsText : null);
     if (cribSel.f15 != null || cribSel.pair != null || cribSel.runs != null || cribSel.flush != null || cribSel.nobs) {
-      const total = offset + pairVal + (cribSel.runs != null ? 3 + cribSel.runs : 0) + (cribSel.flush || 0) + (cribSel.nobs ? 1 : 0);
+      const total = offset + pairVal + (cribSel.runs != null ? 3 + cribSel.runs : 0) + (cribSel.flush != null ? cribFlushPoints() : 0) + (cribSel.nobs ? 1 : 0);
       R.inp.value = String(total); R.setPrev(R.inp.value);
     } else { R.inp.value = ''; R.setPrev(''); }
+  }
+  // A flush is worth 5 when the starter matches the hand's suit, otherwise 4.
+  function cribFlushPoints() {
+    try {
+      const hand = (cribState && cribState.hands && cribState.hands[cribGetLocalIdx()]) || [], st = cribState && cribState.starter;
+      if (st && hand[0] && st.s === hand[0].s) return 5;
+    } catch (e) { }
+    return 4;
   }
   function cribCountReset() { cribSel = cribNewSel(); try { cribCountRefresh(); } catch (e) { } }
 
