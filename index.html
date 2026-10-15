@@ -1390,7 +1390,7 @@ body {
 
     const colPair = document.getElementById('crib-colpair');
     const cPy0 = anchorY;
-    const valsPair = ['a Pair', 'is 2', 'is 4', 'is 6', 'is 8', 'is 10', 'is 12'];
+    const valsPair = ['a Pair', 'is 2', 'is 4', 'is 6', 'is 8', 'is 12']; // 5 pairs can't occur, so 6 pairs takes the fifth row
     valsPair.forEach((v, i) => {
       const t = document.createElementNS(NS, 'text');
       t.setAttribute('y', cPy0 + i * rowH);
@@ -1484,12 +1484,28 @@ body {
         r.setAttribute('rx', 2); r.setAttribute('pointer-events', 'none'); r.setAttribute('display', 'none');
         hc.appendChild(r); return r;
       };
-      cribCountRefs = { pairTexts, f15Texts, runTexts, inp, outlines: { f15: mkOutline(), pair: mkOutline(), runs: mkOutline() }, setPrev: v => { prev = v; } };
+      const flushText = document.querySelector('#crib-colflush text'), nobsText = document.querySelector('#crib-colnobs text');
+      cribCountRefs = { pairTexts, f15Texts, runTexts, flushText, nobsText, inp, outlines: { f15: mkOutline(), pair: mkOutline(), runs: mkOutline(), flush: mkOutline(), nobs: mkOutline() }, setPrev: v => { prev = v; } };
       const wire = (texts, key) => texts.forEach((t, i) => {
         t.style.cursor = 'pointer';
-        t.addEventListener('click', () => { cribSel[key] = (cribSel[key] === i) ? null : i; cribCountRefresh(); });
+        t.addEventListener('click', () => {
+          if (t.dataset.cribOff === '1') return;
+          cribSel[key] = (cribSel[key] === i) ? null : i; cribCountRefresh();
+        });
       });
       wire(f15Texts, 'f15'); wire(pairTexts, 'pair'); wire(runTexts, 'runs');
+      // Flush cycles off -> 4 -> 5 -> off (a 5-card flush needs the starter too); Nobs toggles.
+      flushText.style.cursor = 'pointer'; nobsText.style.cursor = 'pointer';
+      flushText.addEventListener('click', () => {
+        if (flushText.dataset.cribOff === '1') return;
+        const next = cribSel.flush == null ? 4 : (cribSel.flush === 4 ? 5 : null);
+        if (next != null && !cribFeasible(Object.assign({}, cribSel, { flush: next }))) cribSel.flush = null; else cribSel.flush = next;
+        cribCountRefresh();
+      });
+      nobsText.addEventListener('click', () => {
+        if (nobsText.dataset.cribOff === '1') return;
+        cribSel.nobs = !cribSel.nobs; cribCountRefresh();
+      });
       cribCountRefresh();
     }
   }
@@ -1498,11 +1514,22 @@ body {
   // whenever the 15s selection changes.
   const CRIB_IMPOSSIBLE_COUNTS = [19, 25, 26, 27];
   const CRIB_RUN_DEFAULTS = ['## ## ##', '## ## # ##', '## ## ## ## ##'];
-  let cribSel = { f15: null, pair: null, runs: null }, cribCountRefs = null;
+  // Every combination a real hand (4 cards + starter) can produce, enumerated from all possible deals:
+  // [number of 15s, number of pairs, run points, flush points (0/4/5), nobs (0/1)].
+  const CRIB_COMBOS = [[0,0,0,0,0],[0,0,0,0,1],[0,0,0,4,0],[0,0,0,5,0],[0,0,0,5,1],[0,0,3,0,0],[0,0,3,0,1],[0,0,3,4,0],[0,0,3,5,0],[0,0,3,5,1],[0,0,4,0,0],[0,0,4,0,1],[0,0,4,4,0],[0,0,4,5,0],[0,0,4,5,1],[0,0,5,0,0],[0,0,5,0,1],[0,0,5,4,0],[0,0,5,5,0],[0,0,5,5,1],[0,1,0,0,0],[0,1,0,0,1],[0,1,0,4,0],[0,1,3,0,0],[0,1,3,0,1],[0,1,3,4,0],[0,1,6,0,0],[0,1,6,0,1],[0,1,6,4,0],[0,1,8,0,0],[0,1,8,0,1],[0,1,8,4,0],[0,2,0,0,0],[0,2,0,0,1],[0,2,12,0,0],[0,2,12,0,1],[0,3,0,0,0],[0,3,0,0,1],[0,3,9,0,0],[0,3,9,0,1],[0,4,0,0,0],[0,4,0,0,1],[0,6,0,0,0],[0,6,0,0,1],[1,0,0,0,0],[1,0,0,0,1],[1,0,0,4,0],[1,0,0,5,0],[1,0,0,5,1],[1,0,3,0,0],[1,0,3,0,1],[1,0,3,4,0],[1,0,3,5,0],[1,0,3,5,1],[1,0,4,0,0],[1,0,4,0,1],[1,0,4,4,0],[1,0,4,5,0],[1,0,4,5,1],[1,0,5,0,0],[1,0,5,0,1],[1,0,5,4,0],[1,0,5,5,0],[1,0,5,5,1],[1,1,0,0,0],[1,1,0,0,1],[1,1,0,4,0],[1,1,3,0,0],[1,1,3,0,1],[1,1,3,4,0],[1,1,6,0,0],[1,1,6,0,1],[1,1,6,4,0],[1,1,8,0,0],[1,1,8,4,0],[1,2,0,0,0],[1,2,0,0,1],[1,2,12,0,0],[1,3,0,0,0],[1,3,0,0,1],[1,3,9,0,0],[1,4,0,0,0],[1,6,0,0,0],[2,0,0,0,0],[2,0,0,0,1],[2,0,0,4,0],[2,0,0,5,0],[2,0,0,5,1],[2,0,3,0,0],[2,0,3,0,1],[2,0,3,4,0],[2,0,3,5,0],[2,0,3,5,1],[2,0,4,0,0],[2,0,4,0,1],[2,0,4,4,0],[2,0,4,5,0],[2,0,4,5,1],[2,0,5,0,0],[2,0,5,4,0],[2,0,5,5,0],[2,1,0,0,0],[2,1,0,0,1],[2,1,0,4,0],[2,1,3,0,0],[2,1,3,0,1],[2,1,3,4,0],[2,1,6,0,0],[2,1,6,0,1],[2,1,6,4,0],[2,1,8,0,0],[2,1,8,4,0],[2,2,0,0,0],[2,2,0,0,1],[2,2,12,0,0],[2,3,0,0,0],[2,4,0,0,0],[3,0,0,0,0],[3,0,0,0,1],[3,0,0,4,0],[3,0,0,5,0],[3,0,0,5,1],[3,0,3,0,0],[3,0,3,0,1],[3,0,3,4,0],[3,0,3,5,0],[3,0,3,5,1],[3,0,4,0,0],[3,0,4,0,1],[3,0,4,4,0],[3,0,4,5,0],[3,0,4,5,1],[3,1,0,0,0],[3,1,0,0,1],[3,1,0,4,0],[3,1,3,0,0],[3,1,3,0,1],[3,1,3,4,0],[3,1,6,0,0],[3,1,6,0,1],[3,1,6,4,0],[3,1,8,0,0],[3,1,8,4,0],[3,2,0,0,0],[3,3,0,0,0],[3,3,0,0,1],[3,3,9,0,0],[3,4,0,0,0],[4,0,0,0,0],[4,0,0,0,1],[4,0,0,4,0],[4,0,0,5,0],[4,0,0,5,1],[4,0,4,0,0],[4,0,4,0,1],[4,0,4,4,0],[4,0,4,5,0],[4,0,4,5,1],[4,1,0,0,0],[4,1,0,0,1],[4,1,0,4,0],[4,1,3,0,0],[4,1,3,0,1],[4,1,3,4,0],[4,1,6,0,0],[4,1,6,0,1],[4,1,6,4,0],[4,2,0,0,0],[4,2,0,0,1],[4,2,12,0,0],[4,3,0,0,0],[4,3,0,0,1],[4,3,9,0,0],[4,6,0,0,0],[4,6,0,0,1],[5,2,0,0,0],[5,3,0,0,0],[5,4,0,0,0],[6,1,0,0,0],[6,1,0,0,1],[6,1,0,4,0],[6,1,3,0,0],[6,1,3,0,1],[6,1,3,4,0],[6,2,0,0,0],[6,2,0,0,1],[6,3,0,0,0],[6,4,0,0,0],[6,4,0,0,1],[6,6,0,0,0],[7,3,0,0,0],[7,3,0,0,1],[7,4,0,0,0],[7,4,0,0,1],[8,6,0,0,0],[8,6,0,0,1]];
+  const CRIB_PAIR_COUNTS = [1, 2, 3, 4, 6]; // pairs represented by the five "a Pair" rows
+  const cribNewSel = () => ({ f15: null, pair: null, runs: null, flush: null, nobs: false });
+  let cribSel = cribNewSel(), cribCountRefs = null;
+  // Is there a real hand consistent with everything claimed so far? Unclaimed categories are free.
+  function cribFeasible(s) {
+    const n = s.f15 != null ? s.f15 + 1 : null, p = s.pair != null ? CRIB_PAIR_COUNTS[s.pair] : null, r = s.runs != null ? 3 + s.runs : null;
+    const f = s.flush != null ? s.flush : null, b = s.nobs ? 1 : null;
+    return CRIB_COMBOS.some(t => (n == null || t[0] === n) && (p == null || t[1] === p) && (r == null || t[2] === r) && (f == null || t[3] === f) && (b == null || t[4] === b));
+  }
   function cribCountRefresh() {
     const R = cribCountRefs; if (!R) return;
     const offset = cribSel.f15 != null ? (cribSel.f15 + 1) * 2 : 0;
-    R.pairTexts.forEach((t, i) => { t.textContent = 'is ' + (offset + (i + 1) * 2); });
+    R.pairTexts.forEach((t, i) => { t.textContent = 'is ' + (offset + CRIB_PAIR_COUNTS[i] * 2); });
     const place = (rect, t) => {
       if (!t) { rect.setAttribute('display', 'none'); return; }
       try {
@@ -1511,22 +1538,33 @@ body {
         rect.removeAttribute('display');
       } catch (e) { }
     };
-    const pairVal = cribSel.pair != null ? (cribSel.pair + 1) * 2 : 0;
+    const pairVal = cribSel.pair != null ? CRIB_PAIR_COUNTS[cribSel.pair] * 2 : 0;
     const runBase = offset + pairVal;
     R.runTexts.forEach((t, i) => {
       if (!runBase) { t.textContent = CRIB_RUN_DEFAULTS[i]; return; }
       const nums = []; for (let k = 1; k <= 3 + i; k++) nums.push(runBase + k);
       t.textContent = nums.join(' ');
     });
+    // Gray every option that no real hand could combine with what is already claimed.
+    // Nothing is grayed until something has been claimed.
+    const anySel = cribSel.f15 != null || cribSel.pair != null || cribSel.runs != null || cribSel.flush != null || cribSel.nobs;
+    const gray = (t, ok) => { const show = ok || !anySel; t.dataset.cribOff = ok ? '0' : '1'; t.setAttribute('opacity', show ? '1' : '0.28'); t.style.cursor = show ? 'pointer' : 'default'; };
+    R.f15Texts.forEach((t, i) => gray(t, cribSel.f15 === i || cribFeasible(Object.assign({}, cribSel, { f15: i }))));
+    R.pairTexts.forEach((t, i) => gray(t, cribSel.pair === i || cribFeasible(Object.assign({}, cribSel, { pair: i }))));
+    R.runTexts.forEach((t, i) => gray(t, cribSel.runs === i || cribFeasible(Object.assign({}, cribSel, { runs: i }))));
+    gray(R.flushText, cribSel.flush != null || cribFeasible(Object.assign({}, cribSel, { flush: 4 })) || cribFeasible(Object.assign({}, cribSel, { flush: 5 })));
+    gray(R.nobsText, cribSel.nobs || cribFeasible(Object.assign({}, cribSel, { nobs: true })));
     place(R.outlines.f15, cribSel.f15 != null ? R.f15Texts[cribSel.f15] : null);
     place(R.outlines.pair, cribSel.pair != null ? R.pairTexts[cribSel.pair] : null);
     place(R.outlines.runs, cribSel.runs != null ? R.runTexts[cribSel.runs] : null);
-    if (cribSel.f15 != null || cribSel.pair != null || cribSel.runs != null) {
-      const total = offset + (cribSel.pair != null ? (cribSel.pair + 1) * 2 : 0) + (cribSel.runs != null ? 3 + cribSel.runs : 0);
+    place(R.outlines.flush, cribSel.flush != null ? R.flushText : null);
+    place(R.outlines.nobs, cribSel.nobs ? R.nobsText : null);
+    if (cribSel.f15 != null || cribSel.pair != null || cribSel.runs != null || cribSel.flush != null || cribSel.nobs) {
+      const total = offset + pairVal + (cribSel.runs != null ? 3 + cribSel.runs : 0) + (cribSel.flush || 0) + (cribSel.nobs ? 1 : 0);
       R.inp.value = String(total); R.setPrev(R.inp.value);
     } else { R.inp.value = ''; R.setPrev(''); }
   }
-  function cribCountReset() { cribSel = { f15: null, pair: null, runs: null }; try { cribCountRefresh(); } catch (e) { } }
+  function cribCountReset() { cribSel = cribNewSel(); try { cribCountRefresh(); } catch (e) { } }
 
   function renderBoxes() { let setupEl = document.getElementById('setup'); if (setupEl) { if (postRegisterTarget === 'cribbage') { setupEl.classList.add('crib-bg'); if (!setupEl.style.backgroundImage) { let art = document.getElementById('crib-landing-art'); if (art && art.src) setupEl.style.backgroundImage = "url('" + art.src + "')"; } } else { setupEl.classList.remove('crib-bg'); setupEl.style.backgroundImage = ''; } } let owner = getOwner(); let br = document.getElementById("box-register"), bs = document.getElementById("box-start"); if (!br || !bs) return; if (!owner) { br.hidden = false; bs.hidden = true; let sp = document.getElementById("share-panel"); if (sp) sp.hidden = true; requestAnimationFrame(() => { setTimeout(() => { let f = document.getElementById("reg-user"); if (f) { f.focus(); f.select(); } }, 50); }); } else { br.hidden = true; bs.hidden = false; let on = document.getElementById("owner-name"); if (on) on.textContent = owner; setTimeout(() => { let f = document.getElementById("nameB"); if (f) f.focus(); }, 0); } }  
   function getPendingInviteIds() { try { return JSON.parse(localStorage.getItem("bt_pending_invite_ids") || "[]"); } catch (e) { return []; } }
