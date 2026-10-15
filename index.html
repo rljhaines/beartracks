@@ -1168,6 +1168,7 @@ body {
       cribFlippedSet = new Set();
       cribBoardOrder = [0, 1, 2, 3, 4, 5];
       cribFlipHandKey = key;
+      cribCountReset();
     }
     let slots = Array.from(cardsG.querySelectorAll('.crib-card-slot'))
       .sort((a, b) => Number(a.dataset.cribCardSlot) - Number(b.dataset.cribCardSlot));
@@ -1387,7 +1388,7 @@ body {
 
     const colPair = document.getElementById('crib-colpair');
     const cPy0 = anchorY;
-    const valsPair = ['a Pair', 'is 2', 'Is 4', 'is 6', 'is 8', 'is 10', 'is 12'];
+    const valsPair = ['a Pair', 'is 2', 'is 4', 'is 6', 'is 8', 'is 10', 'is 12'];
     valsPair.forEach((v, i) => {
       const t = document.createElementNS(NS, 'text');
       t.setAttribute('y', cPy0 + i * rowH);
@@ -1404,19 +1405,18 @@ body {
 
     const colFlush = document.getElementById('crib-colflush');
     const is10Y = cPy0 + 5 * rowH;
-    // Align Flush with the 2nd "##" group (not just the row's left edge) of the
-    // "## ## # ##" run-of-4 row (colRuns row index 2).
-    let flushX = runsRowLeftEdges[2];
-    {
-      const runsRows = Array.from(colRuns.querySelectorAll('text'));
-      const row2Tspans = runsRows[2] ? Array.from(runsRows[2].querySelectorAll('tspan')) : [];
-      if (row2Tspans[1]) flushX = row2Tspans[1].getBBox().x;
-    }
+    // Align Flush/Nobs with the 2nd '#' character of the (runs) rows (every row starts "##").
+    let flushX = runsRowLeftEdges[1];
+    try {
+      const r1 = colRuns.querySelectorAll('text')[1];
+      const ext = r1.getExtentOfChar(1);
+      flushX = ext.x + ext.width / 2;
+    } catch (e) { }
     const flushY = is10Y - 2;
     {
       const t = document.createElementNS(NS, 'text');
       t.setAttribute('x', flushX); t.setAttribute('y', flushY);
-      t.setAttribute('text-anchor', 'start');
+      t.setAttribute('text-anchor', 'middle');
       t.setAttribute('font-size', 12.5); t.setAttribute('font-weight', '700');
       t.textContent = 'Flush';
       colFlush.appendChild(t);
@@ -1438,59 +1438,82 @@ body {
       t.setAttribute('y', Number(t.getAttribute('y')) + (hole90InnerY - probeCenter));
     }
 
-    // ---- "hand count": label (row of 15-16, column of "is 12") + bare numeric entry ----
+    // ---- "hand count": label (row of 15-16; its "h" sits under the "i" of "is 12") + bare numeric entry ----
     {
       const hc = document.getElementById('crib-handcount');
       hc.innerHTML = '';
-      const midXHC = Number(colPair.querySelector('text').getAttribute('x'));
+      const pairTexts = Array.from(colPair.querySelectorAll('text')).slice(1);
+      const f15Texts = Array.from(col15.querySelectorAll('text')).slice(1);
+      const runTexts = Array.from(colRuns.querySelectorAll('text')).slice(1);
+      const is12 = pairTexts[pairTexts.length - 1].getBBox();
       const hcY = anchorY + 8 * rowH;
       const label = document.createElementNS(NS, 'text');
-      label.setAttribute('x', midXHC); label.setAttribute('y', hcY);
-      label.setAttribute('text-anchor', 'middle');
+      label.setAttribute('x', is12.x); label.setAttribute('y', hcY);
+      label.setAttribute('text-anchor', 'start');
       label.setAttribute('font-size', 12.5); label.setAttribute('font-weight', '400');
       label.textContent = 'hand count';
       hc.appendChild(label);
       const lb = label.getBBox();
       let spaceW = 3.5;
       try { const cx = document.createElement('canvas').getContext('2d'); cx.font = '12.5px sans-serif'; spaceW = cx.measureText('  ').width; } catch (e) { }
-      const inX = lb.x + lb.width + spaceW;
       const fo = document.createElementNS(NS, 'foreignObject');
-      fo.setAttribute('x', inX); fo.setAttribute('y', lb.y - 1);
+      fo.setAttribute('x', lb.x + lb.width + spaceW); fo.setAttribute('y', lb.y - 1);
       fo.setAttribute('width', 36); fo.setAttribute('height', lb.height + 2);
       const inp = document.createElementNS('http://www.w3.org/1999/xhtml', 'input');
-      inp.type = 'text'; inp.setAttribute('inputmode', 'numeric'); inp.maxLength = 3;
+      inp.type = 'text'; inp.setAttribute('inputmode', 'numeric'); inp.maxLength = 2;
       inp.setAttribute('aria-label', 'hand count'); inp.autocomplete = 'off';
       inp.style.cssText = 'border:none;outline:none;background:transparent;box-shadow:none;padding:0;margin:0;width:100%;height:100%;font:400 12.5px sans-serif;color:#000;caret-color:#000;';
-      inp.value = cribHandCount ? String(cribHandCount) : '';
+      let prev = '';
       inp.addEventListener('input', () => {
-        inp.value = inp.value.replace(/[^0-9]/g, '');
-        cribHandCount = inp.value === '' ? 0 : parseInt(inp.value, 10);
+        let s = inp.value.replace(/[^0-9]/g, '');
+        const v = s === '' ? 0 : parseInt(s, 10);
+        if (s.length > 2 || (s.length > 1 && s[0] === '0') || v > 29 || CRIB_IMPOSSIBLE_COUNTS.indexOf(v) !== -1) s = prev;
+        inp.value = s; prev = s;
       });
       fo.appendChild(inp);
       hc.appendChild(fo);
-      cribHandCountInput = inp;
 
-      // Claiming a score from a row adds that row's points to the hand count.
-      const pts = { col15: v => parseInt(String(v).split('-')[1], 10), pair: v => parseInt(String(v).replace(/\D/g, ''), 10) };
-      const wire = (g, fn) => Array.from(g.querySelectorAll('text')).slice(1).forEach(t => {
-        const n = fn(t.textContent);
-        if (!isFinite(n)) return;
+      const mkOutline = () => {
+        const r = document.createElementNS(NS, 'rect');
+        r.setAttribute('fill', 'none'); r.setAttribute('stroke', '#000'); r.setAttribute('stroke-width', '0.75');
+        r.setAttribute('rx', 2); r.setAttribute('pointer-events', 'none'); r.setAttribute('display', 'none');
+        hc.appendChild(r); return r;
+      };
+      cribCountRefs = { pairTexts, f15Texts, runTexts, inp, outlines: { f15: mkOutline(), pair: mkOutline(), runs: mkOutline() }, setPrev: v => { prev = v; } };
+      const wire = (texts, key) => texts.forEach((t, i) => {
         t.style.cursor = 'pointer';
-        t.addEventListener('click', () => cribAddHandCount(n));
+        t.addEventListener('click', () => { cribSel[key] = (cribSel[key] === i) ? null : i; cribCountRefresh(); });
       });
-      wire(col15, pts.col15);
-      wire(colPair, pts.pair);
-      Array.from(colRuns.querySelectorAll('text')).slice(1).forEach((t, i) => {
-        t.style.cursor = 'pointer';
-        t.addEventListener('click', () => cribAddHandCount(3 + i)); // run of 3 / 4 / 5
-      });
+      wire(f15Texts, 'f15'); wire(pairTexts, 'pair'); wire(runTexts, 'runs');
+      cribCountRefresh();
     }
   }
-  let cribHandCount = 0, cribHandCountInput = null;
-  function cribAddHandCount(n) {
-    cribHandCount += n;
-    if (cribHandCountInput) cribHandCountInput.value = String(cribHandCount);
+  // Hand-count claiming: one selected row per column (most recent click wins; clicking it again clears it).
+  // The a-Pair rows read as (selected 15s value + pair value), so the remembered pair row re-labels itself
+  // whenever the 15s selection changes.
+  const CRIB_IMPOSSIBLE_COUNTS = [19, 25, 26, 27];
+  let cribSel = { f15: null, pair: null, runs: null }, cribCountRefs = null;
+  function cribCountRefresh() {
+    const R = cribCountRefs; if (!R) return;
+    const offset = cribSel.f15 != null ? (cribSel.f15 + 1) * 2 : 0;
+    R.pairTexts.forEach((t, i) => { t.textContent = 'is ' + (offset + (i + 1) * 2); });
+    const place = (rect, t) => {
+      if (!t) { rect.setAttribute('display', 'none'); return; }
+      try {
+        const b = t.getBBox();
+        rect.setAttribute('x', b.x - 2); rect.setAttribute('y', b.y); rect.setAttribute('width', b.width + 4); rect.setAttribute('height', b.height);
+        rect.removeAttribute('display');
+      } catch (e) { }
+    };
+    place(R.outlines.f15, cribSel.f15 != null ? R.f15Texts[cribSel.f15] : null);
+    place(R.outlines.pair, cribSel.pair != null ? R.pairTexts[cribSel.pair] : null);
+    place(R.outlines.runs, cribSel.runs != null ? R.runTexts[cribSel.runs] : null);
+    if (cribSel.f15 != null || cribSel.pair != null || cribSel.runs != null) {
+      const total = offset + (cribSel.pair != null ? (cribSel.pair + 1) * 2 : 0) + (cribSel.runs != null ? 3 + cribSel.runs : 0);
+      R.inp.value = String(total); R.setPrev(R.inp.value);
+    } else { R.inp.value = ''; R.setPrev(''); }
   }
+  function cribCountReset() { cribSel = { f15: null, pair: null, runs: null }; try { cribCountRefresh(); } catch (e) { } }
 
   function renderBoxes() { let setupEl = document.getElementById('setup'); if (setupEl) { if (postRegisterTarget === 'cribbage') { setupEl.classList.add('crib-bg'); if (!setupEl.style.backgroundImage) { let art = document.getElementById('crib-landing-art'); if (art && art.src) setupEl.style.backgroundImage = "url('" + art.src + "')"; } } else { setupEl.classList.remove('crib-bg'); setupEl.style.backgroundImage = ''; } } let owner = getOwner(); let br = document.getElementById("box-register"), bs = document.getElementById("box-start"); if (!br || !bs) return; if (!owner) { br.hidden = false; bs.hidden = true; let sp = document.getElementById("share-panel"); if (sp) sp.hidden = true; requestAnimationFrame(() => { setTimeout(() => { let f = document.getElementById("reg-user"); if (f) { f.focus(); f.select(); } }, 50); }); } else { br.hidden = true; bs.hidden = false; let on = document.getElementById("owner-name"); if (on) on.textContent = owner; setTimeout(() => { let f = document.getElementById("nameB"); if (f) f.focus(); }, 0); } }  
   function getPendingInviteIds() { try { return JSON.parse(localStorage.getItem("bt_pending_invite_ids") || "[]"); } catch (e) { return []; } }
