@@ -961,16 +961,27 @@ body {
   function getTabSeat(gid) { let v = tabSeatMap()[gid]; return (v === 0 || v === 1) ? v : null; }
   function setTabSeat(gid, seat) { try { if (!gid || (seat !== 0 && seat !== 1)) return; let m = tabSeatMap(); m[gid] = seat; sessionStorage.setItem('bt_tab_seat', JSON.stringify(m)); } catch (e) { } }
   let gateLocked = false, gateFresh = false, gateLeft = false;  // gateLeft: this tab has been left (hidden / window blurred) and not yet returned to
-  function gateName() { try { return state.players[getLocalIdx()].name; } catch (e) { return ''; } }
-  function gateArmed() { try { return !!(state && state.id && isShared(state.id) && hasPassword(gateName())); } catch (e) { return false; } }
+  // The game this tab is showing (Cribbage when its board is up, otherwise Wordage) and this tab's player in it.
+  function gateGame() {
+    try {
+      let cg = document.getElementById('cribbage-game');
+      if (cg && !cg.hidden && cribState && cribState.id) return { id: cribState.id, name: cribState.players[cribGetLocalIdx()].name };
+      if (state && state.id) return { id: state.id, name: state.players[getLocalIdx()].name };
+    } catch (e) { }
+    return null;
+  }
+  function gateName() { let g = gateGame(); return g ? g.name : ''; }
+  function gateArmed() { try { let g = gateGame(); return !!(g && g.id && isShared(g.id) && hasPassword(g.name)); } catch (e) { return false; } }
   function lockGate() {
     if (gateLocked || !gateArmed()) return;
     gateLocked = true;
+    try { let cgl = document.getElementById('cribbage-game'); if (cgl) cgl.style.visibility = 'hidden'; } catch (e) { }  // the Cribbage board sits above the splash, so hide it while locked
     $('unlock-name').textContent = gateName(); $('unlock-pass').value = ''; $('unlock-error').textContent = '';
     $('box-register').hidden = true; $('box-start').hidden = true; $('bt-headsup').hidden = true; $('box-unlock').hidden = false; $('setup').hidden = false;
     setTimeout(function () { try { $('unlock-pass').focus(); } catch (e) { } }, 30);
   }
   function unlockGate() {
+    try { let cgl = document.getElementById('cribbage-game'); if (cgl) cgl.style.visibility = ''; } catch (e) { }
     gateLocked = false; gateLeft = false; $('box-unlock').hidden = true; $('setup').hidden = true; $('unlock-pass').value = '';
     setTimeout(function () { try { $('wordInput').focus(); } catch (e) { } }, 0);
   }
@@ -1661,13 +1672,15 @@ body {
   function getPendingInviteIds() { try { return JSON.parse(localStorage.getItem("bt_pending_invite_ids") || "[]"); } catch (e) { return []; } }
   function rememberPendingInvite(inv) { if (!inv || !inv.id) return; try { let ids = getPendingInviteIds(); if (ids.indexOf(inv.id) === -1) ids.push(inv.id); localStorage.setItem("bt_pending_invite_ids", JSON.stringify(ids)); } catch (e) { } }
   function forgetPendingInvite(id) { if (!id) return; try { localStorage.setItem("bt_pending_invite_ids", JSON.stringify(getPendingInviteIds().filter(x => x !== id))); } catch (e) { } }
-  function showEntryPage() { let el = $('entry-home'); if (!el) return; try { $('bt-headsup').classList.remove('gw-pick'); $('setup').classList.remove('gw-nodlg'); } catch (e) { } el.hidden = false; $('setup').hidden = true; $('bt-headsup').hidden = true; let owner = getOwner(); $('entry-welcome').textContent = owner ? 'Welcome, ' + owner : 'Welcome'; }
+  // Backup and restore are offered only while a registered player is in the Foyer.
+  function updateBackupVisibility() { try { let b = $('entry-backup'); if (b) b.hidden = !getOwner(); } catch (e) { } }
+  function showEntryPage() { let el = $('entry-home'); if (!el) return; updateBackupVisibility(); try { $('bt-headsup').classList.remove('gw-pick'); $('setup').classList.remove('gw-nodlg'); } catch (e) { } el.hidden = false; $('setup').hidden = true; $('bt-headsup').hidden = true; let owner = getOwner(); $('entry-welcome').textContent = owner ? 'Welcome, ' + owner : 'Welcome'; }
   function hideEntryPage() { let el = $('entry-home'); if (el) el.hidden = true; }
   function entryWordage() { postRegisterTarget = 'wordage'; hideEntryPage(); let owner = getOwner(); if (owner) handleBegin(); else { $('setup').hidden = false; renderBoxes(); } }
   function entryCribbage() { postRegisterTarget = 'cribbage'; hideEntryPage(); $('setup').hidden = false; renderBoxes(); }
   async function enterGameDirect(gameObj, playerIndex) { if (!gameObj) return false; let g = cloneRacks(gameObj); let li = (playerIndex === 0 || playerIndex === 1) ? playerIndex : null; if (li === null) { li = 0; let owner = (getOwner() || '').toLowerCase(); for (let i = 0; i < g.players.length; i++) if ((g.players[i].name || '').toLowerCase() === owner) li = i; } $('bt-headsup').hidden = true; state = g; setTabSeat(g.id, li); mirrorPassword(gateName()); initBroadcastChannel(g.id); initComm(g.id); $('setup').hidden = true; hideEntryPage(); render(); ensureCommPanel(); pendingGameForHeadsUp = null; scheduleFit(); try { let url = new URL(location.href); url.searchParams.set('game', g.id); url.searchParams.delete('p'); url.searchParams.delete('invite'); history.replaceState(null, '', url.pathname + url.search + url.hash); } catch (e) { } return true; }
   async function openPendingInvite(inv) { if (!inv || !inv.id) return; rememberPendingInvite(inv); try { let owner = getOwner(); if (!owner) { let url = new URL(location.href); url.searchParams.set('invite', inv.id); history.replaceState(null, '', url.pathname + url.search + url.hash); hideEntryPage(); $('setup').hidden = false; renderBoxes(); return; } currentInvite = inv; hideEntryPage(); if (!(await joinViaInvite(inv, owner))) showEntryPage(); } catch (e) { } }
-  async function populateEntryGames() { let owner = getOwner(), underwayEl = $('underway-games'), pendingEl = $('pending-games'); if (!underwayEl || !pendingEl) return; underwayEl.innerHTML = ''; pendingEl.innerHTML = ''; if (!owner) { underwayEl.innerHTML = '<div class="entry-empty"><a href="#" id="entry-register-link" style="color:inherit;text-decoration:underline;cursor:pointer">Register</a> to see your games.</div>'; { let rl = $('entry-register-link'); if (rl) rl.onclick = function (ev) { ev.preventDefault(); hideEntryPage(); $('setup').hidden = false; renderBoxes(); }; } } else { let ids = getAllGameIds(), games = []; for (let i = 0; i < ids.length; i++) { try { let g = await loadGame(ids[i]); if (!g || !g.players) continue; let mine = g.players.some(p => (p.name || '').toLowerCase() === owner.toLowerCase()); if (mine) games.push(g); } catch (e) { } } if (!games.length) underwayEl.innerHTML = '<div class="entry-empty">No underway games.</div>'; games.forEach(g => { let my = g.players.findIndex(p => (p.name || '').toLowerCase() === owner.toLowerCase()); let opp = g.players[1 - my]?.name || 'Opponent'; let b = document.createElement('button'); b.className = 'entry-game'; b.textContent = opp; b.onclick = () => enterGameDirect(g, my); underwayEl.appendChild(b); }); }
+  async function populateEntryGames() { updateBackupVisibility(); let owner = getOwner(), underwayEl = $('underway-games'), pendingEl = $('pending-games'); if (!underwayEl || !pendingEl) return; underwayEl.innerHTML = ''; pendingEl.innerHTML = ''; if (!owner) { underwayEl.innerHTML = '<div class="entry-empty"><a href="#" id="entry-register-link" style="color:inherit;text-decoration:underline;cursor:pointer">Register</a> to see your games.</div>'; { let rl = $('entry-register-link'); if (rl) rl.onclick = function (ev) { ev.preventDefault(); hideEntryPage(); $('setup').hidden = false; renderBoxes(); }; } } else { let ids = getAllGameIds(), games = []; for (let i = 0; i < ids.length; i++) { try { let g = await loadGame(ids[i]); if (!g || !g.players) continue; let mine = g.players.some(p => (p.name || '').toLowerCase() === owner.toLowerCase()); if (mine) games.push(g); } catch (e) { } } if (!games.length) underwayEl.innerHTML = '<div class="entry-empty">No underway games.</div>'; games.forEach(g => { let my = g.players.findIndex(p => (p.name || '').toLowerCase() === owner.toLowerCase()); let opp = g.players[1 - my]?.name || 'Opponent'; let b = document.createElement('button'); b.className = 'entry-game'; b.textContent = opp; b.onclick = () => enterGameDirect(g, my); underwayEl.appendChild(b); }); }
     let pids = getPendingInviteIds(); if (!pids.length) pendingEl.innerHTML = '<div class="entry-empty">No pending games.</div>'; else { let found = 0; for (let i = 0; i < pids.length; i++) { try { let inv = await loadInvite(pids[i]); if (!inv) { forgetPendingInvite(pids[i]); continue; } let b = document.createElement('button'); b.className = 'entry-game'; b.textContent = inv.invitedBy || 'Pending game'; b.onclick = () => openPendingInvite(inv); pendingEl.appendChild(b); found++; } catch (e) { } } if (!found) pendingEl.innerHTML = '<div class="entry-empty">No pending games.</div>'; }
   }
   function initEntryPaws() { let canvas = $('entry-paws'); if (!canvas || canvas.dataset.ready) return; canvas.dataset.ready = '1'; let ctx = canvas.getContext('2d'); const colors = ['#c94a3c','#e68a82','#2e8aa8','#86c2cc']; const pad = new Path2D('M 20 56 C 20 46 35 42 50 42 C 65 42 80 46 80 56 C 84 70 78 86 50 92 C 22 86 16 70 20 56 Z'); const toes = [[23,28,14],[50,15,16],[77,28,14]]; let W=0,H=0; const walkers = Array.from({length:61}, () => ({nx:Math.random(),ny:Math.random(),ang:Math.random()*Math.PI*2,speed:.4+Math.random()*.9,color:colors[Math.floor(Math.random()*colors.length)]})); function resize(){let dpr=window.devicePixelRatio||1;W=canvas.clientWidth;H=canvas.clientHeight;canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);ctx.setTransform(dpr,0,0,dpr,0,0)} function drawPaw(w){let k=Math.min(W,H)/15*.6/100;ctx.save();ctx.translate(w.nx*W,w.ny*H);ctx.rotate(w.ang+Math.PI/2);ctx.scale(k,k);ctx.translate(-50,-50);ctx.fillStyle=w.color;toes.forEach(([x,y,r])=>{ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill()});ctx.fill(pad);ctx.restore()} let last=performance.now(); function tick(now){ctx.globalAlpha=.85;let dt=Math.min((now-last)/1000,.05);last=now;ctx.clearRect(0,0,W,H);walkers.forEach(w=>{w.ang+=(Math.random()-.5)*.15*(dt*60);let x=w.nx*W+Math.cos(w.ang)*w.speed*Math.min(W,H)/15*dt;let y=w.ny*H+Math.sin(w.ang)*w.speed*Math.min(W,H)/15*dt;let m=Math.min(W,H)*.01;if(x<m||x>W-m){w.ang=Math.PI-w.ang;x=Math.min(W-m,Math.max(m,x))}if(y<m||y>H-m){w.ang=-w.ang;y=Math.min(H-m,Math.max(m,y))}w.nx=x/W;w.ny=y/H;drawPaw(w)});ctx.globalAlpha=1;requestAnimationFrame(tick)} new ResizeObserver(resize).observe(canvas);resize();requestAnimationFrame(tick); }
@@ -2126,9 +2139,10 @@ body {
   function gateReturn() { if (gateLocked) { focusUnlock(); return; } if (gateLeft && gateArmed()) { lockGate(); focusUnlock(); } else gateLeft = false; }
   window.addEventListener('storage', function (e) {
     // Another player registering in this browser (a changed owner name) makes this a shared browser: this tab's player gets a lock.
-    if (e.key === 'bt_owner' && e.newValue && state && state.id) {
-      let me = gateName();
-      if (me && String(e.newValue).toLowerCase() !== String(me).toLowerCase()) { mirrorPassword(me); markTabShared(state.id); if (gateLeft) gateReturn(); }
+    let gg = gateGame();
+    if (e.key === 'bt_owner' && e.newValue && gg) {
+      let me = gg.name;
+      if (me && String(e.newValue).toLowerCase() !== String(me).toLowerCase()) { mirrorPassword(me); markTabShared(gg.id); if (gateLeft) gateReturn(); }
     } else if (e.key === 'bt_shared') { if (gateLeft) gateReturn(); }
   });
   window.addEventListener('focus', gateReturn);
@@ -2327,16 +2341,24 @@ body {
     };
   }
   async function cribLoadGame(id) { for (let k = 0; k < 3; k++) { try { let r = await fetch(API + "/games/" + id); if (r.ok) { let j = await r.json(); return j.game; } } catch (e) { } await new Promise(r => setTimeout(r, 400)); } return null; }
-  async function cribSaveGame(g) {
+  // Cribbage games are protected by seat keys like every other game: saves carry this tab's seat key, and the
+  // key for a brand-new game is issued once, by the POST that creates it.
+  function cribSeat(g) { let ts = getTabSeat(g.id); if (ts !== null) return ts; return (getSeatToken(g.id, 1) && !getSeatToken(g.id, 0)) ? 1 : 0; }
+  async function cribSaveGame(g, opts) {
     addGameId(g.id);
     try {
-      let r = await fetch(API + "/games/" + g.id, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ game: g }) });
-      if (r.status === 404) r = await fetch(API + "/games", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ game: g }) });
+      let r = await fetch(API + "/games/" + g.id, { method: "PUT", headers: seatHeaders(g.id, cribSeat(g), { "Content-Type": "application/json" }), body: JSON.stringify({ game: g }) });
+      if (r.status === 404) {
+        r = await fetch(API + "/games", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ game: g, withSeat1: !!(opts && opts.withSeat1) }) });
+        if (r.ok) { let j = await r.json(); setSeatToken(g.id, 0, j.seat0Token); if (j.seat1Token) setSeatToken(g.id, 1, j.seat1Token); }
+      }
+      if (r.status === 401) { try { cribMessage('This browser has no key for your seat in this game. Open your seat link to resume.'); } catch (e) { } return g; }
+      if (r.status === 409) { try { cribMessage('The game changed elsewhere - reload to see the latest.'); } catch (e) { } return g; }
       if (!r.ok) throw new Error("save failed " + r.status);
     } catch (e) { try { localStorage.setItem("bt_pending_game_" + g.id, JSON.stringify(g)); } catch (_e) { } }
     return g;
   }
-  async function cribSaveInvite(inv) { try { let r = await fetch(API + "/invites", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ invite: inv }) }); if (!r.ok) throw new Error("save invite failed"); } catch (e) { } return inv; }
+  async function cribSaveInvite(inv) { try { let r = await fetch(API + "/invites", { method: "POST", headers: seatHeaders(inv.gameId, 0, { "Content-Type": "application/json" }), body: JSON.stringify({ invite: inv }) }); if (!r.ok) throw new Error("save invite failed " + r.status); } catch (e) { try { localStorage.setItem("bt_pending_invite_" + inv.id, JSON.stringify(inv)); } catch (_e) { } } return inv; }
   async function cribLoadInvite(id) { for (let k = 0; k < 3; k++) { try { let r = await fetch(API + "/invites/" + id); if (r.ok) { let j = await r.json(); return j.invite; } } catch (e) { } await new Promise(r => setTimeout(r, 400)); } return null; }
 
   function cribGetLocalIdx() {
@@ -2393,6 +2415,7 @@ body {
     cribState = g; setTabSeat(g.id, seat); cribInitBroadcast(g.id);
     hideCribbageLanding(); hideEntryPage(); $('setup').hidden = true;
     let cg = $('cribbage-game'); if (cg) cg.hidden = false; cribLayoutBoard();
+    try { mirrorPassword(gateName()); } catch (e) { }
     cribRender();
     try { let url = new URL(location.href); url.searchParams.set('game', g.id); url.searchParams.set('kind', 'cribbage'); url.searchParams.delete('p'); url.searchParams.delete('invite'); history.replaceState(null, '', url.pathname + url.search + url.hash); } catch (e) { }
   }
@@ -2401,7 +2424,7 @@ body {
     let owner = getOwner(); if (!owner) return;
     let opp = ($('nameB') ? $('nameB').value.trim() : '');
     let g = cribFreshGame(owner, opp || 'Opponent');
-    await cribSaveGame(g);
+    await cribSaveGame(g, { withSeat1: !!opp });
     if (!opp) {
       let iid = randomId();
       let inv = { id: iid, invitedBy: owner, gameId: g.id, mode: 'game-invite', kind: 'cribbage', created: Date.now() };
@@ -2436,16 +2459,34 @@ body {
     cribPendingHeadsUp = gameObj;
     $('bt-headsup-continue').onclick = function () { $('bt-headsup').hidden = true; cribEnterGame(cribPendingHeadsUp, 0); };
   }
-  async function cribJoinViaInvite(inv, owner) {
-    let g = await cribLoadGame(inv.gameId); if (!g) return false;
-    let me = String(owner).toLowerCase();
-    if (String(inv.invitedBy || '').toLowerCase() === me) { // re-entering own invite, not claiming seat 1
-      let myIdx = g.players.findIndex(p => (p.name || '').toLowerCase() === me);
-      await cribEnterGame(g, myIdx < 0 ? 0 : myIdx); return true;
+  // The worker claims seat 1 for the invitee (first claim wins), burns the invite and returns seat 1's key.
+  async function cribClaimInvite(inv, owner) {
+    let claimName = owner;
+    if (inv.invitedBy && String(owner).toLowerCase() === String(inv.invitedBy).toLowerCase()) claimName = owner + ' (2)';
+    for (let a = 0; a < 5; a++) {
+      try {
+        let r = await fetch(API + "/invites/" + encodeURIComponent(inv.id) + "/claim", { method: "POST", headers: seatHeaders(inv.gameId, 1, { "Content-Type": "application/json" }), body: JSON.stringify({ name: claimName }) });
+        if (r.status === 409) { try { message('This invitation has already been used.'); } catch (e) { } return null; }
+        if (!r.ok) { await new Promise(res => setTimeout(res, 400)); continue; }
+        let j = await r.json(); if (!j || !j.game) return null;
+        if (j.token) setSeatToken(j.game.id, 1, j.token);
+        return j.game;
+      } catch (e) { await new Promise(res => setTimeout(res, 400)); }
     }
-    if ((g.players[1].name || '').toLowerCase() === 'opponent') g.players[1].name = owner;
-    await cribSaveGame(g);
-    try { cribInitBroadcast(g.id); cribBroadcastGame(g); } catch (e) { }
+    return null;
+  }
+  async function cribJoinViaInvite(inv, owner) {
+    if (!inv || !inv.gameId) return false;
+    let me = String(owner).toLowerCase();
+    // The inviter opening their own link (e.g. in a second tab) re-enters their own game as seat 0; nothing is claimed.
+    if (String(inv.invitedBy || '').toLowerCase() === me && !getSeatToken(inv.gameId, 1)) {
+      let g0 = await cribLoadGame(inv.gameId); if (!g0) return false;
+      let myIdx = g0.players.findIndex(p => (p.name || '').toLowerCase() === me);
+      await cribEnterGame(g0, myIdx < 0 ? 0 : myIdx); return true;
+    }
+    let g = await cribClaimInvite(inv, owner); if (!g) return false;
+    try { addOpponent(g.players[0].name); addOpponent(g.players[1].name); } catch (e) { }
+    if (getSeatToken(g.id, 0)) { markShared(g.id); gateFresh = true; }
     await cribEnterGame(g, 1);
     return true;
   }
@@ -2963,12 +3004,17 @@ body {
     let owner = getOwner(); let hasState = false;
     if (kindParam === 'cribbage') {
       if (gid) {
+        absorbSeatKey(gid, pParam);
         let cg = await cribLoadGame(gid);
         if (cg) {
-          let seat = 0;
+          let seat = 0, ts = getTabSeat(gid);
+          let held = [0, 1].filter(k => !!getSeatToken(gid, k));
           if (pParam === '0' || pParam === '1') seat = Number(pParam);
+          else if (ts !== null) seat = ts;
+          else if (held.length === 1) seat = held[0];
           else if (owner) { let mi = cg.players.findIndex(p => (p.name || '').toLowerCase() === owner.toLowerCase()); if (mi >= 0) seat = mi; }
           await cribEnterGame(cg, seat);
+          lockGate();
           return;
         }
       } else if (iid) {
@@ -2983,6 +3029,9 @@ body {
           }
           return;
         }
+        // The invitation could not be found: say so in the Foyer rather than falling through to the Wordage screens.
+        showEntryPage(); initEntryPaws(); await populateEntryGames(); try { message('That Cribbage invitation could not be found - it may have expired. Ask your opponent for a new one.'); } catch (e) { }
+        return;
       }
     }    
     if (kindParam === 'groupwords' && params.get("gw")) { await gwBoot(params.get("gw")); return; }
