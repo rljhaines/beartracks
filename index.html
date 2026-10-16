@@ -1233,6 +1233,7 @@ body {
   function cribFlipCard(handIndex) {
     if (cribFlippedSet.has(handIndex)) cribFlippedSet.delete(handIndex); else cribFlippedSet.add(handIndex);
     cribAnimateCardFlipByHandIndex(handIndex);
+    try { cribCountRefresh(); } catch (e) { }
   }
   function cribFlipAllToggle() {
     let hand = (cribState && cribState.hands && cribState.hands[cribGetLocalIdx()]) || [];
@@ -1242,6 +1243,7 @@ body {
       if (anyFaceDown) cribFlippedSet.add(hi); else cribFlippedSet.delete(hi);
       cribAnimateCardFlipByHandIndex(hi);
     });
+    try { cribCountRefresh(); } catch (e) { }
   }
   function cribAnimateCardFlipByHandIndex(handIndex) {
     let cardsG = document.getElementById('crib-cards');
@@ -1402,7 +1404,7 @@ body {
 
     const colRuns = document.getElementById('crib-colruns');
     const hole67X = 444.66003304325466 + 2;
-    const valsRuns = ['(runs)', '## ## ##', '## ## # ##', '## ## ## ## ##'];
+    const valsRuns = ['(runs)', '## ## ##', '## ## ## ##', '## ## ## ## ##'];
     valsRuns.forEach((v, i) => {
       const t = document.createElementNS(NS, 'text');
       t.setAttribute('x', hole67X); t.setAttribute('y', anchorY + i * rowH);
@@ -1511,7 +1513,7 @@ body {
         let s = inp.value.replace(/[^0-9]/g, '');
         const v = s === '' ? 0 : parseInt(s, 10);
         if (s.length > 2 || (s.length > 1 && s[0] === '0') || v > 29 || CRIB_IMPOSSIBLE_COUNTS.indexOf(v) !== -1) s = prev;
-        inp.value = s; prev = s;
+        inp.value = s; prev = s; cribHeldInput = s;
       });
       fo.appendChild(inp);
       hc.appendChild(fo);
@@ -1531,7 +1533,7 @@ body {
         t.style.cursor = 'pointer';
         t.addEventListener('click', () => {
           if (t.dataset.cribOff === '1') return;
-          cribSel[key] = (cribSel[key] === i) ? null : i; cribCountRefresh();
+          cribSelReal[key] = (cribSelReal[key] === i) ? null : i; cribCountRefresh();
         });
       });
       wire(f15Texts, 'f15'); wire(pairTexts, 'pair'); wire(runTexts, 'runs');
@@ -1539,11 +1541,11 @@ body {
       flushText.style.cursor = 'pointer'; nobsText.style.cursor = 'pointer';
       flushText.addEventListener('click', () => {
         if (flushText.dataset.cribOff === '1') return;
-        cribSel.flush = cribSel.flush == null ? 4 : null; cribCountRefresh();
+        cribSelReal.flush = cribSelReal.flush == null ? 4 : null; cribCountRefresh();
       });
       nobsText.addEventListener('click', () => {
         if (nobsText.dataset.cribOff === '1') return;
-        cribSel.nobs = !cribSel.nobs; cribCountRefresh();
+        cribSelReal.nobs = !cribSelReal.nobs; cribCountRefresh();
       });
       cribCountRefresh();
     }
@@ -1552,21 +1554,29 @@ body {
   // The a-Pair rows read as (selected 15s value + pair value), so the remembered pair row re-labels itself
   // whenever the 15s selection changes.
   const CRIB_IMPOSSIBLE_COUNTS = [19, 25, 26, 27];
-  const CRIB_RUN_DEFAULTS = ['## ## ##', '## ## # ##', '## ## ## ## ##'];
+  const CRIB_RUN_DEFAULTS = ['## ## ##', '## ## ## ##', '## ## ## ## ##'];
   // Every combination a real hand (4 cards + starter) can produce, enumerated from all possible deals:
   // [number of 15s, number of pairs, run points, flush points (0/4/5), nobs (0/1)].
   const CRIB_COMBOS = [[0,0,0,0,0],[0,0,0,0,1],[0,0,0,4,0],[0,0,0,5,0],[0,0,0,5,1],[0,0,3,0,0],[0,0,3,0,1],[0,0,3,4,0],[0,0,3,5,0],[0,0,3,5,1],[0,0,4,0,0],[0,0,4,0,1],[0,0,4,4,0],[0,0,4,5,0],[0,0,4,5,1],[0,0,5,0,0],[0,0,5,0,1],[0,0,5,4,0],[0,0,5,5,0],[0,0,5,5,1],[0,1,0,0,0],[0,1,0,0,1],[0,1,0,4,0],[0,1,3,0,0],[0,1,3,0,1],[0,1,3,4,0],[0,1,6,0,0],[0,1,6,0,1],[0,1,6,4,0],[0,1,8,0,0],[0,1,8,0,1],[0,1,8,4,0],[0,2,0,0,0],[0,2,0,0,1],[0,2,12,0,0],[0,2,12,0,1],[0,3,0,0,0],[0,3,0,0,1],[0,3,9,0,0],[0,3,9,0,1],[0,4,0,0,0],[0,4,0,0,1],[0,6,0,0,0],[0,6,0,0,1],[1,0,0,0,0],[1,0,0,0,1],[1,0,0,4,0],[1,0,0,5,0],[1,0,0,5,1],[1,0,3,0,0],[1,0,3,0,1],[1,0,3,4,0],[1,0,3,5,0],[1,0,3,5,1],[1,0,4,0,0],[1,0,4,0,1],[1,0,4,4,0],[1,0,4,5,0],[1,0,4,5,1],[1,0,5,0,0],[1,0,5,0,1],[1,0,5,4,0],[1,0,5,5,0],[1,0,5,5,1],[1,1,0,0,0],[1,1,0,0,1],[1,1,0,4,0],[1,1,3,0,0],[1,1,3,0,1],[1,1,3,4,0],[1,1,6,0,0],[1,1,6,0,1],[1,1,6,4,0],[1,1,8,0,0],[1,1,8,4,0],[1,2,0,0,0],[1,2,0,0,1],[1,2,12,0,0],[1,3,0,0,0],[1,3,0,0,1],[1,3,9,0,0],[1,4,0,0,0],[1,6,0,0,0],[2,0,0,0,0],[2,0,0,0,1],[2,0,0,4,0],[2,0,0,5,0],[2,0,0,5,1],[2,0,3,0,0],[2,0,3,0,1],[2,0,3,4,0],[2,0,3,5,0],[2,0,3,5,1],[2,0,4,0,0],[2,0,4,0,1],[2,0,4,4,0],[2,0,4,5,0],[2,0,4,5,1],[2,0,5,0,0],[2,0,5,4,0],[2,0,5,5,0],[2,1,0,0,0],[2,1,0,0,1],[2,1,0,4,0],[2,1,3,0,0],[2,1,3,0,1],[2,1,3,4,0],[2,1,6,0,0],[2,1,6,0,1],[2,1,6,4,0],[2,1,8,0,0],[2,1,8,4,0],[2,2,0,0,0],[2,2,0,0,1],[2,2,12,0,0],[2,3,0,0,0],[2,4,0,0,0],[3,0,0,0,0],[3,0,0,0,1],[3,0,0,4,0],[3,0,0,5,0],[3,0,0,5,1],[3,0,3,0,0],[3,0,3,0,1],[3,0,3,4,0],[3,0,3,5,0],[3,0,3,5,1],[3,0,4,0,0],[3,0,4,0,1],[3,0,4,4,0],[3,0,4,5,0],[3,0,4,5,1],[3,1,0,0,0],[3,1,0,0,1],[3,1,0,4,0],[3,1,3,0,0],[3,1,3,0,1],[3,1,3,4,0],[3,1,6,0,0],[3,1,6,0,1],[3,1,6,4,0],[3,1,8,0,0],[3,1,8,4,0],[3,2,0,0,0],[3,3,0,0,0],[3,3,0,0,1],[3,3,9,0,0],[3,4,0,0,0],[4,0,0,0,0],[4,0,0,0,1],[4,0,0,4,0],[4,0,0,5,0],[4,0,0,5,1],[4,0,4,0,0],[4,0,4,0,1],[4,0,4,4,0],[4,0,4,5,0],[4,0,4,5,1],[4,1,0,0,0],[4,1,0,0,1],[4,1,0,4,0],[4,1,3,0,0],[4,1,3,0,1],[4,1,3,4,0],[4,1,6,0,0],[4,1,6,0,1],[4,1,6,4,0],[4,2,0,0,0],[4,2,0,0,1],[4,2,12,0,0],[4,3,0,0,0],[4,3,0,0,1],[4,3,9,0,0],[4,6,0,0,0],[4,6,0,0,1],[5,2,0,0,0],[5,3,0,0,0],[5,4,0,0,0],[6,1,0,0,0],[6,1,0,0,1],[6,1,0,4,0],[6,1,3,0,0],[6,1,3,0,1],[6,1,3,4,0],[6,2,0,0,0],[6,2,0,0,1],[6,3,0,0,0],[6,4,0,0,0],[6,4,0,0,1],[6,6,0,0,0],[7,3,0,0,0],[7,3,0,0,1],[7,4,0,0,0],[7,4,0,0,1],[8,6,0,0,0],[8,6,0,0,1]];
   const CRIB_PAIR_COUNTS = [1, 2, 3, 4, 6]; // pairs represented by the five "a Pair" rows
   const cribNewSel = () => ({ f15: null, pair: null, runs: null, flush: null, nobs: false });
-  let cribSel = cribNewSel(), cribCountRefs = null;
+  let cribSelReal = cribNewSel(), cribCountRefs = null;
   // Is there a real hand consistent with everything claimed so far? Unclaimed categories are free.
   function cribFeasible(s) {
     const n = s.f15 != null ? s.f15 + 1 : null, p = s.pair != null ? CRIB_PAIR_COUNTS[s.pair] : null, r = s.runs != null ? 3 + s.runs : null;
     const f = s.flush != null ? s.flush : null, b = s.nobs ? 1 : null;
     return CRIB_COMBOS.some(t => (n == null || t[0] === n) && (p == null || t[1] === p) && (r == null || t[2] === r) && (f == null || t[3] > 0) && (b == null || t[4] === b));
   }
+  // Counting is live only while at least one card is face-up; face-down returns the chart to its
+  // entry state (claims are kept and reappear when cards are flipped back up).
+  function cribCountActive() { return cribFlippedSet.size > 0; }
+  let cribHeldInput = '';
   function cribCountRefresh() {
     const R = cribCountRefs; if (!R) return;
+    const active = cribCountActive();
+    const cribSel = active ? cribSelReal : cribNewSel();
+    if (!active && !R.inp.readOnly) cribHeldInput = R.inp.value;
+    R.inp.readOnly = !active;
     const offset = cribSel.f15 != null ? (cribSel.f15 + 1) * 2 : 0;
     R.pairTexts.forEach((t, i) => { t.textContent = 'is ' + (offset + CRIB_PAIR_COUNTS[i] * 2); });
     const place = (rect, t) => {
@@ -1587,7 +1597,7 @@ body {
     // Gray every option that no real hand could combine with what is already claimed.
     // Nothing is grayed until something has been claimed.
     const anySel = cribSel.f15 != null || cribSel.pair != null || cribSel.runs != null || cribSel.flush != null || cribSel.nobs;
-    const gray = (t, ok) => { const show = ok || !anySel; t.dataset.cribOff = ok ? '0' : '1'; t.setAttribute('opacity', show ? '1' : '0.28'); t.style.cursor = show ? 'pointer' : 'default'; };
+    const gray = (t, ok) => { const show = ok || !anySel; t.dataset.cribOff = (ok && active) ? '0' : '1'; t.setAttribute('opacity', show ? '1' : '0.28'); t.style.cursor = (show && active) ? 'pointer' : 'default'; };
     R.f15Texts.forEach((t, i) => gray(t, cribSel.f15 === i || cribFeasible(Object.assign({}, cribSel, { f15: i }))));
     R.pairTexts.forEach((t, i) => gray(t, cribSel.pair === i || cribFeasible(Object.assign({}, cribSel, { pair: i }))));
     R.runTexts.forEach((t, i) => gray(t, cribSel.runs === i || cribFeasible(Object.assign({}, cribSel, { runs: i }))));
@@ -1601,7 +1611,8 @@ body {
     if (cribSel.f15 != null || cribSel.pair != null || cribSel.runs != null || cribSel.flush != null || cribSel.nobs) {
       const total = offset + pairVal + (cribSel.runs != null ? 3 + cribSel.runs : 0) + (cribSel.flush != null ? cribFlushPoints() : 0) + (cribSel.nobs ? 1 : 0);
       R.inp.value = String(total); R.setPrev(R.inp.value);
-    } else { R.inp.value = ''; R.setPrev(''); }
+    } else if (active) { R.inp.value = cribHeldInput; R.setPrev(cribHeldInput); }
+    else { R.inp.value = ''; R.setPrev(''); }
   }
   // A flush is worth 5 when the starter matches the hand's suit, otherwise 4.
   function cribFlushPoints() {
@@ -1611,7 +1622,7 @@ body {
     } catch (e) { }
     return 4;
   }
-  function cribCountReset() { cribSel = cribNewSel(); try { cribCountRefresh(); } catch (e) { } }
+  function cribCountReset() { cribSelReal = cribNewSel(); cribHeldInput = ''; try { cribCountRefresh(); } catch (e) { } }
 
   function renderBoxes() { let setupEl = document.getElementById('setup'); if (setupEl) { setupEl.classList.toggle('gw-bg', postRegisterTarget === 'groupwords'); setupEl.classList.remove('gw-nodlg'); if (postRegisterTarget === 'cribbage') { setupEl.classList.add('crib-bg'); if (!setupEl.style.backgroundImage) { let art = document.getElementById('crib-landing-art'); if (art && art.src) setupEl.style.backgroundImage = "url('" + art.src + "')"; } } else { setupEl.classList.remove('crib-bg'); setupEl.style.backgroundImage = ''; } } let owner = getOwner(); let br = document.getElementById("box-register"), bs = document.getElementById("box-start"); if (!br || !bs) return; if (!owner) { br.hidden = false; bs.hidden = true; let sp = document.getElementById("share-panel"); if (sp) sp.hidden = true; requestAnimationFrame(() => { setTimeout(() => { let f = document.getElementById("reg-user"); if (f) { f.focus(); f.select(); } }, 50); }); } else { br.hidden = true; bs.hidden = false; let on = document.getElementById("owner-name"); if (on) on.textContent = owner; setTimeout(() => { let f = document.getElementById("nameB"); if (f) f.focus(); }, 0); } }  
   function getPendingInviteIds() { try { return JSON.parse(localStorage.getItem("bt_pending_invite_ids") || "[]"); } catch (e) { return []; } }
@@ -2534,6 +2545,106 @@ body {
   function cribMessage(t) { let el = $('crib-status'); if (el) el.textContent = t; }
 
   // ---- render ----
+
+  // ---- Pegs (two white-holed paws per player), deck and crib holding area on the board ----
+  const CRIB_PAW_COLORS = ['#c94a3c', '#2e8aa8']; // Wordage paw palette: P0 red, P1 blue
+  let cribPegInit = false, cribHoles = null, cribStartDots = null, cribFinishDot = null, cribPegState = [{ front: 0, back: -1 }, { front: 0, back: -1 }];
+  function cribBuildBoardExtras() {
+    const NS = 'http://www.w3.org/2000/svg';
+    const svg = document.getElementById('crib-board-svg'); if (!svg) return false;
+    const all = Array.from(svg.querySelectorAll('circle'));
+    cribHoles = all.filter(c => c.getAttribute('fill') === 'black' && c.getAttribute('r') === '5.5');
+    cribHoles.forEach(c => { c.dataset.cribHole = '1'; });
+    const green = all.filter(c => c.getAttribute('fill') === 'green'); cribFinishDot = green[0] || null;
+    // start dots: P0 inner (red) / P1 outer (blue) -> all white, plus a second dot "behind" each
+    const startRed = all.find(c => c.getAttribute('fill') === 'red' || c.dataset.cribStart === '0');
+    const startBlue = all.find(c => c.getAttribute('fill') === 'blue' || c.dataset.cribStart === '1');
+    if (!startRed || !startBlue || cribHoles.length < 240) return false;
+    cribStartDots = [[startRed], [startBlue]];
+    [startRed, startBlue].forEach((d, pi) => {
+      d.dataset.cribStart = String(pi);
+      const back = d.cloneNode(false); back.dataset.cribStart = String(pi) + 'b';
+      back.setAttribute('cx', Number(d.getAttribute('cx')) - 13.07);
+      d.parentNode.insertBefore(back, d);
+      cribStartDots[pi].push(back);
+      [d, back].forEach(x => { x.setAttribute('fill', '#fff'); x.setAttribute('stroke', '#555'); x.setAttribute('stroke-width', '0.8'); });
+    });
+    // paw symbol
+    let defs = svg.querySelector('defs');
+    if (!defs) { defs = document.createElementNS(NS, 'defs'); svg.insertBefore(defs, svg.firstChild); }
+    const sym = document.createElementNS(NS, 'g'); sym.setAttribute('id', 'crib-paw-shape');
+    sym.innerHTML = '<path d="M 20 56 C 20 46 35 42 50 42 C 65 42 80 46 80 56 C 84 70 78 86 50 92 C 22 86 16 70 20 56 Z"/>' +
+      '<circle cx="23" cy="28" r="14"/><circle cx="50" cy="15" r="16"/><circle cx="77" cy="28" r="14"/>';
+    defs.appendChild(sym);
+    const pg = document.createElementNS(NS, 'g'); pg.setAttribute('id', 'crib-paws'); pg.setAttribute('pointer-events', 'none');
+    for (let pi = 0; pi < 2; pi++) for (let k = 0; k < 2; k++) {
+      const u = document.createElementNS(NS, 'use');
+      u.setAttribute('href', '#crib-paw-shape'); u.setAttribute('fill', CRIB_PAW_COLORS[pi]); u.setAttribute('stroke', '#fff'); u.setAttribute('stroke-width', '3');
+      u.dataset.cribPaw = pi + ':' + k; pg.appendChild(u);
+    }
+    svg.appendChild(pg);
+    // deck + crib holding area, to the right of the mountain scene
+    const g = document.createElementNS(NS, 'g'); g.setAttribute('id', 'crib-deck-area'); g.setAttribute('pointer-events', 'none');
+    const cw = CRIB_CARD_W, ch = CRIB_CARD_H;
+    const backCard = (x, y, w, hh, dashed) => {
+      const c = document.createElementNS(NS, 'g'); c.setAttribute('transform', 'translate(' + x + ',' + y + ') scale(' + (w / cw) + ',' + (hh / ch) + ')');
+      c.innerHTML = '<rect width="' + cw + '" height="' + ch + '" rx="7" fill="#fffef6" stroke="#8a7a52" stroke-width="2"/>' +
+        '<use href="#crib-cardback-scene" x="4" y="4" width="' + (cw - 8) + '" height="' + (ch - 8) + '"/>';
+      return c;
+    };
+    const DX = 714, DY = 236, dw = 57, dh = 80;
+    for (let i = 3; i >= 0; i--) g.appendChild(backCard(DX + i * 1.4, DY - i * 1.4, dw, dh));   // face-down deck
+    const lab = (txt, x, y) => { const t = document.createElementNS(NS, 'text'); t.setAttribute('x', x); t.setAttribute('y', y); t.setAttribute('text-anchor', 'middle'); t.setAttribute('font-size', 11); t.setAttribute('font-family', 'sans-serif'); t.setAttribute('font-weight', '700'); t.setAttribute('fill', '#000'); t.textContent = txt; return t; };
+    g.appendChild(lab('deck', DX + dw / 2 + 2, DY + dh + 16));
+    const sw = 34, sh = 48, gx = 5, gy = 5, CX = 800, CY = 228;
+    const crib = document.createElementNS(NS, 'g'); crib.setAttribute('id', 'crib-slots');
+    for (let i = 0; i < 4; i++) {
+      const x = CX + (i % 2) * (sw + gx), y = CY + Math.floor(i / 2) * (sh + gy);
+      const s = document.createElementNS(NS, 'rect');
+      s.setAttribute('x', x); s.setAttribute('y', y); s.setAttribute('width', sw); s.setAttribute('height', sh); s.setAttribute('rx', 4);
+      s.setAttribute('fill', 'rgba(0,0,0,0.12)'); s.setAttribute('stroke', '#000'); s.setAttribute('stroke-width', '1'); s.setAttribute('stroke-dasharray', '4 3');
+      crib.appendChild(s);
+      const b = backCard(x, y, sw, sh); b.setAttribute('class', 'crib-slot-card'); b.style.display = 'none'; crib.appendChild(b);
+    }
+    g.appendChild(crib);
+    g.appendChild(lab('crib', CX + sw + gx / 2, CY + 2 * sh + gy + 16));
+    svg.appendChild(g);
+    return true;
+  }
+  function cribPegPos(pi, n) {
+    if (n <= 0) { const d = cribStartDots[pi][n === 0 ? 0 : 1]; return { x: Number(d.getAttribute('cx')), y: Number(d.getAttribute('cy')), el: d }; }
+    if (n >= 121) { const d = cribFinishDot; return { x: Number(d.getAttribute('cx')), y: Number(d.getAttribute('cy')), el: d }; }
+    const lane = pi === 0 ? 1 : 0, d = cribHoles[2 * (n - 1) + lane];
+    return { x: Number(d.getAttribute('cx')), y: Number(d.getAttribute('cy')), el: d };
+  }
+  function cribRenderBoardExtras() {
+    if (!cribState) return;
+    if (!cribPegInit) { cribPegInit = true; try { if (!cribBuildBoardExtras()) cribPegInit = false; } catch (e) { cribPegInit = false; return; } }
+    // peg state: the front paw sits on the score, the back paw on the previous front (leapfrog)
+    for (let pi = 0; pi < 2; pi++) {
+      const s = Math.max(0, Math.min(121, (cribState.players[pi] && cribState.players[pi].score) || 0)), st = cribPegState[pi];
+      if (s < st.front) { st.front = s; st.back = s > 0 ? 0 : -1; }
+      else if (s > st.front) { st.back = st.front; st.front = s; }
+    }
+    cribHoles.forEach(c => c.setAttribute('fill', 'black'));
+    cribStartDots.forEach(a => a.forEach(d => d.setAttribute('fill', '#fff')));
+    const occupied = [];
+    for (let pi = 0; pi < 2; pi++) {
+      const st = cribPegState[pi];
+      [st.front, st.back].forEach((n, k) => {
+        const pos = cribPegPos(pi, n), nxt = cribPegPos(pi, n >= 120 ? n - 1 : n + 1);
+        let ang = Math.atan2(nxt.y - pos.y, nxt.x - pos.x); if (n >= 120) ang += Math.PI;
+        const u = document.querySelector('#crib-paws use[data-crib-paw="' + pi + ':' + k + '"]');
+        const sc = 0.125;
+        u.setAttribute('transform', 'translate(' + pos.x + ',' + pos.y + ') rotate(' + (ang * 180 / Math.PI + 90) + ') scale(' + sc + ') translate(-50,-50)');
+        if (pos.el && pos.el.dataset.cribHole === '1') pos.el.setAttribute('fill', '#fff');
+        occupied.push(pos.el);
+      });
+    }
+    // crib holding area: one face-down card per card in the crib
+    const n = (cribState.crib && cribState.crib.length) || 0;
+    Array.from(document.querySelectorAll('#crib-slots .crib-slot-card')).forEach((c, i) => { c.style.display = i < n ? '' : 'none'; });
+  }
   function cribRender() {
     if (!cribState) return;
     let li = cribGetLocalIdx();
@@ -2550,6 +2661,7 @@ body {
     } else { $('crib-count').textContent = ''; let row = $('crib-pegging-row'); if (row) row.innerHTML = ''; }
     cribRenderHand(li);
     cribRenderBoardHand(li);
+    try { cribRenderBoardExtras(); } catch (e) { }
     $('crib-history').innerHTML = cribState.history.slice().reverse().slice(0, 12).map(x => '<li>' + esc(x) + '</li>').join('');
     let actionsEl = $('crib-actions');
     if (cribState.phase === 'done') {
