@@ -1228,7 +1228,37 @@ body {
       let flipped = cribFlippedSet.has(handIndex) && !!c;
       face.style.display = flipped ? '' : 'none';
       back.style.display = flipped ? 'none' : '';
+      slot.style.display = c ? '' : 'none';
+      slot.style.opacity = cribSelectedDiscard.has(handIndex) ? '0.3' : '1';
     });
+  }
+  // ---- right-click "Send to Crib" (cards go two at a time; the second one confirms the discard) ----
+  function cribCloseCardMenu() { const m = document.getElementById('crib-card-menu'); if (m) m.remove(); }
+  function cribCardContextMenu(ev, slot) {
+    ev.preventDefault();
+    cribCloseCardMenu();
+    if (!cribState || cribState.phase !== 'discard') return;
+    const li = cribGetLocalIdx();
+    if (cribState.discarded && cribState.discarded[li]) return;
+    const hi = Number(slot.dataset.cribHandIndex);
+    const picked = cribSelectedDiscard.has(hi);
+    const m = document.createElement('div');
+    m.id = 'crib-card-menu';
+    m.style.cssText = 'position:fixed;z-index:99999;background:#fffef6;border:1px solid #8a7a52;border-radius:6px;box-shadow:0 3px 10px rgba(0,0,0,.35);padding:4px 0;font:14px sans-serif;color:#000;min-width:130px;left:' + ev.clientX + 'px;top:' + ev.clientY + 'px;';
+    const item = document.createElement('div');
+    item.textContent = picked ? 'Return to hand' : 'Send to Crib';
+    item.style.cssText = 'padding:6px 14px;cursor:pointer;';
+    item.onmouseenter = () => { item.style.background = '#e9dfc0'; }; item.onmouseleave = () => { item.style.background = ''; };
+    item.onclick = () => {
+      cribCloseCardMenu();
+      if (picked) cribSelectedDiscard.delete(hi);
+      else if (cribSelectedDiscard.size < 2) cribSelectedDiscard.add(hi);
+      cribRender();
+      if (cribSelectedDiscard.size === 2) cribConfirmDiscard();
+    };
+    m.appendChild(item);
+    document.body.appendChild(m);
+    setTimeout(() => { const away = (e) => { if (m.contains(e.target)) return; document.removeEventListener('pointerdown', away); cribCloseCardMenu(); }; document.addEventListener('pointerdown', away); }, 0);
   }
   function cribFlipCard(handIndex) {
     if (cribFlippedSet.has(handIndex)) cribFlippedSet.delete(handIndex); else cribFlippedSet.add(handIndex);
@@ -1273,6 +1303,7 @@ body {
     } catch (e) { return 1; }
   }
   function cribCardPointerDown(ev, posIndex) {
+    if (ev.button === 2) return; // right-click opens the Send to Crib menu instead
     let cardsG = document.getElementById('crib-cards'); if (!cardsG) return;
     let slot = cardsG.querySelector('.crib-card-slot[data-crib-card-slot="' + posIndex + '"]');
     if (!slot) return;
@@ -1361,6 +1392,7 @@ body {
 
       g.appendChild(flip);
       g.addEventListener('pointerdown', (ev) => cribCardPointerDown(ev, i));
+      g.addEventListener('contextmenu', (ev) => cribCardContextMenu(ev, g));
       cardsG.appendChild(g);
     }
 
@@ -2642,7 +2674,7 @@ body {
       });
     }
     // crib holding area: one face-down card per card in the crib
-    const n = (cribState.crib && cribState.crib.length) || 0;
+    const n = Math.min(4, ((cribState.crib && cribState.crib.length) || 0) + (cribState.phase === 'discard' ? cribSelectedDiscard.size : 0));
     Array.from(document.querySelectorAll('#crib-slots .crib-slot-card')).forEach((c, i) => { c.style.display = i < n ? '' : 'none'; });
   }
   function cribRender() {
