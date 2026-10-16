@@ -1241,6 +1241,7 @@ body {
     const li = cribGetLocalIdx();
     if (cribState.discarded && cribState.discarded[li]) return;
     const hi = Number(slot.dataset.cribHandIndex);
+    if (!cribFlippedSet.has(hi)) return; // not available on a card's back
     const picked = cribSelectedDiscard.has(hi);
     const m = document.createElement('div');
     m.id = 'crib-card-menu';
