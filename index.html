@@ -1734,13 +1734,15 @@ body {
   }
 
   // ---- pegging claims (shown where the hand-count chart sits, only while pegging) ----
-  // Points in the play are claimed, not awarded: each line is checked against what is really on the table
-  // and a claim worth more than the play is refused. The seat that made the latest play may claim for it
-  // until the next card is played.
-  let cribPegRefs = null;
+  // Points in the play are claimed, not awarded. Pick what the latest play is worth, check the total, press the tick.
+  // Each pick is checked against what is really on the table; a claim worth more than the play is refused.
+  // The seat that made the latest play may claim for it until the next card is played.
+  let cribPegRefs = null, cribPegSel = { f15: false, pair: 0, run: 0, f31: false, last: false }, cribPegSelKey = '';
   let cribNote = { t: '', until: 0 };
-  function cribBuildPegPanel(NS, ax, ay, rh) {
+  const CRIB_PEG_SEL_ORDER = ['f15', 'pair', 'run', 'f31', 'last'];
+  function cribBuildPegPanel(NS, ax0, ay, rh) {
     const svg = document.getElementById('crib-board-svg'); if (!svg) return;
+    const ax = cribCardRowLeft || ax0;           // the table's left edge is the left edge of the first card
     let old = document.getElementById('crib-pegclaims'); if (old) old.remove();
     const g = document.createElementNS(NS, 'g');
     g.setAttribute('id', 'crib-pegclaims'); g.setAttribute('font-family', 'sans-serif'); g.setAttribute('fill', 'black'); g.setAttribute('display', 'none');
@@ -1753,25 +1755,36 @@ body {
       g.appendChild(t); items[key] = t; return t;
     };
     mk('head', 'pegging', 0, true);
-    mk('f15', '15 for 2', 1, false, () => cribClaimPeg('f15'));
-    mk('f31', '31 for 2', 2, false, () => cribClaimPeg('f31'));
-    mk('last', 'last card', 3, false, () => cribClaimPeg('last'));
-    mk('p2', 'a pair is 2', 4, false, () => cribClaimPeg('pair', 2));
-    mk('p6', 'a pair is 6', 5, false, () => cribClaimPeg('pair', 6));
-    mk('p12', 'a pair is 12', 6, false, () => cribClaimPeg('pair', 12));
-    const run = mk('run', 'a run for', 7, false, null);
+    mk('f15', '15 for 2', 1, false, () => cribPegPick('f15'));
+    mk('p2', 'a pair is 2', 2, false, () => cribPegPick('pair', 2));
+    mk('p6', 'a pair is 6', 3, false, () => cribPegPick('pair', 6));
+    const p12 = mk('p12', 'a pair is 12', 4, false, () => cribPegPick('pair', 12));
+    const run = mk('run', 'a run for', 5, false, null);
     const rb = run.getBBox();
     const fo = document.createElementNS(NS, 'foreignObject');
     fo.setAttribute('x', rb.x + rb.width + 4); fo.setAttribute('y', rb.y - 3); fo.setAttribute('width', 22); fo.setAttribute('height', rb.height + 2);
     const inp = document.createElementNS('http://www.w3.org/1999/xhtml', 'input');
     inp.type = 'text'; inp.setAttribute('inputmode', 'numeric'); inp.maxLength = 1; inp.autocomplete = 'off'; inp.setAttribute('aria-label', 'run length');
     inp.style.cssText = 'border:none;border-bottom:1px solid #000;outline:none;background:transparent;box-shadow:none;padding:0;margin:0;width:100%;height:100%;font:400 12.5px sans-serif;color:#000;caret-color:#000;text-align:center;';
-    inp.addEventListener('input', () => { if (!/^[3-7]$/.test(inp.value)) inp.value = ''; });
-    inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); const v = parseInt(inp.value, 10); if (v >= 3 && v <= 7) { cribClaimPeg('run', v); inp.value = ''; } else cribMessage('Type a run length from 3 to 7, then press Enter.'); } });
+    inp.addEventListener('input', () => { if (inp.value !== '' && !/^[3-7]$/.test(inp.value)) inp.value = ''; cribPegRunTyped(inp); });
+    inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); cribSubmitPeg(); } });
     fo.appendChild(inp); g.appendChild(fo);
-    const show = mk('show', 'go to the show', 9, true, () => cribGoToShow());
-    show.setAttribute('fill', '#2b4a63'); show.setAttribute('text-decoration', 'underline'); show.style.display = 'none';
-    cribPegRefs = { g, items, inp, fo };
+    mk('f31', '31 for 2', 6, false, () => cribPegPick('f31'));
+    mk('last', 'last card', 7, false, () => cribPegPick('last'));
+    // total row: "total" ends under the last "2" of "a pair is 12"; the sum follows, then the tick
+    const pr = p12.getBBox(), rightEdge = pr.x + pr.width;
+    const tl = mk('totlabel', 'total', 8, false, null); tl.setAttribute('text-anchor', 'end'); tl.setAttribute('x', rightEdge);
+    const tv = mk('totval', '0', 8, true, null); tv.setAttribute('x', rightEdge + 7);
+    const tick = document.createElementNS(NS, 'g'); tick.setAttribute('id', 'crib-peg-tick'); tick.style.cursor = 'pointer';
+    tick.setAttribute('transform', 'translate(' + (rightEdge + 30) + ',' + (ay + 8 * rh - 10) + ')');
+    tick.innerHTML = '<rect x="-3" y="-3" width="20" height="17" fill="transparent"/><path d="M0.5 6.5 Q2.5 7 4.5 10.5 Q8 3.5 13.5 -0.5" fill="none" stroke="#000" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>';
+    tick.addEventListener('click', () => cribSubmitPeg());
+    g.appendChild(tick);
+    const show = mk('show', 'go to the show', 0, true, () => cribGoToShow());
+    show.setAttribute('x', ax + 80); show.setAttribute('fill', '#2b4a63'); show.setAttribute('text-decoration', 'underline'); show.style.display = 'none';
+    const outlines = {};
+    CRIB_PEG_SEL_ORDER.forEach(k => { const r = document.createElementNS(NS, 'rect'); r.setAttribute('fill', 'none'); r.setAttribute('stroke', '#000'); r.setAttribute('stroke-width', '0.75'); r.setAttribute('rx', 2); r.setAttribute('pointer-events', 'none'); r.setAttribute('display', 'none'); g.appendChild(r); outlines[k] = r; });
+    cribPegRefs = { g, items, inp, fo, tick, outlines, ax };
   }
   // What is really on the table for the latest play.
   function cribPegReality(pend) {
@@ -1786,26 +1799,74 @@ body {
     }
     return { count: pend.count, match: m, run };
   }
-  async function cribClaimPeg(kind, n) {
+  // One claim line against the table: { pts, say } if allowed, { bad } if it is worth more than the play.
+  function cribPegCheck(pend, kind, n) {
+    const R = cribPegReality(pend), cl = pend.claimed || {};
+    if (cl[kind] != null) return { bad: 'Already claimed.' };
+    if (kind === 'f15') return R.count === 15 ? { pts: 2, say: 'fifteen for 2' } : { bad: 'The count is ' + R.count + ', not 15.' };
+    if (kind === 'f31') return R.count === 31 ? { pts: 2, say: 'thirty-one for 2' } : { bad: 'The count is ' + R.count + ', not 31.' };
+    if (kind === 'last') { if (!pend.ended) return { bad: 'The play is not over yet.' }; if (R.count === 31) return { bad: 'A count of 31 scores the 2 for 31, not a last card.' }; return { pts: 1, say: 'last card for 1' }; }
+    if (kind === 'pair') {
+      const need = n === 2 ? 2 : n === 6 ? 3 : 4, nm = n === 2 ? 'a pair' : n === 6 ? 'a pair royal' : 'a double pair royal';
+      return R.match >= need ? { pts: n, say: nm + ' for ' + n } : { bad: 'That play does not make ' + nm + '.' };
+    }
+    if (kind === 'run') return R.run >= n ? { pts: n, say: 'a run of ' + n + ' for ' + n } : { bad: R.run ? 'The longest run on the table is ' + R.run + '.' : 'There is no run on the table.' };
+    return { bad: 'Unknown claim.' };
+  }
+  function cribPegNote(t) { cribNote = { t: t, until: Date.now() + 6000 }; cribMessage(t); }
+  function cribPegPending() {
+    if (!cribState || cribState.phase !== 'pegging' || !cribState.pegging) return null;
+    const pend = cribState.pegging.pending;
+    return (pend && pend.seat === cribGetLocalIdx()) ? pend : null;
+  }
+  function cribPegPick(kind, n) {
+    const pend = cribPegPending();
+    if (!pend) { cribPegNote('Nothing to claim right now - claims belong to the player who made the latest play.'); return; }
+    if (kind === 'pair') { if (cribPegSel.pair === n) { cribPegSel.pair = 0; cribPegRefresh(); return; } }
+    else if (cribPegSel[kind]) { cribPegSel[kind] = false; cribPegRefresh(); return; }
+    const r = cribPegCheck(pend, kind, n);
+    if (r.bad) { cribPegNote('Claim refused: ' + r.bad); return; }
+    if (kind === 'pair') cribPegSel.pair = n; else cribPegSel[kind] = true;
+    cribPegRefresh();
+  }
+  function cribPegRunTyped(inp) {
+    const pend = cribPegPending(), v = inp.value === '' ? 0 : parseInt(inp.value, 10);
+    if (!v) { cribPegSel.run = 0; cribPegRefresh(); return; }
+    if (!pend) { inp.value = ''; cribPegSel.run = 0; cribPegNote('Nothing to claim right now - claims belong to the player who made the latest play.'); cribPegRefresh(); return; }
+    const r = cribPegCheck(pend, 'run', v);
+    if (r.bad) { inp.value = ''; cribPegSel.run = 0; cribPegNote('Claim refused: ' + r.bad); cribPegRefresh(); return; }
+    cribPegSel.run = v; cribPegRefresh();
+  }
+  function cribPegTotal() {
+    const pend = cribPegPending(); if (!pend) return 0;
+    let t = 0;
+    if (cribPegSel.f15) t += 2; if (cribPegSel.pair) t += cribPegSel.pair; if (cribPegSel.run) t += cribPegSel.run;
+    if (cribPegSel.f31) t += 2; if (cribPegSel.last) t += 1;
+    return t;
+  }
+  async function cribSubmitPeg() {
     if (!cribState || cribState.phase !== 'pegging') return;
     let li = cribGetLocalIdx();
+    const picked = [];
+    if (cribPegSel.f15) picked.push(['f15']); if (cribPegSel.pair) picked.push(['pair', cribPegSel.pair]); if (cribPegSel.run) picked.push(['run', cribPegSel.run]);
+    if (cribPegSel.f31) picked.push(['f31']); if (cribPegSel.last) picked.push(['last']);
+    if (!picked.length) { cribPegNote('Pick what you are claiming first, then press the tick.'); return; }
     let server = await cribLoadGame(cribState.id); if (server) cribState = server;
     let p = cribState.pegging, pend = p && p.pending;
-    if (cribState.phase !== 'pegging' || !pend || pend.seat !== li) { cribMessage('Nothing to claim right now - claims belong to the player who made the latest play.'); return; }
+    if (cribState.phase !== 'pegging' || !pend || pend.seat !== li) { cribPegNote('Nothing to claim right now - the play has moved on.'); cribPegSel = { f15: false, pair: 0, run: 0, f31: false, last: false }; cribRender(); return; }
     pend.claimed = pend.claimed || {};
-    const R = cribPegReality(pend); let pts = 0, say = '', bad = '';
-    if (kind === 'f15') { if (pend.claimed.f15) bad = 'Already claimed.'; else if (R.count !== 15) bad = 'The count is ' + R.count + ', not 15.'; else { pts = 2; say = 'fifteen for 2'; } }
-    else if (kind === 'f31') { if (pend.claimed.f31) bad = 'Already claimed.'; else if (R.count !== 31) bad = 'The count is ' + R.count + ', not 31.'; else { pts = 2; say = 'thirty-one for 2'; } }
-    else if (kind === 'last') { if (pend.claimed.last) bad = 'Already claimed.'; else if (!pend.ended) bad = 'The play is not over yet.'; else if (R.count === 31) bad = 'A count of 31 scores the 2 for 31, not a last card.'; else { pts = 1; say = 'last card for 1'; } }
-    else if (kind === 'pair') {
-      const need = n === 2 ? 2 : n === 6 ? 3 : 4;
-      if (pend.claimed.pair) bad = 'A pair was already claimed for this play.'; else if (R.match < need) bad = 'That play does not make ' + (n === 2 ? 'a pair' : n === 6 ? 'a pair royal' : 'a double pair royal') + '.'; else { pts = n; say = (n === 2 ? 'a pair' : n === 6 ? 'a pair royal' : 'a double pair royal') + ' for ' + n; }
+    let total = 0; const says = [];
+    for (const [kind, n] of picked) {
+      const r = cribPegCheck(pend, kind, n);
+      if (r.bad) { cribPegNote('Claim refused: ' + r.bad); return; }
+      total += r.pts; says.push(r.say);
     }
-    else if (kind === 'run') { if (pend.claimed.run) bad = 'A run was already claimed for this play.'; else if (R.run < n) bad = R.run ? 'The longest run on the table is ' + R.run + '.' : 'There is no run on the table.'; else { pts = n; say = 'a run of ' + n + ' for ' + n; } }
-    if (bad) { cribNote = { t: 'Claim refused: ' + bad, until: Date.now() + 6000 }; cribMessage(cribNote.t); return; }
-    cribState.players[li].score += pts; pend.claimed[kind === 'pair' ? 'pair' : kind] = pts;
-    cribState.history.push(cribState.players[li].name + ' claims ' + say);
+    picked.forEach(([kind], i) => { pend.claimed[kind] = true; });
+    cribState.players[li].score += total;
+    cribState.history.push(cribState.players[li].name + ' claims ' + says.join(', ') + ' = ' + total);
     cribState.moveCount++;
+    cribPegSel = { f15: false, pair: 0, run: 0, f31: false, last: false };
+    try { if (cribPegRefs) cribPegRefs.inp.value = ''; } catch (e) { }
     await cribSaveGame(cribState); cribBroadcastGame(cribState);
     cribCheckWin();
     cribRender();
@@ -1820,23 +1881,60 @@ body {
     await cribSaveGame(cribState); cribBroadcastGame(cribState);
     cribRender();
   }
+  // Player names with their scores: P0 on the "pegging" row, P1 one line above, both starting over hole 53.
+  let cribNamesG = null;
+  function cribRenderNames() {
+    const NS = 'http://www.w3.org/2000/svg', svg = document.getElementById('crib-board-svg');
+    if (!svg || !cribState || !cribHoles || cribHoles.length < 106) return;
+    if (!cribNamesG) {
+      cribNamesG = document.createElementNS(NS, 'g'); cribNamesG.setAttribute('id', 'crib-peg-names'); cribNamesG.setAttribute('font-family', 'sans-serif'); cribNamesG.setAttribute('fill', 'black'); cribNamesG.setAttribute('pointer-events', 'none');
+      svg.appendChild(cribNamesG);
+    }
+    const x = Number(cribHoles[2 * 52 + 1].getAttribute('cx')), y0 = 214.25777868061553, rh = 16;
+    cribNamesG.innerHTML = '';
+    const rows = [[1, y0 - rh], [0, y0]], texts = [];
+    rows.forEach(([pi, y]) => {
+      const t = document.createElementNS(NS, 'text'); t.setAttribute('x', x); t.setAttribute('y', y); t.setAttribute('font-size', 12.5); t.setAttribute('font-weight', '400');
+      t.textContent = cribState.players[pi].name; cribNamesG.appendChild(t); texts.push([pi, y, t]);
+    });
+    const sx = Math.max(...texts.map(([, , t]) => { const b = t.getBBox(); return b.x + b.width; })) + 10;
+    texts.forEach(([pi, y]) => {
+      const t = document.createElementNS(NS, 'text'); t.setAttribute('x', sx); t.setAttribute('y', y); t.setAttribute('font-size', 12.5); t.setAttribute('font-weight', '400');
+      t.textContent = String(cribState.players[pi].score); cribNamesG.appendChild(t);
+    });
+  }
+  function cribPegRefresh() {
+    const R = cribPegRefs; if (!R || !cribState || cribState.phase !== 'pegging') return;
+    const li = cribGetLocalIdx(), p = cribState.pegging, pend = p && p.pending, mine = !!pend && pend.seat === li, cl = (pend && pend.claimed) || {};
+    const key = String(cribState.moveCount) + ':' + li;
+    if (key !== cribPegSelKey) { cribPegSelKey = key; cribPegSel = { f15: false, pair: 0, run: 0, f31: false, last: false }; R.inp.value = ''; }
+    const on = (k, claimed) => { const t = R.items[k]; const live = mine && !claimed; t.setAttribute('opacity', live ? '1' : '0.3'); t.style.cursor = live ? 'pointer' : 'default'; t.setAttribute('text-decoration', claimed ? 'line-through' : 'none'); };
+    on('f15', cl.f15); on('f31', cl.f31); on('last', cl.last); on('p2', cl.pair); on('p6', cl.pair); on('p12', cl.pair);
+    R.items.run.setAttribute('opacity', mine && !cl.run ? '1' : '0.3'); R.inp.disabled = !(mine && !cl.run);
+    const place = (rect, t) => { if (!t) { rect.setAttribute('display', 'none'); return; } const b = t.getBBox(); rect.setAttribute('x', b.x - 2); rect.setAttribute('y', b.y); rect.setAttribute('width', b.width + 4); rect.setAttribute('height', b.height); rect.removeAttribute('display'); };
+    place(R.outlines.f15, cribPegSel.f15 ? R.items.f15 : null);
+    place(R.outlines.pair, cribPegSel.pair ? R.items['p' + cribPegSel.pair] : null);
+    place(R.outlines.run, cribPegSel.run ? R.items.run : null);
+    place(R.outlines.f31, cribPegSel.f31 ? R.items.f31 : null);
+    place(R.outlines.last, cribPegSel.last ? R.items.last : null);
+    const tot = cribPegTotal();
+    R.items.totval.textContent = String(tot);
+    R.items.totlabel.setAttribute('opacity', mine ? '1' : '0.3'); R.items.totval.setAttribute('opacity', mine ? '1' : '0.3');
+    R.tick.setAttribute('opacity', mine && tot > 0 ? '1' : '0.3'); R.tick.style.cursor = mine && tot > 0 ? 'pointer' : 'default';
+    R.items.show.style.display = (p && p.finished && p.turn === li) ? '' : 'none';
+  }
   let cribChartWasShown = false;
   // The left-hand scoring area: empty while the crib is being made, pegging claims during the play, the hand-count chart for the show.
   function cribBoardPhaseView() {
-    const ph = cribState && cribState.phase, li = cribGetLocalIdx();
+    const ph = cribState && cribState.phase;
     const chart = ph === 'counting';
     ['crib-col15', 'crib-colpair', 'crib-colruns', 'crib-colflush', 'crib-colnobs', 'crib-handcount'].forEach(id => { const e = document.getElementById(id); if (e) { if (chart) e.removeAttribute('display'); else e.setAttribute('display', 'none'); } });
     if (chart && !cribChartWasShown && cribCountRefs) setTimeout(() => { try { cribCountRefs.inp.focus({ preventScroll: true }); } catch (e) { } }, 0);
     cribChartWasShown = chart;
+    try { cribRenderNames(); } catch (e) { }
     const R = cribPegRefs; if (!R) return;
     if (ph === 'pegging') R.g.removeAttribute('display'); else R.g.setAttribute('display', 'none');
-    if (ph !== 'pegging') return;
-    const p = cribState.pegging, pend = p && p.pending, mine = !!pend && pend.seat === li, cl = (pend && pend.claimed) || {};
-    const set = (key, on, done) => { const t = R.items[key]; t.setAttribute('opacity', on && !done ? '1' : '0.3'); t.style.cursor = on && !done ? 'pointer' : 'default'; t.setAttribute('text-decoration', done ? 'line-through' : (key === 'show' ? 'underline' : 'none')); };
-    set('f15', mine, cl.f15 != null); set('f31', mine, cl.f31 != null); set('last', mine, cl.last != null);
-    set('p2', mine, cl.pair != null); set('p6', mine, cl.pair != null); set('p12', mine, cl.pair != null);
-    R.items.run.setAttribute('opacity', mine && cl.run == null ? '1' : '0.3'); R.inp.disabled = !(mine && cl.run == null);
-    R.items.show.style.display = (p && p.finished && p.turn === li) ? '' : 'none';
+    if (ph === 'pegging') cribPegRefresh();
   }
   // Hand-count claiming: one selected row per column (most recent click wins; clicking it again clears it).
   // The a-Pair rows read as (selected 15s value + pair value), so the remembered pair row re-labels itself
@@ -2796,7 +2894,7 @@ body {
     if (!card || p.count + cribVal(card.r) > 31) { cribMessage("That card would go over 31."); return; }
     p.inHand[li].splice(cardIdx, 1);
     p.played.push(card); p.count += cribVal(card.r); p.lastToPlay = li; p.consecutiveGo = 0;
-    // Nothing is scored for the play: the player claims what it is worth (see cribClaimPeg).
+    // Nothing is scored for the play: the player claims what it is worth (see cribSubmitPeg).
     p.pending = { seat: li, seq: p.played.slice(), count: p.count, ended: false, claimed: {} };
     cribState.history.push(cribState.players[li].name + ' plays ' + cribCardLabel(card) + ' (count ' + p.count + ')');
     cribAdvancePegTurn();
@@ -2879,6 +2977,8 @@ body {
     const all = Array.from(svg.querySelectorAll('circle'));
     cribHoles = all.filter(c => c.getAttribute('fill') === 'black' && c.getAttribute('r') === '5.5');
     cribHoles.forEach(c => { c.dataset.cribHole = '1'; });
+    // Clicking a hole moves this player's back paw there, as far as the confirmed score and no further.
+    cribHoles.forEach((c, i) => { c.style.cursor = 'pointer'; c.addEventListener('click', () => cribHoleClick(Math.floor(i / 2) + 1)); });
     const green = all.filter(c => c.getAttribute('fill') === 'green'); cribFinishDot = green[0] || null;
     // start dots: P0 inner (red) / P1 outer (blue) -> all white, plus a second dot "behind" each
     const startRed = all.find(c => c.getAttribute('fill') === 'red' || c.dataset.cribStart === '0');
@@ -2934,6 +3034,13 @@ body {
     g.appendChild(lab('crib', CX + sw + gx / 2, CY + 2 * sh + gy + 16));
     svg.appendChild(g);
     return true;
+  }
+  function cribHoleClick(n) {
+    if (!cribState || cribState.phase === 'done') return;
+    const li = cribGetLocalIdx(), sc = Math.max(0, Math.min(121, (cribState.players[li] && cribState.players[li].score) || 0));
+    if (n > sc) { cribPegNote('That hole is past your confirmed score of ' + sc + '.'); return; }
+    cribPegState[li].back = n;
+    cribRenderBoardExtras();
   }
   function cribPegPos(pi, n) {
     if (n <= 0) { const d = cribStartDots[pi][n === 0 ? 0 : 1]; return { x: Number(d.getAttribute('cx')), y: Number(d.getAttribute('cy')), el: d }; }
