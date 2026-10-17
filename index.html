@@ -2641,7 +2641,14 @@ body {
     if (cribState.discarded[li]) { cribMessage('Already sent your discards.'); return; }
     let idxArr = Array.from(cribSelectedDiscard).sort((a, b) => b - a);
     let hand = cribState.hands[li];
+    // Remember what was face-up and in what order, so the four cards left keep their faces and places.
+    let sentSet = new Set(idxArr), shiftOf = i => i - idxArr.filter(x => x < i).length;
+    let keepOrder = cribBoardOrder.filter(i => !sentSet.has(i) && hand[i]).map(shiftOf);
+    let keepFlipped = new Set(Array.from(cribFlippedSet).filter(i => !sentSet.has(i)).map(shiftOf));
     idxArr.forEach(i => { cribState.crib.push(hand[i]); hand.splice(i, 1); });
+    for (let k = keepOrder.length; k < 6; k++) keepOrder.push(k);
+    cribBoardOrder = keepOrder; cribFlippedSet = keepFlipped; cribHi = [];
+    cribFlipHandKey = li + ':' + hand.map(c => c.r + c.s).join(',');
     cribState.discarded[li] = true;
     cribSelectedDiscard = new Set();
     cribState.history.push(cribState.players[li].name + ' sent 2 to the crib');
