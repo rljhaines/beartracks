@@ -1207,11 +1207,9 @@ body {
   // themselves. Flip state is tracked by hand index (card identity), so a
   // card's face-up/down state follows it when reordered.
   let cribBoardOrder = [0, 1, 2, 3, 4, 5];
-  let cribHi = [];  // highlighted (border) hand cards, oldest first; the two most recently selected keep the border
-  const CRIB_SLOT = { CX: 800, CY: 228, sw: 34, sh: 48, gx: 5, gy: 5 };  // the four crib holding slots on the board
   let cribFlippedSet = new Set();
   let cribFlipHandKey = null;
-  let cribCardRowLeft = 0, cribCardW = 80, cribCardGap = 14, cribCardRowTop = 355, cribRowShift = 0;  // cribRowShift: sideways shift that centres a short hand in the row
+  let cribCardRowLeft = 0, cribCardW = 80, cribCardGap = 14;
   function cribRenderBoardHand(li) {
     if (!cribState) return;
     let svg = document.getElementById('crib-board-svg');
@@ -1223,19 +1221,13 @@ body {
     if (key !== cribFlipHandKey) {
       cribFlippedSet = new Set();
       cribBoardOrder = [0, 1, 2, 3, 4, 5];
-      cribHi = [];
       cribFlipHandKey = key;
       cribCountReset();
     }
     let slots = Array.from(cardsG.querySelectorAll('.crib-card-slot'))
       .sort((a, b) => Number(a.dataset.cribCardSlot) - Number(b.dataset.cribCardSlot));
-    // Cards sent to the crib leave the row at once: the cards still in the hand close up (kept in their order) and the row re-centres.
-    let inRow = i => !!hand[i] && !cribSelectedDiscard.has(i);
-    cribBoardOrder = cribBoardOrder.filter(inRow).concat(cribBoardOrder.filter(i => !inRow(i)));
-    let nCards = cribBoardOrder.filter(inRow).length;
-    cribRowShift = nCards > 0 && nCards < 6 ? (6 - nCards) / 2 * (cribCardW + cribCardGap) : 0;
     slots.forEach((slot, pos) => {
-      slot.setAttribute('transform', 'translate(' + (Number(slot.dataset.baseX) + cribRowShift) + ',' + slot.dataset.baseY + ')');
+      slot.setAttribute('transform', 'translate(' + slot.dataset.baseX + ',' + slot.dataset.baseY + ')');
       let handIndex = cribBoardOrder[pos];
       slot.dataset.cribHandIndex = String(handIndex);
       let face = slot.querySelector('.crib-card-face');
@@ -1247,116 +1239,9 @@ body {
       let flipped = cribFlippedSet.has(handIndex) && !!c;
       face.style.display = flipped ? '' : 'none';
       back.style.display = flipped ? 'none' : '';
-      slot.style.display = (c && !cribSelectedDiscard.has(handIndex)) ? '' : 'none';  // a card sent to the crib leaves its place in the hand
-      slot.style.opacity = '1';
+      slot.style.display = c ? '' : 'none';
+      slot.style.opacity = cribSelectedDiscard.has(handIndex) ? '0.3' : '1';
     });
-    cribSyncHighlights();
-    cribUpdateLinks();
-  }
-  // Which hand cards currently show the border (face-up cards only, and only while discarding).
-  function cribSyncHighlights() {
-    let li = cribGetLocalIdx();
-    let live = cribState && cribState.phase === 'discard' && !(cribState.discarded && cribState.discarded[li]);
-    cribHi = cribHi.filter(h => live && cribFlippedSet.has(h) && !cribSelectedDiscard.has(h) && cribState.hands[li] && cribState.hands[li][h]);
-    let cardsG = document.getElementById('crib-cards'); if (!cardsG) return;
-    Array.from(cardsG.querySelectorAll('.crib-card-slot')).forEach(slot => {
-      let hl = slot.querySelector('.crib-card-hi');
-      if (hl) hl.style.display = cribHi.indexOf(Number(slot.dataset.cribHandIndex)) >= 0 ? '' : 'none';
-    });
-  }
-  function cribCanStage() { return !!cribState && cribState.phase === 'discard' && !(cribState.discarded && cribState.discarded[cribGetLocalIdx()]); }
-  function cribUpdateLinks() {
-    let t = document.getElementById('crib-send-link');
-    if (t) { let on = cribCanStage() && cribHi.length > 0; t.setAttribute('opacity', on ? '1' : '0.4'); }
-  }
-  function cribToggleHighlight(hi) {
-    let i = cribHi.indexOf(hi);
-    if (i >= 0) cribHi.splice(i, 1); else { cribHi.push(hi); if (cribHi.length > 2) cribHi.shift(); }
-    cribSyncHighlights(); cribUpdateLinks();
-  }
-  // Sending to the crib only stages the card(s) face-up in the crib slots; nothing is submitted until "submit crib".
-  function cribStageCard(hi) {
-    if (!cribCanStage()) return false;
-    if (cribSelectedDiscard.has(hi)) return false;
-    if (!cribFlippedSet.has(hi)) { cribMessage('Turn the card face-up first.'); return false; }
-    if (cribSelectedDiscard.size >= 2) { cribMessage('Only two cards go to the crib - return one to your hand first.'); return false; }
-    cribSelectedDiscard.add(hi);
-    cribRender();
-    cribMessage(cribSelectedDiscard.size === 2 ? 'Two cards are in the crib. Click "submit crib" to send them, or drag one back to your hand.' : 'One card is in the crib. Choose one more.');
-    return true;
-  }
-  function cribSendHighlighted() {
-    if (!cribCanStage()) return;
-    let list = cribHi.slice();
-    if (!list.length) { cribMessage('Click a face-up card first, then "send to crib".'); return; }
-    if (cribSelectedDiscard.size + list.length > 2) { cribMessage('Only two cards go to the crib - return one to your hand first.'); return; }
-    list.forEach(h => cribSelectedDiscard.add(h)); cribHi = [];
-    cribRender();
-    cribMessage(cribSelectedDiscard.size === 2 ? 'Two cards are in the crib. Click "submit crib" to send them, or drag one back to your hand.' : 'One card is in the crib. Choose one more.');
-  }
-  function cribReturnToHand(hi) { cribSelectedDiscard.delete(hi); cribRender(); }
-  function cribClientToSvg(cx, cy) {
-    try { let svg = document.getElementById('crib-board-svg'), pt = svg.createSVGPoint(); pt.x = cx; pt.y = cy; return pt.matrixTransform(svg.getScreenCTM().inverse()); } catch (e) { return { x: 0, y: 0 }; }
-  }
-  function cribInCribBox(p) { const S = CRIB_SLOT; return p.x >= S.CX - 14 && p.x <= S.CX + 2 * S.sw + S.gx + 14 && p.y >= S.CY - 14 && p.y <= S.CY + 2 * S.sh + S.gy + 40; }
-  function cribInHandZone(p) { return p.y >= cribCardRowTop - 30 && p.x >= cribCardRowLeft - 24 && p.x <= cribCardRowLeft + 6 * cribCardW + 5 * cribCardGap + 24; }
-  // Crib cards staged by this player: face-up until submission; drag one back to the hand, or right-click it.
-  let cribStagedDrag = null;
-  function cribShowMenu(ev, label, fn) {
-    ev.preventDefault(); cribCloseCardMenu();
-    const m = document.createElement('div'); m.id = 'crib-card-menu';
-    m.style.cssText = 'position:fixed;z-index:99999;background:#fffef6;border:1px solid #8a7a52;border-radius:6px;box-shadow:0 3px 10px rgba(0,0,0,.35);padding:4px 0;font:14px sans-serif;color:#000;min-width:130px;left:' + ev.clientX + 'px;top:' + ev.clientY + 'px;';
-    const item = document.createElement('div'); item.textContent = label; item.style.cssText = 'padding:6px 14px;cursor:pointer;';
-    item.onmouseenter = () => { item.style.background = '#e9dfc0'; }; item.onmouseleave = () => { item.style.background = ''; };
-    item.onclick = () => { cribCloseCardMenu(); fn(); };
-    m.appendChild(item); document.body.appendChild(m);
-    setTimeout(() => { const away = (e) => { if (m.contains(e.target)) return; document.removeEventListener('pointerdown', away); cribCloseCardMenu(); }; document.addEventListener('pointerdown', away); }, 0);
-  }
-  function cribStagedPointerDown(ev, hi, el) {
-    if (ev.button === 2) return;
-    try { el.setPointerCapture(ev.pointerId); } catch (e) { }
-    cribStagedDrag = { hi, el, sx: ev.clientX, sy: ev.clientY, moved: false, bx: Number(el.dataset.bx), by: Number(el.dataset.by), k: el.dataset.k, pid: ev.pointerId };
-    const mv = (e) => {
-      if (!cribStagedDrag) return;
-      let dx = e.clientX - cribStagedDrag.sx, dy = e.clientY - cribStagedDrag.sy;
-      if (!cribStagedDrag.moved && Math.hypot(dx, dy) < 4) return;
-      cribStagedDrag.moved = true; let sc = cribSvgScale();
-      el.setAttribute('transform', 'translate(' + (cribStagedDrag.bx + dx / sc) + ',' + (cribStagedDrag.by + dy / sc) + ') scale(' + cribStagedDrag.k + ')');
-    };
-    const up = (e) => {
-      el.removeEventListener('pointermove', mv); el.removeEventListener('pointerup', up); el.removeEventListener('pointercancel', up);
-      try { el.releasePointerCapture(e.pointerId); } catch (x) { }
-      let d = cribStagedDrag; cribStagedDrag = null; if (!d) return;
-      if (d.moved && cribInHandZone(cribClientToSvg(e.clientX, e.clientY))) cribReturnToHand(d.hi); else cribRender();
-    };
-    el.addEventListener('pointermove', mv); el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
-  }
-  function cribRenderStaged() {
-    const NS = 'http://www.w3.org/2000/svg';
-    let svg = document.getElementById('crib-board-svg'); if (!svg || !cribState) return;
-    let g = document.getElementById('crib-staged');
-    if (!g) { g = document.createElementNS(NS, 'g'); g.setAttribute('id', 'crib-staged'); svg.appendChild(g); }
-    g.innerHTML = '';
-    if (!cribCanStage()) return;
-    const S = CRIB_SLOT, li = cribGetLocalIdx(), hand = cribState.hands[li] || [], base = (cribState.crib || []).length;
-    Array.from(cribSelectedDiscard).forEach((hi, j) => {
-      let c = hand[hi], si = base + j; if (!c || si > 3) return;
-      let x = S.CX + (si % 2) * (S.sw + S.gx), y = S.CY + Math.floor(si / 2) * (S.sh + S.gy), k = (S.sw / CRIB_CARD_W) + ',' + (S.sh / CRIB_CARD_H);
-      let w = document.createElementNS(NS, 'g');
-      w.setAttribute('transform', 'translate(' + x + ',' + y + ') scale(' + k + ')');
-      w.dataset.bx = String(x); w.dataset.by = String(y); w.dataset.k = k; w.style.cursor = 'grab'; w.style.touchAction = 'none';
-      w.appendChild(cribBuildCardFace(c.r, c.s, CRIB_CARD_W, CRIB_CARD_H));
-      w.addEventListener('pointerdown', (ev) => cribStagedPointerDown(ev, hi, w));
-      w.addEventListener('contextmenu', (ev) => cribShowMenu(ev, 'Return to hand', () => cribReturnToHand(hi)));
-      g.appendChild(w);
-    });
-    if (cribSelectedDiscard.size === 2) {
-      let t = document.createElementNS(NS, 'text');
-      t.setAttribute('x', S.CX + S.sw + S.gx / 2); t.setAttribute('y', S.CY + 2 * S.sh + S.gy + 34); t.setAttribute('text-anchor', 'middle');
-      t.setAttribute('font-size', 12); t.setAttribute('font-weight', '700'); t.setAttribute('fill', '#2b4a63'); t.setAttribute('text-decoration', 'underline'); t.style.cursor = 'pointer';
-      t.textContent = 'submit crib'; t.addEventListener('click', () => cribConfirmDiscard());
-      g.appendChild(t);
-    }
   }
   // ---- right-click "Send to Crib" (cards go two at a time; the second one confirms the discard) ----
   function cribCloseCardMenu() { const m = document.getElementById('crib-card-menu'); if (m) m.remove(); }
@@ -1378,7 +1263,10 @@ body {
     item.onmouseenter = () => { item.style.background = '#e9dfc0'; }; item.onmouseleave = () => { item.style.background = ''; };
     item.onclick = () => {
       cribCloseCardMenu();
-      if (picked) cribReturnToHand(hi); else cribStageCard(hi);
+      if (picked) cribSelectedDiscard.delete(hi);
+      else if (cribSelectedDiscard.size < 2) cribSelectedDiscard.add(hi);
+      cribRender();
+      if (cribSelectedDiscard.size === 2) cribConfirmDiscard();
     };
     m.appendChild(item);
     document.body.appendChild(m);
@@ -1397,7 +1285,6 @@ body {
       if (anyFaceDown) cribFlippedSet.add(hi); else cribFlippedSet.delete(hi);
       cribAnimateCardFlipByHandIndex(hi);
     });
-    cribSyncHighlights(); cribUpdateLinks();
     try { cribCountRefresh(); } catch (e) { }
   }
   function cribAnimateCardFlipByHandIndex(handIndex) {
@@ -1433,21 +1320,21 @@ body {
     let slot = cardsG.querySelector('.crib-card-slot[data-crib-card-slot="' + posIndex + '"]');
     if (!slot) return;
     try { slot.setPointerCapture(ev.pointerId); } catch (e) { }
-    cribDrag = { pos: posIndex, startClientX: ev.clientX, startClientY: ev.clientY, moved: false, baseX: Number(slot.dataset.baseX) + cribRowShift, baseY: Number(slot.dataset.baseY), pointerId: ev.pointerId };
+    cribDrag = { pos: posIndex, startClientX: ev.clientX, moved: false, baseX: Number(slot.dataset.baseX), pointerId: ev.pointerId };
     slot.addEventListener('pointermove', cribCardPointerMove);
     slot.addEventListener('pointerup', cribCardPointerUp);
     slot.addEventListener('pointercancel', cribCardPointerUp);
   }
   function cribCardPointerMove(ev) {
     if (!cribDrag) return;
-    let dxScreen = ev.clientX - cribDrag.startClientX, dyScreen = ev.clientY - cribDrag.startClientY;
-    if (!cribDrag.moved && Math.hypot(dxScreen, dyScreen) < 4) return;
+    let dxScreen = ev.clientX - cribDrag.startClientX;
+    if (!cribDrag.moved && Math.abs(dxScreen) < 4) return;
     cribDrag.moved = true;
-    let dx = dxScreen / cribSvgScale(), dy = dyScreen / cribSvgScale();
+    let dx = dxScreen / cribSvgScale();
     let cardsG = document.getElementById('crib-cards'); if (!cardsG) return;
     let slot = cardsG.querySelector('.crib-card-slot[data-crib-card-slot="' + cribDrag.pos + '"]');
     if (!slot) return;
-    slot.setAttribute('transform', 'translate(' + (cribDrag.baseX + dx) + ',' + (cribDrag.baseY + dy) + ')');
+    slot.setAttribute('transform', 'translate(' + (cribDrag.baseX + dx) + ',' + slot.dataset.baseY + ')');
   }
   function cribCardPointerUp(ev) {
     if (!cribDrag) return;
@@ -1460,28 +1347,18 @@ body {
       slot.removeEventListener('pointercancel', cribCardPointerUp);
       try { slot.releasePointerCapture(cribDrag.pointerId); } catch (e) { }
     }
-    if (moved && slot && cribInCribBox(cribClientToSvg(ev.clientX, ev.clientY))) {
-      // dropped on the crib: send this card there (it must be face-up); otherwise it just returns to its place
-      let hiIdx = Number(slot.dataset.cribHandIndex);
-      cribDrag = null; cribRenderBoardHand(cribGetLocalIdx());
-      cribStageCard(hiIdx);
-      return;
-    }
     if (moved && slot) {
       let m = /translate\(([-\d.]+),/.exec(slot.getAttribute('transform') || '');
       let curX = m ? parseFloat(m[1]) : cribDrag.baseX;
-      let target = Math.round((curX - cribCardRowLeft - cribRowShift) / (cribCardW + cribCardGap));
-      let nHand = ((cribState && cribState.hands && cribState.hands[cribGetLocalIdx()]) || []).filter((c, i) => c && !cribSelectedDiscard.has(i)).length || 6;
-      target = Math.max(0, Math.min(Math.min(5, nHand - 1), target));
+      let target = Math.round((curX - cribCardRowLeft) / (cribCardW + cribCardGap));
+      target = Math.max(0, Math.min(5, target));
       if (target !== posIndex) {
         let movedVal = cribBoardOrder.splice(posIndex, 1)[0];
         cribBoardOrder.splice(target, 0, movedVal);
       }
       cribRenderBoardHand(cribGetLocalIdx());
     } else if (slot) {
-      let hiIdx = Number(slot.dataset.cribHandIndex);
-      if (!cribFlippedSet.has(hiIdx)) cribFlipCard(hiIdx);                       // a face-down card turns up with a click
-      else if (cribCanStage() && !cribSelectedDiscard.has(hiIdx)) cribToggleHighlight(hiIdx);  // face-up cards are not flipped individually; the click borders them
+      cribFlipCard(Number(slot.dataset.cribHandIndex));
     }
     cribDrag = null;
   }
@@ -1492,7 +1369,7 @@ body {
     const rowWidth = 6 * cardW + 5 * gap;
     const rowLeft = mountainCenterX - rowWidth / 2;
     const rowTop = mountainBottomY + 10;
-    cribCardRowLeft = rowLeft; cribCardW = cardW; cribCardGap = gap; cribCardRowTop = rowTop;
+    cribCardRowLeft = rowLeft; cribCardW = cardW; cribCardGap = gap;
     const cardsG = document.getElementById('crib-cards');
     cribEnsureCardBackDefsForGame(document.getElementById('crib-board-svg'), cribState);
     for (let i = 0; i < 6; i++) {
@@ -1526,12 +1403,6 @@ body {
       flip.appendChild(face);
 
       g.appendChild(flip);
-      const hiRect = document.createElementNS(NS, 'rect');
-      hiRect.setAttribute('class', 'crib-card-hi'); hiRect.setAttribute('x', -3); hiRect.setAttribute('y', -3);
-      hiRect.setAttribute('width', cardW + 6); hiRect.setAttribute('height', cardH + 6); hiRect.setAttribute('rx', 9);
-      hiRect.setAttribute('fill', 'none'); hiRect.setAttribute('stroke', '#e8a400'); hiRect.setAttribute('stroke-width', 4);
-      hiRect.setAttribute('pointer-events', 'none'); hiRect.style.display = 'none';
-      g.appendChild(hiRect);
       g.addEventListener('pointerdown', (ev) => cribCardPointerDown(ev, i));
       g.addEventListener('contextmenu', (ev) => cribCardContextMenu(ev, g));
       cardsG.appendChild(g);
@@ -1548,14 +1419,6 @@ body {
       t.textContent = 'Flip all';
       t.addEventListener('click', () => cribFlipAllToggle());
       cardsG.appendChild(t);
-      // "send to crib" - sends the border-highlighted card(s)
-      const s2 = document.createElementNS(NS, 'text');
-      s2.setAttribute('id', 'crib-send-link'); s2.setAttribute('class', 'crib-flipall-text');
-      s2.setAttribute('x', rowLeft + 4 * (cardW + gap) + cardW / 2); s2.setAttribute('y', flipAllY); s2.setAttribute('text-anchor', 'middle');
-      s2.setAttribute('font-size', 13); s2.setAttribute('font-weight', '700'); s2.setAttribute('fill', '#2b4a63'); s2.setAttribute('text-decoration', 'underline');
-      s2.textContent = 'send to crib';
-      s2.addEventListener('click', () => cribSendHighlighted());
-      cardsG.appendChild(s2);
     }
 
     const anchorX = 305.2986459933324 + 2, anchorY = 214.25777868061553;
@@ -1699,7 +1562,7 @@ body {
       fo.appendChild(inp);
       hc.appendChild(fo);
       // keep the cursor in the entry field
-      inp.addEventListener('blur', () => { setTimeout(() => { try { if (!document.getElementById('cribbage-game').hidden && cribState && cribState.phase === 'counting' && document.activeElement !== inp) inp.focus({ preventScroll: true }); } catch (e) { } }, 0); });
+      inp.addEventListener('blur', () => { setTimeout(() => { try { if (!document.getElementById('cribbage-game').hidden && document.activeElement !== inp) inp.focus({ preventScroll: true }); } catch (e) { } }, 0); });
       setTimeout(() => { try { inp.focus({ preventScroll: true }); } catch (e) { } }, 0);
 
       const mkOutline = () => {
@@ -1730,211 +1593,6 @@ body {
       });
       cribCountRefresh();
     }
-    cribBuildPegPanel(NS, anchorX, anchorY, rowH);
-  }
-
-  // ---- pegging claims (shown where the hand-count chart sits, only while pegging) ----
-  // Points in the play are claimed, not awarded. Pick what the latest play is worth, check the total, press the tick.
-  // Each pick is checked against what is really on the table; a claim worth more than the play is refused.
-  // The seat that made the latest play may claim for it until the next card is played.
-  let cribPegRefs = null, cribPegSel = { f15: false, pair: 0, run: 0, f31: false, last: false }, cribPegSelKey = '';
-  let cribNote = { t: '', until: 0 };
-  const CRIB_PEG_SEL_ORDER = ['f15', 'pair', 'run', 'f31', 'last'];
-  function cribBuildPegPanel(NS, ax0, ay, rh) {
-    const svg = document.getElementById('crib-board-svg'); if (!svg) return;
-    const ax = cribCardRowLeft || ax0;           // the table's left edge is the left edge of the first card
-    let old = document.getElementById('crib-pegclaims'); if (old) old.remove();
-    const g = document.createElementNS(NS, 'g');
-    g.setAttribute('id', 'crib-pegclaims'); g.setAttribute('font-family', 'sans-serif'); g.setAttribute('fill', 'black'); g.setAttribute('display', 'none');
-    svg.appendChild(g);
-    const items = {};
-    const mk = (key, label, row, bold, fn) => {
-      const t = document.createElementNS(NS, 'text');
-      t.setAttribute('x', ax); t.setAttribute('y', ay + row * rh); t.setAttribute('font-size', 12.5); t.setAttribute('font-weight', bold ? '700' : '400');
-      t.textContent = label; if (fn) { t.style.cursor = 'pointer'; t.addEventListener('click', fn); }
-      g.appendChild(t); items[key] = t; return t;
-    };
-    mk('head', 'pegging', 0, true);
-    mk('f15', '15 for 2', 1, false, () => cribPegPick('f15'));
-    mk('p2', 'a pair is 2', 2, false, () => cribPegPick('pair', 2));
-    mk('p6', 'a pair is 6', 3, false, () => cribPegPick('pair', 6));
-    const p12 = mk('p12', 'a pair is 12', 4, false, () => cribPegPick('pair', 12));
-    const run = mk('run', 'a run for', 5, false, null);
-    const rb = run.getBBox();
-    const fo = document.createElementNS(NS, 'foreignObject');
-    fo.setAttribute('x', rb.x + rb.width + 4); fo.setAttribute('y', rb.y - 3); fo.setAttribute('width', 22); fo.setAttribute('height', rb.height + 2);
-    const inp = document.createElementNS('http://www.w3.org/1999/xhtml', 'input');
-    inp.type = 'text'; inp.setAttribute('inputmode', 'numeric'); inp.maxLength = 1; inp.autocomplete = 'off'; inp.setAttribute('aria-label', 'run length');
-    inp.style.cssText = 'border:none;border-bottom:1px solid #000;outline:none;background:transparent;box-shadow:none;padding:0;margin:0;width:100%;height:100%;font:400 12.5px sans-serif;color:#000;caret-color:#000;text-align:center;';
-    inp.addEventListener('input', () => { if (inp.value !== '' && !/^[3-7]$/.test(inp.value)) inp.value = ''; cribPegRunTyped(inp); });
-    inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); cribSubmitPeg(); } });
-    fo.appendChild(inp); g.appendChild(fo);
-    mk('f31', '31 for 2', 6, false, () => cribPegPick('f31'));
-    mk('last', 'last card', 7, false, () => cribPegPick('last'));
-    // total row: "total" ends under the last "2" of "a pair is 12"; the sum follows, then the tick
-    const pr = p12.getBBox(), rightEdge = pr.x + pr.width;
-    const tl = mk('totlabel', 'total', 8, false, null); tl.setAttribute('text-anchor', 'end'); tl.setAttribute('x', rightEdge);
-    const tv = mk('totval', '0', 8, true, null); tv.setAttribute('x', rightEdge + 7);
-    const tick = document.createElementNS(NS, 'g'); tick.setAttribute('id', 'crib-peg-tick'); tick.style.cursor = 'pointer';
-    tick.setAttribute('transform', 'translate(' + (rightEdge + 30) + ',' + (ay + 8 * rh - 10) + ')');
-    tick.innerHTML = '<rect x="-3" y="-3" width="20" height="17" fill="transparent"/><path d="M0.5 6.5 Q2.5 7 4.5 10.5 Q8 3.5 13.5 -0.5" fill="none" stroke="#000" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>';
-    tick.addEventListener('click', () => cribSubmitPeg());
-    g.appendChild(tick);
-    const show = mk('show', 'go to the show', 0, true, () => cribGoToShow());
-    show.setAttribute('x', ax + 80); show.setAttribute('fill', '#2b4a63'); show.setAttribute('text-decoration', 'underline'); show.style.display = 'none';
-    const outlines = {};
-    CRIB_PEG_SEL_ORDER.forEach(k => { const r = document.createElementNS(NS, 'rect'); r.setAttribute('fill', 'none'); r.setAttribute('stroke', '#000'); r.setAttribute('stroke-width', '0.75'); r.setAttribute('rx', 2); r.setAttribute('pointer-events', 'none'); r.setAttribute('display', 'none'); g.appendChild(r); outlines[k] = r; });
-    cribPegRefs = { g, items, inp, fo, tick, outlines, ax };
-  }
-  // What is really on the table for the latest play.
-  function cribPegReality(pend) {
-    const seq = pend.seq || [], n = seq.length; let m = 1, k = n - 1;
-    while (k > 0 && seq[k - 1].r === seq[k].r) { m++; k--; }
-    let run = 0;
-    for (let L = n; L >= 3; L--) {
-      const r = seq.slice(n - L).map(c => cribRankIdx(c.r)).sort((a, b) => a - b);
-      let okRun = new Set(r).size === r.length;
-      for (let i = 1; okRun && i < r.length; i++) if (r[i] !== r[i - 1] + 1) okRun = false;
-      if (okRun) { run = L; break; }
-    }
-    return { count: pend.count, match: m, run };
-  }
-  // One claim line against the table: { pts, say } if allowed, { bad } if it is worth more than the play.
-  function cribPegCheck(pend, kind, n) {
-    const R = cribPegReality(pend), cl = pend.claimed || {};
-    if (cl[kind] != null) return { bad: 'Already claimed.' };
-    if (kind === 'f15') return R.count === 15 ? { pts: 2, say: 'fifteen for 2' } : { bad: 'The count is ' + R.count + ', not 15.' };
-    if (kind === 'f31') return R.count === 31 ? { pts: 2, say: 'thirty-one for 2' } : { bad: 'The count is ' + R.count + ', not 31.' };
-    if (kind === 'last') { if (!pend.ended) return { bad: 'The play is not over yet.' }; if (R.count === 31) return { bad: 'A count of 31 scores the 2 for 31, not a last card.' }; return { pts: 1, say: 'last card for 1' }; }
-    if (kind === 'pair') {
-      const need = n === 2 ? 2 : n === 6 ? 3 : 4, nm = n === 2 ? 'a pair' : n === 6 ? 'a pair royal' : 'a double pair royal';
-      return R.match >= need ? { pts: n, say: nm + ' for ' + n } : { bad: 'That play does not make ' + nm + '.' };
-    }
-    if (kind === 'run') return R.run >= n ? { pts: n, say: 'a run of ' + n + ' for ' + n } : { bad: R.run ? 'The longest run on the table is ' + R.run + '.' : 'There is no run on the table.' };
-    return { bad: 'Unknown claim.' };
-  }
-  function cribPegNote(t) { cribNote = { t: t, until: Date.now() + 6000 }; cribMessage(t); }
-  function cribPegPending() {
-    if (!cribState || cribState.phase !== 'pegging' || !cribState.pegging) return null;
-    const pend = cribState.pegging.pending;
-    return (pend && pend.seat === cribGetLocalIdx()) ? pend : null;
-  }
-  function cribPegPick(kind, n) {
-    const pend = cribPegPending();
-    if (!pend) { cribPegNote('Nothing to claim right now - claims belong to the player who made the latest play.'); return; }
-    if (kind === 'pair') { if (cribPegSel.pair === n) { cribPegSel.pair = 0; cribPegRefresh(); return; } }
-    else if (cribPegSel[kind]) { cribPegSel[kind] = false; cribPegRefresh(); return; }
-    const r = cribPegCheck(pend, kind, n);
-    if (r.bad) { cribPegNote('Claim refused: ' + r.bad); return; }
-    if (kind === 'pair') cribPegSel.pair = n; else cribPegSel[kind] = true;
-    cribPegRefresh();
-  }
-  function cribPegRunTyped(inp) {
-    const pend = cribPegPending(), v = inp.value === '' ? 0 : parseInt(inp.value, 10);
-    if (!v) { cribPegSel.run = 0; cribPegRefresh(); return; }
-    if (!pend) { inp.value = ''; cribPegSel.run = 0; cribPegNote('Nothing to claim right now - claims belong to the player who made the latest play.'); cribPegRefresh(); return; }
-    const r = cribPegCheck(pend, 'run', v);
-    if (r.bad) { inp.value = ''; cribPegSel.run = 0; cribPegNote('Claim refused: ' + r.bad); cribPegRefresh(); return; }
-    cribPegSel.run = v; cribPegRefresh();
-  }
-  function cribPegTotal() {
-    const pend = cribPegPending(); if (!pend) return 0;
-    let t = 0;
-    if (cribPegSel.f15) t += 2; if (cribPegSel.pair) t += cribPegSel.pair; if (cribPegSel.run) t += cribPegSel.run;
-    if (cribPegSel.f31) t += 2; if (cribPegSel.last) t += 1;
-    return t;
-  }
-  async function cribSubmitPeg() {
-    if (!cribState || cribState.phase !== 'pegging') return;
-    let li = cribGetLocalIdx();
-    const picked = [];
-    if (cribPegSel.f15) picked.push(['f15']); if (cribPegSel.pair) picked.push(['pair', cribPegSel.pair]); if (cribPegSel.run) picked.push(['run', cribPegSel.run]);
-    if (cribPegSel.f31) picked.push(['f31']); if (cribPegSel.last) picked.push(['last']);
-    if (!picked.length) { cribPegNote('Pick what you are claiming first, then press the tick.'); return; }
-    let server = await cribLoadGame(cribState.id); if (server) cribState = server;
-    let p = cribState.pegging, pend = p && p.pending;
-    if (cribState.phase !== 'pegging' || !pend || pend.seat !== li) { cribPegNote('Nothing to claim right now - the play has moved on.'); cribPegSel = { f15: false, pair: 0, run: 0, f31: false, last: false }; cribRender(); return; }
-    pend.claimed = pend.claimed || {};
-    let total = 0; const says = [];
-    for (const [kind, n] of picked) {
-      const r = cribPegCheck(pend, kind, n);
-      if (r.bad) { cribPegNote('Claim refused: ' + r.bad); return; }
-      total += r.pts; says.push(r.say);
-    }
-    picked.forEach(([kind], i) => { pend.claimed[kind] = true; });
-    cribState.players[li].score += total;
-    cribState.history.push(cribState.players[li].name + ' claims ' + says.join(', ') + ' = ' + total);
-    cribState.moveCount++;
-    cribPegSel = { f15: false, pair: 0, run: 0, f31: false, last: false };
-    try { if (cribPegRefs) cribPegRefs.inp.value = ''; } catch (e) { }
-    await cribSaveGame(cribState); cribBroadcastGame(cribState);
-    cribCheckWin();
-    cribRender();
-  }
-  async function cribGoToShow() {
-    let li = cribGetLocalIdx();
-    let server = await cribLoadGame(cribState.id); if (server) cribState = server;
-    let p = cribState.pegging;
-    if (cribState.phase !== 'pegging' || !p || !p.finished || p.turn !== li) return;
-    cribFinishPegging();
-    cribState.moveCount++;
-    await cribSaveGame(cribState); cribBroadcastGame(cribState);
-    cribRender();
-  }
-  // Player names with their scores: P0 on the "pegging" row, P1 one line above, both starting over hole 53.
-  let cribNamesG = null;
-  function cribRenderNames() {
-    const NS = 'http://www.w3.org/2000/svg', svg = document.getElementById('crib-board-svg');
-    if (!svg || !cribState || !cribHoles || cribHoles.length < 106) return;
-    if (!cribNamesG) {
-      cribNamesG = document.createElementNS(NS, 'g'); cribNamesG.setAttribute('id', 'crib-peg-names'); cribNamesG.setAttribute('font-family', 'sans-serif'); cribNamesG.setAttribute('fill', 'black'); cribNamesG.setAttribute('pointer-events', 'none');
-      svg.appendChild(cribNamesG);
-    }
-    const x = Number(cribHoles[2 * 52 + 1].getAttribute('cx')), y0 = 214.25777868061553, rh = 16;
-    cribNamesG.innerHTML = '';
-    const rows = [[1, y0 - rh], [0, y0]], texts = [];
-    rows.forEach(([pi, y]) => {
-      const t = document.createElementNS(NS, 'text'); t.setAttribute('x', x); t.setAttribute('y', y); t.setAttribute('font-size', 12.5); t.setAttribute('font-weight', '400');
-      t.textContent = cribState.players[pi].name; cribNamesG.appendChild(t); texts.push([pi, y, t]);
-    });
-    const sx = Math.max(...texts.map(([, , t]) => { const b = t.getBBox(); return b.x + b.width; })) + 10;
-    texts.forEach(([pi, y]) => {
-      const t = document.createElementNS(NS, 'text'); t.setAttribute('x', sx); t.setAttribute('y', y); t.setAttribute('font-size', 12.5); t.setAttribute('font-weight', '400');
-      t.textContent = String(cribState.players[pi].score); cribNamesG.appendChild(t);
-    });
-  }
-  function cribPegRefresh() {
-    const R = cribPegRefs; if (!R || !cribState || cribState.phase !== 'pegging') return;
-    const li = cribGetLocalIdx(), p = cribState.pegging, pend = p && p.pending, mine = !!pend && pend.seat === li, cl = (pend && pend.claimed) || {};
-    const key = String(cribState.moveCount) + ':' + li;
-    if (key !== cribPegSelKey) { cribPegSelKey = key; cribPegSel = { f15: false, pair: 0, run: 0, f31: false, last: false }; R.inp.value = ''; }
-    const on = (k, claimed) => { const t = R.items[k]; const live = mine && !claimed; t.setAttribute('opacity', live ? '1' : '0.3'); t.style.cursor = live ? 'pointer' : 'default'; t.setAttribute('text-decoration', claimed ? 'line-through' : 'none'); };
-    on('f15', cl.f15); on('f31', cl.f31); on('last', cl.last); on('p2', cl.pair); on('p6', cl.pair); on('p12', cl.pair);
-    R.items.run.setAttribute('opacity', mine && !cl.run ? '1' : '0.3'); R.inp.disabled = !(mine && !cl.run);
-    const place = (rect, t) => { if (!t) { rect.setAttribute('display', 'none'); return; } const b = t.getBBox(); rect.setAttribute('x', b.x - 2); rect.setAttribute('y', b.y); rect.setAttribute('width', b.width + 4); rect.setAttribute('height', b.height); rect.removeAttribute('display'); };
-    place(R.outlines.f15, cribPegSel.f15 ? R.items.f15 : null);
-    place(R.outlines.pair, cribPegSel.pair ? R.items['p' + cribPegSel.pair] : null);
-    place(R.outlines.run, cribPegSel.run ? R.items.run : null);
-    place(R.outlines.f31, cribPegSel.f31 ? R.items.f31 : null);
-    place(R.outlines.last, cribPegSel.last ? R.items.last : null);
-    const tot = cribPegTotal();
-    R.items.totval.textContent = String(tot);
-    R.items.totlabel.setAttribute('opacity', mine ? '1' : '0.3'); R.items.totval.setAttribute('opacity', mine ? '1' : '0.3');
-    R.tick.setAttribute('opacity', mine && tot > 0 ? '1' : '0.3'); R.tick.style.cursor = mine && tot > 0 ? 'pointer' : 'default';
-    R.items.show.style.display = (p && p.finished && p.turn === li) ? '' : 'none';
-  }
-  let cribChartWasShown = false;
-  // The left-hand scoring area: empty while the crib is being made, pegging claims during the play, the hand-count chart for the show.
-  function cribBoardPhaseView() {
-    const ph = cribState && cribState.phase;
-    const chart = ph === 'counting';
-    ['crib-col15', 'crib-colpair', 'crib-colruns', 'crib-colflush', 'crib-colnobs', 'crib-handcount'].forEach(id => { const e = document.getElementById(id); if (e) { if (chart) e.removeAttribute('display'); else e.setAttribute('display', 'none'); } });
-    if (chart && !cribChartWasShown && cribCountRefs) setTimeout(() => { try { cribCountRefs.inp.focus({ preventScroll: true }); } catch (e) { } }, 0);
-    cribChartWasShown = chart;
-    try { cribRenderNames(); } catch (e) { }
-    const R = cribPegRefs; if (!R) return;
-    if (ph === 'pegging') R.g.removeAttribute('display'); else R.g.setAttribute('display', 'none');
-    if (ph === 'pegging') cribPegRefresh();
   }
   // Hand-count claiming: one selected row per column (most recent click wins; clicking it again clears it).
   // The a-Pair rows read as (selected 15s value + pair value), so the remembered pair row re-labels itself
@@ -2848,14 +2506,7 @@ body {
     if (cribState.discarded[li]) { cribMessage('Already sent your discards.'); return; }
     let idxArr = Array.from(cribSelectedDiscard).sort((a, b) => b - a);
     let hand = cribState.hands[li];
-    // Remember what was face-up and in what order, so the four cards left keep their faces and places.
-    let sentSet = new Set(idxArr), shiftOf = i => i - idxArr.filter(x => x < i).length;
-    let keepOrder = cribBoardOrder.filter(i => !sentSet.has(i) && hand[i]).map(shiftOf);
-    let keepFlipped = new Set(Array.from(cribFlippedSet).filter(i => !sentSet.has(i)).map(shiftOf));
     idxArr.forEach(i => { cribState.crib.push(hand[i]); hand.splice(i, 1); });
-    for (let k = keepOrder.length; k < 6; k++) keepOrder.push(k);
-    cribBoardOrder = keepOrder; cribFlippedSet = keepFlipped; cribHi = [];
-    cribFlipHandKey = li + ':' + hand.map(c => c.r + c.s).join(',');
     cribState.discarded[li] = true;
     cribSelectedDiscard = new Set();
     cribState.history.push(cribState.players[li].name + ' sent 2 to the crib');
@@ -2877,7 +2528,7 @@ body {
     cribState.pegging = {
       count: 0, played: [], turn: nonDealer, lastToPlay: null,
       inHand: [cribState.hands[0].slice(), cribState.hands[1].slice()],
-      consecutiveGo: 0, pending: null, finished: false
+      consecutiveGo: 0
     };
     cribCheckWin();
   }
@@ -2893,10 +2544,10 @@ body {
     let card = p.inHand[li][cardIdx];
     if (!card || p.count + cribVal(card.r) > 31) { cribMessage("That card would go over 31."); return; }
     p.inHand[li].splice(cardIdx, 1);
-    p.played.push(card); p.count += cribVal(card.r); p.lastToPlay = li; p.consecutiveGo = 0;
-    // Nothing is scored for the play: the player claims what it is worth (see cribSubmitPeg).
-    p.pending = { seat: li, seq: p.played.slice(), count: p.count, ended: false, claimed: {} };
-    cribState.history.push(cribState.players[li].name + ' plays ' + cribCardLabel(card) + ' (count ' + p.count + ')');
+    let res = cribScorePeggingPlay(p.played, card, p.count);
+    p.played.push(card); p.count = res.newCount; p.lastToPlay = li; p.consecutiveGo = 0;
+    if (res.points) { cribState.players[li].score += res.points; cribState.history.push(cribState.players[li].name + ' plays ' + cribCardLabel(card) + ': ' + res.detail.join(', ')); }
+    else cribState.history.push(cribState.players[li].name + ' plays ' + cribCardLabel(card) + ' (count ' + p.count + ')');
     cribAdvancePegTurn();
     cribState.moveCount++;
     await cribSaveGame(cribState); cribBroadcastGame(cribState);
@@ -2923,8 +2574,9 @@ body {
     let bothEmpty = p.inHand[0].length === 0 && p.inHand[1].length === 0;
     let segmentOver = (p.count === 31) || (!cribHasPlayable(0) && !cribHasPlayable(1));
     if (segmentOver && p.lastToPlay !== null) {
-      if (p.pending) p.pending.ended = true;   // the last-card / 31 claims open for the player who made the final play
-      if (bothEmpty) { p.finished = true; p.turn = p.lastToPlay; return; }   // stays in pegging until "go to the show" so those claims can still be made
+      let pts = (p.count === 31) ? 0 : 1; // 31 already scored 2 in cribScorePeggingPlay; a stalled "go" scores 1 for last card played
+      if (pts) { cribState.players[p.lastToPlay].score += pts; cribState.history.push(cribState.players[p.lastToPlay].name + ' gets 1 for go'); }
+      if (bothEmpty) { cribFinishPegging(); return; }
       p.count = 0; p.played = []; p.turn = p.lastToPlay; p.lastToPlay = null;
       // leader of next segment is whoever didn't play last, unless they have no cards
       if (p.inHand[p.turn].length === 0) p.turn = other;
@@ -2977,8 +2629,6 @@ body {
     const all = Array.from(svg.querySelectorAll('circle'));
     cribHoles = all.filter(c => c.getAttribute('fill') === 'black' && c.getAttribute('r') === '5.5');
     cribHoles.forEach(c => { c.dataset.cribHole = '1'; });
-    // Clicking a hole moves this player's back paw there, as far as the confirmed score and no further.
-    cribHoles.forEach((c, i) => { c.style.cursor = 'pointer'; c.addEventListener('click', () => cribHoleClick(Math.floor(i / 2) + 1)); });
     const green = all.filter(c => c.getAttribute('fill') === 'green'); cribFinishDot = green[0] || null;
     // start dots: P0 inner (red) / P1 outer (blue) -> all white, plus a second dot "behind" each
     const startRed = all.find(c => c.getAttribute('fill') === 'red' || c.dataset.cribStart === '0');
@@ -3020,7 +2670,7 @@ body {
     for (let i = 3; i >= 0; i--) g.appendChild(backCard(DX + i * 1.4, DY - i * 1.4, dw, dh));   // face-down deck
     const lab = (txt, x, y) => { const t = document.createElementNS(NS, 'text'); t.setAttribute('x', x); t.setAttribute('y', y); t.setAttribute('text-anchor', 'middle'); t.setAttribute('font-size', 11); t.setAttribute('font-family', 'sans-serif'); t.setAttribute('font-weight', '700'); t.setAttribute('fill', '#000'); t.textContent = txt; return t; };
     g.appendChild(lab('deck', DX + dw / 2 + 2, DY + dh + 16));
-    const { sw, sh, gx, gy, CX, CY } = CRIB_SLOT;
+    const sw = 34, sh = 48, gx = 5, gy = 5, CX = 800, CY = 228;
     const crib = document.createElementNS(NS, 'g'); crib.setAttribute('id', 'crib-slots');
     for (let i = 0; i < 4; i++) {
       const x = CX + (i % 2) * (sw + gx), y = CY + Math.floor(i / 2) * (sh + gy);
@@ -3034,13 +2684,6 @@ body {
     g.appendChild(lab('crib', CX + sw + gx / 2, CY + 2 * sh + gy + 16));
     svg.appendChild(g);
     return true;
-  }
-  function cribHoleClick(n) {
-    if (!cribState || cribState.phase === 'done') return;
-    const li = cribGetLocalIdx(), sc = Math.max(0, Math.min(121, (cribState.players[li] && cribState.players[li].score) || 0));
-    if (n > sc) { cribPegNote('That hole is past your confirmed score of ' + sc + '.'); return; }
-    cribPegState[li].back = n;
-    cribRenderBoardExtras();
   }
   function cribPegPos(pi, n) {
     if (n <= 0) { const d = cribStartDots[pi][n === 0 ? 0 : 1]; return { x: Number(d.getAttribute('cx')), y: Number(d.getAttribute('cy')), el: d }; }
@@ -3073,10 +2716,8 @@ body {
       });
     }
     // crib holding area: one face-down card per card in the crib
-    // face-down cards for what is already in the crib; this player's staged cards are drawn face-up on top (cribRenderStaged)
-    const n = Math.min(4, (cribState.crib && cribState.crib.length) || 0);
+    const n = Math.min(4, ((cribState.crib && cribState.crib.length) || 0) + (cribState.phase === 'discard' ? cribSelectedDiscard.size : 0));
     Array.from(document.querySelectorAll('#crib-slots .crib-slot-card')).forEach((c, i) => { c.style.display = i < n ? '' : 'none'; });
-    cribRenderStaged();
   }
   function cribRender() {
     if (!cribState) return;
@@ -3095,7 +2736,6 @@ body {
     cribRenderHand(li);
     cribRenderBoardHand(li);
     try { cribRenderBoardExtras(); } catch (e) { }
-    try { cribBoardPhaseView(); } catch (e) { }
     $('crib-history').innerHTML = cribState.history.slice().reverse().slice(0, 12).map(x => '<li>' + esc(x) + '</li>').join('');
     let actionsEl = $('crib-actions');
     if (cribState.phase === 'done') {
@@ -3106,16 +2746,13 @@ body {
     if (cribState.phase === 'discard') {
       cribMessage('Hand dealt — ' + cribState.players[0].name + ' and ' + cribState.players[1].name + ' each have 6 cards on the board.');
     } else if (cribState.phase === 'pegging') {
-      if (cribState.pegging.finished) {
-        cribMessage(cribState.pegging.turn === li ? 'All cards are played. Claim any points (last card, 31), then "go to the show".' : 'All cards are played. Waiting for ' + cribState.players[1 - li].name + ' to go to the show.');
-      } else if (cribState.pegging.turn === li) {
+      if (cribState.pegging.turn === li) {
         if (!cribHasPlayable(li)) cribMessage('No playable card — say Go.');
         else cribMessage('Your play. Count is ' + cribState.pegging.count + '.');
       } else cribMessage("Waiting for " + cribState.players[1 - li].name + "'s play.");
     } else if (cribState.phase === 'counting') {
       cribMessage('Counting hands…');
     }
-    if (cribNote.until > Date.now()) cribMessage(cribNote.t);   // a refused claim stays on screen through the next redraw
   }
   function cribCardHtml(c) { return '<span class="crib-card" style="color:' + cribSuitColor(c.s) + '">' + c.r + cribSuitGlyph(c.s) + '</span>'; }
   function cribRenderHand(li) {
@@ -3136,7 +2773,7 @@ body {
         btn.onclick = () => { if (cribState.pegging.turn === li) cribPlayCard(i); };
       });
     }
-    let goBtn = $('crib-go-btn'); if (goBtn) goBtn.hidden = !(inPegging && myTurn && !cribState.pegging.finished && !cribHasPlayable(li));
+    let goBtn = $('crib-go-btn'); if (goBtn) goBtn.hidden = !(inPegging && myTurn && !cribHasPlayable(li));
     // The old "Send to Crib" discard panel is retired now that hands are
     // dealt and shown directly on the board; keep the button hidden.
     let discardBtn = $('crib-discard-btn'); if (discardBtn) discardBtn.hidden = true;
@@ -3154,7 +2791,14 @@ body {
   let gwPassArmed = 0, gwMsgTimer = null;
   function GW_TZ() { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; } catch (e) { return 'UTC'; } }
   function gwKeys() { try { return JSON.parse(localStorage.getItem('bt_gw') || '{}'); } catch (e) { return {}; } }
-  function gwSaveKey(gid, token, seat) { let k = gwKeys(); k[gid] = { token: token, seat: seat }; localStorage.setItem('bt_gw', JSON.stringify(k)); }
+  // Vault shape: { gid: { seats: { "0": {token, name}, "2": {...} } } }.  The old shape { gid: {token, seat} } is upgraded on read.
+  function gwSeatsOf(gid) { let r = gwKeys()[gid]; if (!r) return {}; if (r.seats) return r.seats; if (r.token != null) { let o = {}; o[r.seat] = { token: r.token, name: getOwner() || '' }; return o; } return {}; }
+  function gwSaveKey(gid, token, seat, name) { let k = gwKeys(), v = gwSeatsOf(gid); v[seat] = { token: token, name: name || (v[seat] && v[seat].name) || '' }; k[gid] = { seats: v }; localStorage.setItem('bt_gw', JSON.stringify(k)); }
+  // Each browser tab remembers its own seat (sessionStorage survives a reload of that tab, and keeps working even if another tab clears localStorage).
+  function gwTabMap() { try { return JSON.parse(sessionStorage.getItem('bt_gw_tab') || '{}') || {}; } catch (e) { return {}; } }
+  function gwTabRec(gid) { let r = gwTabMap()[gid]; return r && r.token ? r : null; }
+  function gwSetTabSeat(gid, seat, token) { try { let m = gwTabMap(); m[gid] = { seat: seat, token: token }; sessionStorage.setItem('bt_gw_tab', JSON.stringify(m)); } catch (e) { } }
+  function gwUrlSeat() { try { let p = new URLSearchParams(location.search).get('p'); return /^[0-5]$/.test(p || '') ? +p : null; } catch (e) { return null; } }
   async function gwApi(method, act, body, gid, token) {
     gid = gid || gw.gid; token = token === undefined ? gw.token : token;
     let url = act === 'games' ? API + '/gw/games' : API + '/gw/' + encodeURIComponent(gid) + '/' + act + (method === 'GET' ? '?tz=' + encodeURIComponent(GW_TZ()) : '');
@@ -3189,7 +2833,7 @@ body {
     $('gw-save').textContent = 'saving...';
     let r = await gwApi('POST', 'games', { name: owner, tz: GW_TZ(), seats: n }, null, null);
     if (r.s !== 201 || !r.j.token) { $('gw-save').textContent = "(couldn't save - click to retry)"; return; }
-    gw.gid = r.j.gid; gw.token = r.j.token; gw.seat = 0; gwSaveKey(gw.gid, gw.token, 0);
+    gw.gid = r.j.gid; gw.token = r.j.token; gw.seat = 0; gwSaveKey(gw.gid, gw.token, 0, owner); gwSetTabSeat(gw.gid, 0, gw.token);
     let url = LIVE_SITE + '?kind=groupwords&gw=' + encodeURIComponent(gw.gid), msg = 'Join me for a game of groupWords on BearTracks: ' + url, first = r.j;
     $('bt-headsup').classList.remove('gw-pick');
     $('bt-headsup-help').textContent = 'Join me for a game of groupWords on BearTracks:';
@@ -3204,21 +2848,47 @@ body {
 
   // ---- joining by the shared link ----
   async function gwBoot(gid) {
-    let rec = gwKeys()[gid], owner = getOwner();
+    let owner = getOwner(), seats = gwSeatsOf(gid), tab = gwTabRec(gid), hint = gwUrlSeat();
     hideEntryPage(); $('bt-headsup').hidden = true;
-    if (rec && rec.token) { gw.gid = gid; gw.token = rec.token; gw.seat = rec.seat; return gwEnter(); }
+    if (tab) return gwUse(gid, tab.seat, tab.token);                                   // this tab already has a seat (e.g. a reload)
+    if (hint != null && seats[hint]) return gwUse(gid, hint, seats[hint].token);       // reopened tab: p= says which seat
+    if (Object.keys(seats).length) return gwChoose(gid, seats);                        // this browser already holds seat(s): ask which one this tab is
     if (!owner) { postRegisterTarget = 'groupwords'; $('setup').hidden = false; renderBoxes(); return; }
     return gwJoin(gid, owner, false);
   }
+  function gwUse(gid, seat, token) { gw.gid = gid; gw.token = token; gw.seat = +seat; gwSetTabSeat(gid, +seat, token); return gwEnter(); }
+  function gwBackdrop() { gwNoticeClose(); $('setup').hidden = false; $('box-start').hidden = true; $('box-register').hidden = true; $('setup').classList.add('gw-nodlg'); }
+  function gwChoose(gid, seats) {
+    gwBackdrop();
+    let b = Object.keys(seats).map(function (n) { return ['Continue as ' + (seats[n].name || ('player ' + (+n + 1))), function () { gwUse(gid, n, seats[n].token); }]; });
+    b.push(['Add another player in this tab', function () { gwAskName(gid); }]);
+    gwNotice('This browser already holds a seat in this game. Which player is this tab?', b);
+  }
+  function gwAskName(gid) {
+    gwBackdrop();
+    let d = document.createElement('div'); d.id = 'gw-notice';
+    let p = document.createElement('p'); p.textContent = 'Name for the new player (any name, no registration needed):'; d.appendChild(p);
+    let i = document.createElement('input'); i.maxLength = 24; i.autocomplete = 'off'; i.style.cssText = 'display:block;margin:8px auto;font:inherit;text-align:center'; d.appendChild(i);
+    let go = function () { let n = i.value.trim(); if (n) gwJoin(gid, n, false); else i.focus(); };
+    let ok = document.createElement('button'); ok.textContent = 'Join'; ok.onclick = go; d.appendChild(ok);
+    let bk = document.createElement('button'); bk.textContent = 'Back'; bk.onclick = function () { gwBoot(gid); }; d.appendChild(bk);
+    i.onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); go(); } };
+    document.body.appendChild(d); setTimeout(function () { i.focus(); }, 50);
+  }
   async function gwJoin(gid, owner, restore) {
-    gwNoticeClose(); $('setup').hidden = false; $('box-start').hidden = true; $('box-register').hidden = true; $('setup').classList.add('gw-nodlg');
+    gwBackdrop();
     let r = await gwApi('POST', 'join', { name: owner, tz: GW_TZ(), restore: !!restore }, gid, null);
     if (r.s === 200 || r.s === 201) {
-      if (r.j.token) gwSaveKey(gid, r.j.token, r.j.seat);
-      gw.gid = gid; gw.token = r.j.token || (gwKeys()[gid] || {}).token; gw.seat = r.j.seat; return gwEnter();
+      let tok = r.j.token || ((gwSeatsOf(gid)[r.j.seat] || {}).token);
+      if (r.j.token) gwSaveKey(gid, r.j.token, r.j.seat, owner);
+      return gwUse(gid, r.j.seat, tok);
     }
     let back = ['Back to Foyer', gwLeave];
-    if (r.s === 409 && /taken/.test(r.j.error || '')) return gwNotice('This game already has a player named ' + owner + '.', [['Restore my seat', function () { gwJoin(gid, owner, true); }], back]);
+    if (r.s === 409 && /taken/.test(r.j.error || '')) {
+      let sv = gwSeatsOf(gid), mine = Object.keys(sv).find(function (n) { return (sv[n].name || '').toLowerCase() === owner.toLowerCase(); });
+      if (mine != null) return gwUse(gid, mine, sv[mine].token);   // this browser already holds that seat: just use it, don't re-key it
+      return gwNotice('This game already has a player named ' + owner + '.', [['Restore my seat', function () { gwJoin(gid, owner, true); }], ['Use a different name', function () { gwAskName(gid); }], back]);
+    }
     if (r.s === 409) return gwNotice('This game is full.', [back]);
     if (r.s === 404) return gwNotice(restore ? 'No seat with that name was found.' : 'That game was not found.', [back]);
     gwNotice('Could not join right now. Please try again.', [back]);
@@ -3246,7 +2916,7 @@ body {
   }
   async function gwEnter(first) {
     hideEntryPage(); $('setup').hidden = true; $('bt-headsup').hidden = true; gwNoticeClose(); gwBuild(); $('gw-game').hidden = false;
-    try { let u = new URL(location.href); u.searchParams.set('kind', 'groupwords'); u.searchParams.set('gw', gw.gid); u.searchParams.delete('invite'); history.replaceState(null, '', u.pathname + u.search + u.hash); } catch (e) { }
+    try { let u = new URL(location.href); u.searchParams.set('kind', 'groupwords'); u.searchParams.set('gw', gw.gid); u.searchParams.set('p', String(gw.seat)); u.searchParams.delete('invite'); history.replaceState(null, '', u.pathname + u.search + u.hash); } catch (e) { }
     if (first && first.me) { gw.st = first; gwRender(); }
     await gwRefresh(); gwConnect();
     clearInterval(gw.poll); gw.poll = setInterval(function () { if (!document.hidden) gwRefresh(); }, 30000);
