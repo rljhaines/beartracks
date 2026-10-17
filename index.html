@@ -1211,7 +1211,7 @@ body {
   const CRIB_SLOT = { CX: 800, CY: 228, sw: 34, sh: 48, gx: 5, gy: 5 };  // the four crib holding slots on the board
   let cribFlippedSet = new Set();
   let cribFlipHandKey = null;
-  let cribCardRowLeft = 0, cribCardW = 80, cribCardGap = 14, cribCardRowTop = 355;
+  let cribCardRowLeft = 0, cribCardW = 80, cribCardGap = 14, cribCardRowTop = 355, cribRowShift = 0;  // cribRowShift: sideways shift that centres a short hand in the row
   function cribRenderBoardHand(li) {
     if (!cribState) return;
     let svg = document.getElementById('crib-board-svg');
@@ -1229,8 +1229,11 @@ body {
     }
     let slots = Array.from(cardsG.querySelectorAll('.crib-card-slot'))
       .sort((a, b) => Number(a.dataset.cribCardSlot) - Number(b.dataset.cribCardSlot));
+    // A hand of fewer than six cards (the four left after the discard) sits centred in the row.
+    let nCards = hand.filter(Boolean).length;
+    cribRowShift = nCards > 0 && nCards < 6 ? (6 - nCards) / 2 * (cribCardW + cribCardGap) : 0;
     slots.forEach((slot, pos) => {
-      slot.setAttribute('transform', 'translate(' + slot.dataset.baseX + ',' + slot.dataset.baseY + ')');
+      slot.setAttribute('transform', 'translate(' + (Number(slot.dataset.baseX) + cribRowShift) + ',' + slot.dataset.baseY + ')');
       let handIndex = cribBoardOrder[pos];
       slot.dataset.cribHandIndex = String(handIndex);
       let face = slot.querySelector('.crib-card-face');
@@ -1428,7 +1431,7 @@ body {
     let slot = cardsG.querySelector('.crib-card-slot[data-crib-card-slot="' + posIndex + '"]');
     if (!slot) return;
     try { slot.setPointerCapture(ev.pointerId); } catch (e) { }
-    cribDrag = { pos: posIndex, startClientX: ev.clientX, startClientY: ev.clientY, moved: false, baseX: Number(slot.dataset.baseX), baseY: Number(slot.dataset.baseY), pointerId: ev.pointerId };
+    cribDrag = { pos: posIndex, startClientX: ev.clientX, startClientY: ev.clientY, moved: false, baseX: Number(slot.dataset.baseX) + cribRowShift, baseY: Number(slot.dataset.baseY), pointerId: ev.pointerId };
     slot.addEventListener('pointermove', cribCardPointerMove);
     slot.addEventListener('pointerup', cribCardPointerUp);
     slot.addEventListener('pointercancel', cribCardPointerUp);
@@ -1465,8 +1468,9 @@ body {
     if (moved && slot) {
       let m = /translate\(([-\d.]+),/.exec(slot.getAttribute('transform') || '');
       let curX = m ? parseFloat(m[1]) : cribDrag.baseX;
-      let target = Math.round((curX - cribCardRowLeft) / (cribCardW + cribCardGap));
-      target = Math.max(0, Math.min(5, target));
+      let target = Math.round((curX - cribCardRowLeft - cribRowShift) / (cribCardW + cribCardGap));
+      let nHand = ((cribState && cribState.hands && cribState.hands[cribGetLocalIdx()]) || []).filter(Boolean).length || 6;
+      target = Math.max(0, Math.min(Math.min(5, nHand - 1), target));
       if (target !== posIndex) {
         let movedVal = cribBoardOrder.splice(posIndex, 1)[0];
         cribBoardOrder.splice(target, 0, movedVal);
@@ -2797,7 +2801,7 @@ body {
         '<use href="#crib-cardback-scene" x="4" y="4" width="' + (cw - 8) + '" height="' + (ch - 8) + '"/>';
       return c;
     };
-    const DX = 714, DY = 212, dw = 57, dh = 80;   // DY puts the deck's centre (212+40) level with the centre of the crib's top row (228+24)
+    const DX = 714, DY = 236, dw = 57, dh = 80;
     for (let i = 3; i >= 0; i--) g.appendChild(backCard(DX + i * 1.4, DY - i * 1.4, dw, dh));   // face-down deck
     const lab = (txt, x, y) => { const t = document.createElementNS(NS, 'text'); t.setAttribute('x', x); t.setAttribute('y', y); t.setAttribute('text-anchor', 'middle'); t.setAttribute('font-size', 11); t.setAttribute('font-family', 'sans-serif'); t.setAttribute('font-weight', '700'); t.setAttribute('fill', '#000'); t.textContent = txt; return t; };
     g.appendChild(lab('deck', DX + dw / 2 + 2, DY + dh + 16));
