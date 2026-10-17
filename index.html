@@ -549,7 +549,7 @@ body {
 #gw-game { position: fixed; inset: 0; z-index: 6; background: var(--paper, #f6f0e4); color: #2b2620; overflow: hidden; display: flex; flex-direction: column; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); font-family: Georgia, "Times New Roman", serif; }
 #gw-game[hidden] { display: none; }
 #gw-msg { position: absolute; top: 6px; left: 0; right: 0; text-align: center; font-size: 14px; pointer-events: none; z-index: 2; }
-#gw-table { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; align-content: center; margin: auto; width: 100%; padding: 8px; gap: var(--gwgap, 10px); }
+#gw-table { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px; gap: var(--gwgap, 10px); }
 .gw-row { display: flex; justify-content: center; gap: var(--gwgap, 10px); }
 .gw-card { width: var(--gwcw); height: calc(var(--gwcw) * 1.4); perspective: 1200px; --t: calc(var(--gwcw) * .165); --g: calc(var(--gwcw) * .015); user-select: none; -webkit-user-select: none; }
 .gw-card.can { cursor: pointer; }
@@ -558,17 +558,10 @@ body {
 .gw-face { position: absolute; inset: 0; box-sizing: border-box; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: calc(var(--gwcw) * .05); border: 1px solid #cfc4ad; box-shadow: 0 2px 8px rgba(43,38,32,.18); }
 .gw-front { background: #fffdf7; padding: calc(var(--gwcw) * .05); display: flex; flex-direction: column; align-items: center; }
 .gw-card.mine .gw-front { outline: 3px solid #8a3b2e; outline-offset: 2px; }
-.gw-hd { width: 100%; height: calc(var(--gwcw) * .2); display: flex; justify-content: space-between; align-items: flex-start; font-size: calc(var(--gwcw) * .07); letter-spacing: .04em; gap: .5em; line-height: 1.15; }
-.gw-nm { min-width: 0; display: flex; flex-direction: column; }
-.gw-hd b { font-size: calc(var(--gwcw) * .07 * var(--gwkb, 1)); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.gw-sol { font-size: calc(var(--gwcw) * .048); letter-spacing: .03em; opacity: .8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.gw-sol:empty { display: none; }
+.gw-hd { width: 100%; height: calc(var(--gwcw) * .2); display: flex; justify-content: space-between; align-items: center; font-size: calc(var(--gwcw) * .07); letter-spacing: .04em; gap: .5em; }
+.gw-hd b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .gw-hd span { white-space: nowrap; }
 .gw-link { color: #8a3b2e; text-decoration: underline; cursor: pointer; }
-.gw-rw { position: relative; }
-.gw-az { position: absolute; left: 0; right: 0; bottom: 100%; margin-bottom: 3px; display: flex; justify-content: space-between; font-size: calc(var(--gwcw) * .048); line-height: 1; color: #2b2620; text-transform: lowercase; pointer-events: none; }
-.gw-az i { font-style: normal; transition: opacity .35s; }
-.gw-az i.u { opacity: .28; }
 .gw-rows { display: grid; gap: var(--g); }
 .gw-r { display: grid; grid-template-columns: repeat(5, var(--t)); gap: var(--g); }
 .gw-t { width: var(--t); height: var(--t); box-sizing: border-box; border: 2px solid #cfc4ad; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: calc(var(--gwcw) * .1); color: #fff; }
@@ -578,7 +571,7 @@ body {
 .gw-t.c2 { background: #5a8f5a; border-color: #5a8f5a; }
 .gw-back { transform: rotateY(180deg); background: repeating-linear-gradient(45deg, #7b3a2e 0 7px, #8f4636 7px 14px); display: flex; align-items: center; justify-content: center; }
 .gw-back::before { content: ""; position: absolute; inset: calc(var(--gwcw) * .05); border: 2px solid #f6f0e4; border-radius: calc(var(--gwcw) * .03); opacity: .8; }
-.gw-lab { position: relative; background: #f6f0e4; padding: .4em .9em; border-radius: 99px; font-size: calc(var(--gwcw) * .09 * var(--gwkl, 1)); max-width: 80%; overflow: hidden; text-overflow: ellipsis; white-space: pre; }
+.gw-lab { position: relative; background: #f6f0e4; padding: .4em .9em; border-radius: 99px; font-size: calc(var(--gwcw) * .09); max-width: 80%; overflow: hidden; text-overflow: ellipsis; white-space: pre; }
 .gw-lab:empty { display: none; }
 .gw-pass { position: absolute; top: calc(var(--gwcw) * .08); right: calc(var(--gwcw) * .1); color: #f6f0e4; font-size: calc(var(--gwcw) * .07); letter-spacing: .06em; }
 #gw-inp { position: fixed; top: 0; left: 0; width: 1px; height: 1px; opacity: 0; font-size: 16px; border: 0; padding: 0; }
@@ -1214,27 +1207,38 @@ body {
   // themselves. Flip state is tracked by hand index (card identity), so a
   // card's face-up/down state follows it when reordered.
   let cribBoardOrder = [0, 1, 2, 3, 4, 5];
+  let cribHi = [], cribPegStaged = null;  // highlighted (border) hand cards, oldest first; the two most recently selected keep the border
+  const CRIB_SLOT = { CX: 800, CY: 228, sw: 34, sh: 48, gx: 5, gy: 5 };  // the four crib holding slots on the board
   let cribFlippedSet = new Set();
   let cribFlipHandKey = null;
-  let cribCardRowLeft = 0, cribCardW = 80, cribCardGap = 14;
+  let cribCardRowLeft = 0, cribCardW = 80, cribCardGap = 14, cribCardRowTop = 355, cribRowShift = 0;  // cribRowShift: sideways shift that centres a short hand in the row
   function cribRenderBoardHand(li) {
     if (!cribState) return;
     let svg = document.getElementById('crib-board-svg');
     let cardsG = document.getElementById('crib-cards');
     if (!cardsG) return;
     if (svg) cribEnsureCardBackDefsForGame(svg, cribState);
-    let hand = (cribState.hands && cribState.hands[li]) || [];
-    let key = li + ':' + hand.map(c => c.r + c.s).join(',');
+    let pegNow = cribState.phase === 'pegging' && cribState.pegging && cribState.pegging.inHand;
+    let hand = pegNow ? (cribState.pegging.inHand[li] || []) : ((cribState.hands && cribState.hands[li]) || []);
+    let key = (pegNow ? 'p' : '') + li + ':' + hand.map(c => c.r + c.s).join(',');
     if (key !== cribFlipHandKey) {
+      cribPegStaged = null;
       cribFlippedSet = new Set();
       cribBoardOrder = [0, 1, 2, 3, 4, 5];
+      cribHi = [];
       cribFlipHandKey = key;
       cribCountReset();
     }
+    if (pegNow) cribFlippedSet = new Set(hand.map((c, i) => i));   // during the play your own cards are all face-up
     let slots = Array.from(cardsG.querySelectorAll('.crib-card-slot'))
       .sort((a, b) => Number(a.dataset.cribCardSlot) - Number(b.dataset.cribCardSlot));
+    // Cards sent to the crib leave the row at once: the cards still in the hand close up (kept in their order) and the row re-centres.
+    let inRow = i => !!hand[i] && !cribSelectedDiscard.has(i) && i !== cribPegStaged;
+    cribBoardOrder = cribBoardOrder.filter(inRow).concat(cribBoardOrder.filter(i => !inRow(i)));
+    let nCards = cribBoardOrder.filter(inRow).length;
+    cribRowShift = nCards > 0 && nCards < 6 ? (6 - nCards) / 2 * (cribCardW + cribCardGap) : 0;
     slots.forEach((slot, pos) => {
-      slot.setAttribute('transform', 'translate(' + slot.dataset.baseX + ',' + slot.dataset.baseY + ')');
+      slot.setAttribute('transform', 'translate(' + (Number(slot.dataset.baseX) + cribRowShift) + ',' + slot.dataset.baseY + ')');
       let handIndex = cribBoardOrder[pos];
       slot.dataset.cribHandIndex = String(handIndex);
       let face = slot.querySelector('.crib-card-face');
@@ -1246,9 +1250,116 @@ body {
       let flipped = cribFlippedSet.has(handIndex) && !!c;
       face.style.display = flipped ? '' : 'none';
       back.style.display = flipped ? 'none' : '';
-      slot.style.display = c ? '' : 'none';
-      slot.style.opacity = cribSelectedDiscard.has(handIndex) ? '0.3' : '1';
+      slot.style.display = (c && !cribSelectedDiscard.has(handIndex) && handIndex !== cribPegStaged) ? '' : 'none';  // a card sent to the crib leaves its place in the hand
+      slot.style.opacity = '1';
     });
+    cribSyncHighlights();
+    cribUpdateLinks();
+  }
+  // Which hand cards currently show the border (face-up cards only, and only while discarding).
+  function cribSyncHighlights() {
+    let li = cribGetLocalIdx();
+    let live = cribState && cribState.phase === 'discard' && !(cribState.discarded && cribState.discarded[li]);
+    cribHi = cribHi.filter(h => live && cribFlippedSet.has(h) && !cribSelectedDiscard.has(h) && cribState.hands[li] && cribState.hands[li][h]);
+    let cardsG = document.getElementById('crib-cards'); if (!cardsG) return;
+    Array.from(cardsG.querySelectorAll('.crib-card-slot')).forEach(slot => {
+      let hl = slot.querySelector('.crib-card-hi');
+      if (hl) hl.style.display = cribHi.indexOf(Number(slot.dataset.cribHandIndex)) >= 0 ? '' : 'none';
+    });
+  }
+  function cribCanStage() { return !!cribState && cribState.phase === 'discard' && !(cribState.discarded && cribState.discarded[cribGetLocalIdx()]); }
+  function cribUpdateLinks() {
+    let t = document.getElementById('crib-send-link');
+    if (t) { let on = cribCanStage() && cribHi.length > 0; t.setAttribute('opacity', on ? '1' : '0.4'); }
+  }
+  function cribToggleHighlight(hi) {
+    let i = cribHi.indexOf(hi);
+    if (i >= 0) cribHi.splice(i, 1); else { cribHi.push(hi); if (cribHi.length > 2) cribHi.shift(); }
+    cribSyncHighlights(); cribUpdateLinks();
+  }
+  // Sending to the crib only stages the card(s) face-up in the crib slots; nothing is submitted until "submit crib".
+  function cribStageCard(hi) {
+    if (!cribCanStage()) return false;
+    if (cribSelectedDiscard.has(hi)) return false;
+    if (!cribFlippedSet.has(hi)) { cribMessage('Turn the card face-up first.'); return false; }
+    if (cribSelectedDiscard.size >= 2) { cribMessage('Only two cards go to the crib - return one to your hand first.'); return false; }
+    cribSelectedDiscard.add(hi);
+    cribRender();
+    cribMessage(cribSelectedDiscard.size === 2 ? 'Two cards are in the crib. Click "submit crib" to send them, or drag one back to your hand.' : 'One card is in the crib. Choose one more.');
+    return true;
+  }
+  function cribSendHighlighted() {
+    if (!cribCanStage()) return;
+    let list = cribHi.slice();
+    if (!list.length) { cribMessage('Click a face-up card first, then "send to crib".'); return; }
+    if (cribSelectedDiscard.size + list.length > 2) { cribMessage('Only two cards go to the crib - return one to your hand first.'); return; }
+    list.forEach(h => cribSelectedDiscard.add(h)); cribHi = [];
+    cribRender();
+    cribMessage(cribSelectedDiscard.size === 2 ? 'Two cards are in the crib. Click "submit crib" to send them, or drag one back to your hand.' : 'One card is in the crib. Choose one more.');
+  }
+  function cribReturnToHand(hi) { cribSelectedDiscard.delete(hi); cribRender(); }
+  function cribClientToSvg(cx, cy) {
+    try { let svg = document.getElementById('crib-board-svg'), pt = svg.createSVGPoint(); pt.x = cx; pt.y = cy; return pt.matrixTransform(svg.getScreenCTM().inverse()); } catch (e) { return { x: 0, y: 0 }; }
+  }
+  function cribInCribBox(p) { const S = CRIB_SLOT; return p.x >= S.CX - 14 && p.x <= S.CX + 2 * S.sw + S.gx + 14 && p.y >= S.CY - 14 && p.y <= S.CY + 2 * S.sh + S.gy + 40; }
+  function cribInHandZone(p) { return p.y >= cribCardRowTop - 30 && p.x >= cribCardRowLeft - 24 && p.x <= cribCardRowLeft + 6 * cribCardW + 5 * cribCardGap + 24; }
+  // Crib cards staged by this player: face-up until submission; drag one back to the hand, or right-click it.
+  let cribStagedDrag = null;
+  function cribShowMenu(ev, label, fn) {
+    ev.preventDefault(); cribCloseCardMenu();
+    const m = document.createElement('div'); m.id = 'crib-card-menu';
+    m.style.cssText = 'position:fixed;z-index:99999;background:#fffef6;border:1px solid #8a7a52;border-radius:6px;box-shadow:0 3px 10px rgba(0,0,0,.35);padding:4px 0;font:14px sans-serif;color:#000;min-width:130px;left:' + ev.clientX + 'px;top:' + ev.clientY + 'px;';
+    const item = document.createElement('div'); item.textContent = label; item.style.cssText = 'padding:6px 14px;cursor:pointer;';
+    item.onmouseenter = () => { item.style.background = '#e9dfc0'; }; item.onmouseleave = () => { item.style.background = ''; };
+    item.onclick = () => { cribCloseCardMenu(); fn(); };
+    m.appendChild(item); document.body.appendChild(m);
+    setTimeout(() => { const away = (e) => { if (m.contains(e.target)) return; document.removeEventListener('pointerdown', away); cribCloseCardMenu(); }; document.addEventListener('pointerdown', away); }, 0);
+  }
+  function cribStagedPointerDown(ev, hi, el) {
+    if (ev.button === 2) return;
+    try { el.setPointerCapture(ev.pointerId); } catch (e) { }
+    cribStagedDrag = { hi, el, sx: ev.clientX, sy: ev.clientY, moved: false, bx: Number(el.dataset.bx), by: Number(el.dataset.by), k: el.dataset.k, pid: ev.pointerId };
+    const mv = (e) => {
+      if (!cribStagedDrag) return;
+      let dx = e.clientX - cribStagedDrag.sx, dy = e.clientY - cribStagedDrag.sy;
+      if (!cribStagedDrag.moved && Math.hypot(dx, dy) < 4) return;
+      cribStagedDrag.moved = true; let sc = cribSvgScale();
+      el.setAttribute('transform', 'translate(' + (cribStagedDrag.bx + dx / sc) + ',' + (cribStagedDrag.by + dy / sc) + ') scale(' + cribStagedDrag.k + ')');
+    };
+    const up = (e) => {
+      el.removeEventListener('pointermove', mv); el.removeEventListener('pointerup', up); el.removeEventListener('pointercancel', up);
+      try { el.releasePointerCapture(e.pointerId); } catch (x) { }
+      let d = cribStagedDrag; cribStagedDrag = null; if (!d) return;
+      if (d.moved && cribInHandZone(cribClientToSvg(e.clientX, e.clientY))) cribReturnToHand(d.hi); else cribRender();
+    };
+    el.addEventListener('pointermove', mv); el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
+  }
+  function cribRenderStaged() {
+    const NS = 'http://www.w3.org/2000/svg';
+    let svg = document.getElementById('crib-board-svg'); if (!svg || !cribState) return;
+    let g = document.getElementById('crib-staged');
+    if (!g) { g = document.createElementNS(NS, 'g'); g.setAttribute('id', 'crib-staged'); svg.appendChild(g); }
+    g.innerHTML = '';
+    if (!cribCanStage()) return;
+    const S = CRIB_SLOT, li = cribGetLocalIdx(), hand = cribState.hands[li] || [], base = (cribState.crib || []).length;
+    Array.from(cribSelectedDiscard).forEach((hi, j) => {
+      let c = hand[hi], si = base + j; if (!c || si > 3) return;
+      let x = S.CX + (si % 2) * (S.sw + S.gx), y = S.CY + Math.floor(si / 2) * (S.sh + S.gy), k = (S.sw / CRIB_CARD_W) + ',' + (S.sh / CRIB_CARD_H);
+      let w = document.createElementNS(NS, 'g');
+      w.setAttribute('transform', 'translate(' + x + ',' + y + ') scale(' + k + ')');
+      w.dataset.bx = String(x); w.dataset.by = String(y); w.dataset.k = k; w.style.cursor = 'grab'; w.style.touchAction = 'none';
+      w.appendChild(cribBuildCardFace(c.r, c.s, CRIB_CARD_W, CRIB_CARD_H));
+      w.addEventListener('pointerdown', (ev) => cribStagedPointerDown(ev, hi, w));
+      w.addEventListener('contextmenu', (ev) => cribShowMenu(ev, 'Return to hand', () => cribReturnToHand(hi)));
+      g.appendChild(w);
+    });
+    if (cribSelectedDiscard.size === 2) {
+      let t = document.createElementNS(NS, 'text');
+      t.setAttribute('x', S.CX + S.sw + S.gx / 2); t.setAttribute('y', S.CY + 2 * S.sh + S.gy + 34); t.setAttribute('text-anchor', 'middle');
+      t.setAttribute('font-size', 12); t.setAttribute('font-weight', '700'); t.setAttribute('fill', '#2b4a63'); t.setAttribute('text-decoration', 'underline'); t.style.cursor = 'pointer';
+      t.textContent = 'submit crib'; t.addEventListener('click', () => cribConfirmDiscard());
+      g.appendChild(t);
+    }
   }
   // ---- right-click "Send to Crib" (cards go two at a time; the second one confirms the discard) ----
   function cribCloseCardMenu() { const m = document.getElementById('crib-card-menu'); if (m) m.remove(); }
@@ -1270,10 +1381,7 @@ body {
     item.onmouseenter = () => { item.style.background = '#e9dfc0'; }; item.onmouseleave = () => { item.style.background = ''; };
     item.onclick = () => {
       cribCloseCardMenu();
-      if (picked) cribSelectedDiscard.delete(hi);
-      else if (cribSelectedDiscard.size < 2) cribSelectedDiscard.add(hi);
-      cribRender();
-      if (cribSelectedDiscard.size === 2) cribConfirmDiscard();
+      if (picked) cribReturnToHand(hi); else cribStageCard(hi);
     };
     m.appendChild(item);
     document.body.appendChild(m);
@@ -1292,6 +1400,7 @@ body {
       if (anyFaceDown) cribFlippedSet.add(hi); else cribFlippedSet.delete(hi);
       cribAnimateCardFlipByHandIndex(hi);
     });
+    cribSyncHighlights(); cribUpdateLinks();
     try { cribCountRefresh(); } catch (e) { }
   }
   function cribAnimateCardFlipByHandIndex(handIndex) {
@@ -1327,21 +1436,21 @@ body {
     let slot = cardsG.querySelector('.crib-card-slot[data-crib-card-slot="' + posIndex + '"]');
     if (!slot) return;
     try { slot.setPointerCapture(ev.pointerId); } catch (e) { }
-    cribDrag = { pos: posIndex, startClientX: ev.clientX, moved: false, baseX: Number(slot.dataset.baseX), pointerId: ev.pointerId };
+    cribDrag = { pos: posIndex, startClientX: ev.clientX, startClientY: ev.clientY, moved: false, baseX: Number(slot.dataset.baseX) + cribRowShift, baseY: Number(slot.dataset.baseY), pointerId: ev.pointerId };
     slot.addEventListener('pointermove', cribCardPointerMove);
     slot.addEventListener('pointerup', cribCardPointerUp);
     slot.addEventListener('pointercancel', cribCardPointerUp);
   }
   function cribCardPointerMove(ev) {
     if (!cribDrag) return;
-    let dxScreen = ev.clientX - cribDrag.startClientX;
-    if (!cribDrag.moved && Math.abs(dxScreen) < 4) return;
+    let dxScreen = ev.clientX - cribDrag.startClientX, dyScreen = ev.clientY - cribDrag.startClientY;
+    if (!cribDrag.moved && Math.hypot(dxScreen, dyScreen) < 4) return;
     cribDrag.moved = true;
-    let dx = dxScreen / cribSvgScale();
+    let dx = dxScreen / cribSvgScale(), dy = dyScreen / cribSvgScale();
     let cardsG = document.getElementById('crib-cards'); if (!cardsG) return;
     let slot = cardsG.querySelector('.crib-card-slot[data-crib-card-slot="' + cribDrag.pos + '"]');
     if (!slot) return;
-    slot.setAttribute('transform', 'translate(' + (cribDrag.baseX + dx) + ',' + slot.dataset.baseY + ')');
+    slot.setAttribute('transform', 'translate(' + (cribDrag.baseX + dx) + ',' + (cribDrag.baseY + dy) + ')');
   }
   function cribCardPointerUp(ev) {
     if (!cribDrag) return;
@@ -1354,18 +1463,29 @@ body {
       slot.removeEventListener('pointercancel', cribCardPointerUp);
       try { slot.releasePointerCapture(cribDrag.pointerId); } catch (e) { }
     }
+    if (moved && slot && cribInCribBox(cribClientToSvg(ev.clientX, ev.clientY))) {
+      // dropped on the crib: send this card there (it must be face-up); otherwise it just returns to its place
+      let hiIdx = Number(slot.dataset.cribHandIndex);
+      cribDrag = null; cribRenderBoardHand(cribGetLocalIdx());
+      cribStageCard(hiIdx);
+      return;
+    }
     if (moved && slot) {
       let m = /translate\(([-\d.]+),/.exec(slot.getAttribute('transform') || '');
       let curX = m ? parseFloat(m[1]) : cribDrag.baseX;
-      let target = Math.round((curX - cribCardRowLeft) / (cribCardW + cribCardGap));
-      target = Math.max(0, Math.min(5, target));
+      let target = Math.round((curX - cribCardRowLeft - cribRowShift) / (cribCardW + cribCardGap));
+      let nHand = ((cribState && cribState.hands && cribState.hands[cribGetLocalIdx()]) || []).filter((c, i) => c && !cribSelectedDiscard.has(i)).length || 6;
+      target = Math.max(0, Math.min(Math.min(5, nHand - 1), target));
       if (target !== posIndex) {
         let movedVal = cribBoardOrder.splice(posIndex, 1)[0];
         cribBoardOrder.splice(target, 0, movedVal);
       }
       cribRenderBoardHand(cribGetLocalIdx());
     } else if (slot) {
-      cribFlipCard(Number(slot.dataset.cribHandIndex));
+      let hiIdx = Number(slot.dataset.cribHandIndex);
+      if (cribState && cribState.phase === 'pegging') cribPegStageCard(hiIdx);              // during the play a click stages the card up on the board
+      else if (!cribFlippedSet.has(hiIdx)) cribFlipCard(hiIdx);                       // a face-down card turns up with a click
+      else if (cribCanStage() && !cribSelectedDiscard.has(hiIdx)) cribToggleHighlight(hiIdx);  // face-up cards are not flipped individually; the click borders them
     }
     cribDrag = null;
   }
@@ -1376,7 +1496,7 @@ body {
     const rowWidth = 6 * cardW + 5 * gap;
     const rowLeft = mountainCenterX - rowWidth / 2;
     const rowTop = mountainBottomY + 10;
-    cribCardRowLeft = rowLeft; cribCardW = cardW; cribCardGap = gap;
+    cribCardRowLeft = rowLeft; cribCardW = cardW; cribCardGap = gap; cribCardRowTop = rowTop;
     const cardsG = document.getElementById('crib-cards');
     cribEnsureCardBackDefsForGame(document.getElementById('crib-board-svg'), cribState);
     for (let i = 0; i < 6; i++) {
@@ -1410,6 +1530,12 @@ body {
       flip.appendChild(face);
 
       g.appendChild(flip);
+      const hiRect = document.createElementNS(NS, 'rect');
+      hiRect.setAttribute('class', 'crib-card-hi'); hiRect.setAttribute('x', -3); hiRect.setAttribute('y', -3);
+      hiRect.setAttribute('width', cardW + 6); hiRect.setAttribute('height', cardH + 6); hiRect.setAttribute('rx', 9);
+      hiRect.setAttribute('fill', 'none'); hiRect.setAttribute('stroke', '#e8a400'); hiRect.setAttribute('stroke-width', 4);
+      hiRect.setAttribute('pointer-events', 'none'); hiRect.style.display = 'none';
+      g.appendChild(hiRect);
       g.addEventListener('pointerdown', (ev) => cribCardPointerDown(ev, i));
       g.addEventListener('contextmenu', (ev) => cribCardContextMenu(ev, g));
       cardsG.appendChild(g);
@@ -1426,6 +1552,14 @@ body {
       t.textContent = 'Flip all';
       t.addEventListener('click', () => cribFlipAllToggle());
       cardsG.appendChild(t);
+      // "send to crib" - sends the border-highlighted card(s)
+      const s2 = document.createElementNS(NS, 'text');
+      s2.setAttribute('id', 'crib-send-link'); s2.setAttribute('class', 'crib-flipall-text');
+      s2.setAttribute('x', rowLeft + 4 * (cardW + gap) + cardW / 2); s2.setAttribute('y', flipAllY); s2.setAttribute('text-anchor', 'middle');
+      s2.setAttribute('font-size', 13); s2.setAttribute('font-weight', '700'); s2.setAttribute('fill', '#2b4a63'); s2.setAttribute('text-decoration', 'underline');
+      s2.textContent = 'send to crib';
+      s2.addEventListener('click', () => cribSendHighlighted());
+      cardsG.appendChild(s2);
     }
 
     const anchorX = 305.2986459933324 + 2, anchorY = 214.25777868061553;
@@ -1569,7 +1703,7 @@ body {
       fo.appendChild(inp);
       hc.appendChild(fo);
       // keep the cursor in the entry field
-      inp.addEventListener('blur', () => { setTimeout(() => { try { if (!document.getElementById('cribbage-game').hidden && document.activeElement !== inp) inp.focus({ preventScroll: true }); } catch (e) { } }, 0); });
+      inp.addEventListener('blur', () => { setTimeout(() => { try { if (!document.getElementById('cribbage-game').hidden && cribState && cribState.phase === 'counting' && document.activeElement !== inp) inp.focus({ preventScroll: true }); } catch (e) { } }, 0); });
       setTimeout(() => { try { inp.focus({ preventScroll: true }); } catch (e) { } }, 0);
 
       const mkOutline = () => {
@@ -1600,6 +1734,360 @@ body {
       });
       cribCountRefresh();
     }
+    cribBuildPegPanel(NS, anchorX, anchorY, rowH);
+  }
+
+  // ---- pegging claims (shown where the hand-count chart sits, only while pegging) ----
+  // Points in the play are claimed, not awarded. Pick what the latest play is worth, check the total, press the tick.
+  // Each pick is checked against what is really on the table; a claim worth more than the play is refused.
+  // The seat that made the latest play may claim for it until the next card is played.
+  let cribPegRefs = null, cribPegSel = { f15: false, pair: 0, run: 0, f31: false, last: false }, cribPegSelKey = '';
+  let cribNote = { t: '', until: 0 };
+  const CRIB_PEG_SEL_ORDER = ['f15', 'pair', 'run', 'f31', 'last'];
+  function cribBuildPegPanel(NS, ax0, ay, rh) {
+    const svg = document.getElementById('crib-board-svg'); if (!svg) return;
+    const ax = cribCardRowLeft || ax0;           // the table's left edge is the left edge of the first card
+    let old = document.getElementById('crib-pegclaims'); if (old) old.remove();
+    const g = document.createElementNS(NS, 'g');
+    g.setAttribute('id', 'crib-pegclaims'); g.setAttribute('font-family', 'sans-serif'); g.setAttribute('fill', 'black'); g.setAttribute('display', 'none');
+    svg.appendChild(g);
+    const items = {};
+    const mk = (key, label, row, bold, fn) => {
+      const t = document.createElementNS(NS, 'text');
+      t.setAttribute('x', ax); t.setAttribute('y', ay + row * rh); t.setAttribute('font-size', 12.5); t.setAttribute('font-weight', bold ? '700' : '400');
+      t.textContent = label; if (fn) { t.style.cursor = 'pointer'; t.addEventListener('click', fn); }
+      g.appendChild(t); items[key] = t; return t;
+    };
+    mk('head', 'pegging', 0, true);
+    mk('f15', '15 for 2', 1, false, () => cribPegPick('f15'));
+    mk('p2', 'a pair is 2', 2, false, () => cribPegPick('pair', 2));
+    mk('p6', 'a pair is 6', 3, false, () => cribPegPick('pair', 6));
+    const p12 = mk('p12', 'a pair is 12', 4, false, () => cribPegPick('pair', 12));
+    const run = mk('run', 'a run for', 5, false, null);
+    const rb = run.getBBox();
+    const fo = document.createElementNS(NS, 'foreignObject');
+    fo.setAttribute('x', rb.x + rb.width + 4); fo.setAttribute('y', rb.y - 3); fo.setAttribute('width', 22); fo.setAttribute('height', rb.height + 2);
+    const inp = document.createElementNS('http://www.w3.org/1999/xhtml', 'input');
+    inp.type = 'text'; inp.setAttribute('inputmode', 'numeric'); inp.maxLength = 1; inp.autocomplete = 'off'; inp.setAttribute('aria-label', 'run length');
+    inp.style.cssText = 'border:none;border-bottom:1px solid #000;outline:none;background:transparent;box-shadow:none;padding:0;margin:0;width:100%;height:100%;font:400 12.5px sans-serif;color:#000;caret-color:#000;text-align:center;';
+    inp.addEventListener('input', () => { if (inp.value !== '' && !/^[3-7]$/.test(inp.value)) inp.value = ''; cribPegRunTyped(inp); });
+    inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); cribSubmitPeg(); } });
+    fo.appendChild(inp); g.appendChild(fo);
+    mk('f31', '31 for 2', 6, false, () => cribPegPick('f31'));
+    mk('last', 'last card', 7, false, () => cribPegPick('last'));
+    // total row: "total" ends under the last "2" of "a pair is 12"; the sum follows, then the tick
+    const pr = p12.getBBox(), rightEdge = pr.x + pr.width;
+    const tl = mk('totlabel', 'total', 8, false, null); tl.setAttribute('text-anchor', 'end'); tl.setAttribute('x', rightEdge);
+    const tv = mk('totval', '0', 8, true, null); tv.setAttribute('x', rightEdge + 7);
+    const tick = document.createElementNS(NS, 'g'); tick.setAttribute('id', 'crib-peg-tick'); tick.style.cursor = 'pointer';
+    tick.setAttribute('transform', 'translate(' + (rightEdge + 14) + ',' + (ay + 8 * rh - 17) + ') scale(0.6)');
+    tick.innerHTML = '<rect x="-3" y="-3" width="20" height="17" fill="transparent"/><path d="M0.5 6.5 Q2.5 7 4.5 10.5 Q8 3.5 13.5 -0.5" fill="none" stroke="#000" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>';
+    tick.addEventListener('click', () => cribSubmitPeg());
+    g.appendChild(tick);
+    const show = mk('show', 'go to the show', 0, true, () => cribGoToShow());
+    show.setAttribute('fill', '#2b4a63'); show.setAttribute('text-decoration', 'underline'); show.style.display = 'none';
+    const outlines = {};
+    CRIB_PEG_SEL_ORDER.forEach(k => { const r = document.createElementNS(NS, 'rect'); r.setAttribute('fill', 'none'); r.setAttribute('stroke', '#000'); r.setAttribute('stroke-width', '0.75'); r.setAttribute('rx', 2); r.setAttribute('pointer-events', 'none'); r.setAttribute('display', 'none'); g.appendChild(r); outlines[k] = r; });
+    cribPegRefs = { g, items, inp, fo, tick, outlines, ax };
+  }
+  // What is really on the table for the latest play.
+  function cribPegReality(pend) {
+    const seq = pend.seq || [], n = seq.length; let m = 1, k = n - 1;
+    while (k > 0 && seq[k - 1].r === seq[k].r) { m++; k--; }
+    let run = 0;
+    for (let L = n; L >= 3; L--) {
+      const r = seq.slice(n - L).map(c => cribRankIdx(c.r)).sort((a, b) => a - b);
+      let okRun = new Set(r).size === r.length;
+      for (let i = 1; okRun && i < r.length; i++) if (r[i] !== r[i - 1] + 1) okRun = false;
+      if (okRun) { run = L; break; }
+    }
+    return { count: pend.count, match: m, run };
+  }
+  // One claim line against the table: { pts, say } if allowed, { bad } if it is worth more than the play.
+  function cribPegCheck(pend, kind, n) {
+    const R = cribPegReality(pend), cl = pend.claimed || {};
+    if (cl[kind] != null) return { bad: 'Already claimed.' };
+    if (kind === 'f15') return R.count === 15 ? { pts: 2, say: 'fifteen for 2' } : { bad: 'The count is ' + R.count + ', not 15.' };
+    if (kind === 'f31') return R.count === 31 ? { pts: 2, say: 'thirty-one for 2' } : { bad: 'The count is ' + R.count + ', not 31.' };
+    if (kind === 'last') { if (!pend.ended) return { bad: 'The play is not over yet.' }; if (R.count === 31) return { bad: 'A count of 31 scores the 2 for 31, not a last card.' }; return { pts: 1, say: 'last card for 1' }; }
+    if (kind === 'pair') {
+      const need = n === 2 ? 2 : n === 6 ? 3 : 4, nm = n === 2 ? 'a pair' : n === 6 ? 'a pair royal' : 'a double pair royal';
+      return R.match >= need ? { pts: n, say: nm + ' for ' + n } : { bad: 'That play does not make ' + nm + '.' };
+    }
+    if (kind === 'run') return R.run >= n ? { pts: n, say: 'a run of ' + n + ' for ' + n } : { bad: R.run ? 'The longest run on the table is ' + R.run + '.' : 'There is no run on the table.' };
+    return { bad: 'Unknown claim.' };
+  }
+  function cribPegNote(t) { cribNote = { t: t, until: Date.now() + 6000 }; cribMessage(t); }
+  function cribPegPending() {
+    if (!cribState || cribState.phase !== 'pegging' || !cribState.pegging) return null;
+    const pend = cribState.pegging.pending;
+    return (pend && pend.seat === cribGetLocalIdx()) ? pend : null;
+  }
+  function cribPegPick(kind, n) {
+    const pend = cribPegPending();
+    if (!pend) { cribPegNote('Nothing to claim right now - claims belong to the player who made the latest play.'); return; }
+    if (kind === 'pair') { if (cribPegSel.pair === n) { cribPegSel.pair = 0; cribPegRefresh(); return; } }
+    else if (cribPegSel[kind]) { cribPegSel[kind] = false; cribPegRefresh(); return; }
+    const r = cribPegCheck(pend, kind, n);
+    if (r.bad) { cribPegNote('Claim refused: ' + r.bad); return; }
+    if (kind === 'pair') cribPegSel.pair = n; else cribPegSel[kind] = true;
+    cribPegRefresh();
+  }
+  function cribPegRunTyped(inp) {
+    const pend = cribPegPending(), v = inp.value === '' ? 0 : parseInt(inp.value, 10);
+    if (!v) { cribPegSel.run = 0; cribPegRefresh(); return; }
+    if (!pend) { inp.value = ''; cribPegSel.run = 0; cribPegNote('Nothing to claim right now - claims belong to the player who made the latest play.'); cribPegRefresh(); return; }
+    const r = cribPegCheck(pend, 'run', v);
+    if (r.bad) { inp.value = ''; cribPegSel.run = 0; cribPegNote('Claim refused: ' + r.bad); cribPegRefresh(); return; }
+    cribPegSel.run = v; cribPegRefresh();
+  }
+  function cribPegTotal() {
+    const pend = cribPegPending(); if (!pend) return 0;
+    let t = 0;
+    if (cribPegSel.f15) t += 2; if (cribPegSel.pair) t += cribPegSel.pair; if (cribPegSel.run) t += cribPegSel.run;
+    if (cribPegSel.f31) t += 2; if (cribPegSel.last) t += 1;
+    return t;
+  }
+  async function cribSubmitPeg() {
+    if (!cribState || cribState.phase !== 'pegging') return;
+    let li = cribGetLocalIdx();
+    const picked = [];
+    if (cribPegSel.f15) picked.push(['f15']); if (cribPegSel.pair) picked.push(['pair', cribPegSel.pair]); if (cribPegSel.run) picked.push(['run', cribPegSel.run]);
+    if (cribPegSel.f31) picked.push(['f31']); if (cribPegSel.last) picked.push(['last']);
+    if (!picked.length) { cribPegNote('Pick what you are claiming first, then press the tick.'); return; }
+    let server = await cribLoadGame(cribState.id); if (server) cribState = server;
+    let p = cribState.pegging, pend = p && p.pending;
+    if (cribState.phase !== 'pegging' || !pend || pend.seat !== li) { cribPegNote('Nothing to claim right now - the play has moved on.'); cribPegSel = { f15: false, pair: 0, run: 0, f31: false, last: false }; cribRender(); return; }
+    pend.claimed = pend.claimed || {};
+    let total = 0; const says = [];
+    for (const [kind, n] of picked) {
+      const r = cribPegCheck(pend, kind, n);
+      if (r.bad) { cribPegNote('Claim refused: ' + r.bad); return; }
+      total += r.pts; says.push(r.say);
+    }
+    if ((pend.claimedPts || 0) + total > cribPegMax(pend)) { cribPegNote('Claim refused: that is more than the play is worth.'); return; }
+    picked.forEach(([kind], i) => { pend.claimed[kind] = true; });
+    pend.claimedPts = (pend.claimedPts || 0) + total;
+    cribState.players[li].score += total;
+    cribState.history.push(cribState.players[li].name + ' claims ' + says.join(', ') + ' = ' + total);
+    cribState.moveCount++;
+    cribPegSel = { f15: false, pair: 0, run: 0, f31: false, last: false };
+    try { if (cribPegRefs) cribPegRefs.inp.value = ''; } catch (e) { }
+    await cribSaveGame(cribState); cribBroadcastGame(cribState);
+    cribCheckWin();
+    cribRender();
+  }
+  async function cribGoToShow() {
+    let li = cribGetLocalIdx();
+    let server = await cribLoadGame(cribState.id); if (server) cribState = server;
+    let p = cribState.pegging;
+    if (cribState.phase !== 'pegging' || !p || !p.finished || p.turn !== li) return;
+    cribFinishPegging();
+    cribState.moveCount++;
+    await cribSaveGame(cribState); cribBroadcastGame(cribState);
+    cribRender();
+  }
+  // Player names with their scores: P0 on the "pegging" row, P1 one line above, both starting over hole 53.
+  let cribNamesG = null;
+  function cribRenderNames() {
+    const NS = 'http://www.w3.org/2000/svg', svg = document.getElementById('crib-board-svg');
+    if (!svg || !cribState || !cribHoles || cribHoles.length < 106) return;
+    if (!cribNamesG) {
+      cribNamesG = document.createElementNS(NS, 'g'); cribNamesG.setAttribute('id', 'crib-peg-names'); cribNamesG.setAttribute('font-family', 'sans-serif'); cribNamesG.setAttribute('fill', 'black'); cribNamesG.setAttribute('pointer-events', 'none');
+      svg.appendChild(cribNamesG);
+    }
+    const x = Number(cribHoles[2 * 52 + 1].getAttribute('cx')), y0 = 214.25777868061553, rh = 16;
+    cribNamesG.innerHTML = '';
+    const rows = [[1, y0 - rh], [0, y0]], texts = [];
+    rows.forEach(([pi, y]) => {
+      const t = document.createElementNS(NS, 'text'); t.setAttribute('x', x); t.setAttribute('y', y); t.setAttribute('font-size', 12); t.setAttribute('font-weight', '400');
+      t.textContent = cribState.players[pi].name; cribNamesG.appendChild(t); texts.push([pi, y, t]);
+    });
+    const sx = Math.max(...texts.map(([, , t]) => { const b = t.getBBox(); return b.x + b.width; })) + 10;
+    texts.forEach(([pi, y]) => {
+      const t = document.createElementNS(NS, 'text'); t.setAttribute('x', sx); t.setAttribute('y', y); t.setAttribute('font-size', 12); t.setAttribute('font-weight', '400');
+      t.textContent = String(cribState.players[pi].score); cribNamesG.appendChild(t);
+    });
+  }
+  function cribPegRefresh() {
+    const R = cribPegRefs; if (!R || !cribState || cribState.phase !== 'pegging') return;
+    const li = cribGetLocalIdx(), p = cribState.pegging, pend = p && p.pending, mine = !!pend && pend.seat === li, cl = (pend && pend.claimed) || {};
+    const key = String(cribState.moveCount) + ':' + li;
+    if (key !== cribPegSelKey) { cribPegSelKey = key; cribPegSel = { f15: false, pair: 0, run: 0, f31: false, last: false }; R.inp.value = ''; }
+    const on = (k, claimed) => { const t = R.items[k]; const live = mine && !claimed; t.setAttribute('opacity', live ? '1' : '0.3'); t.style.cursor = live ? 'pointer' : 'default'; t.setAttribute('text-decoration', claimed ? 'line-through' : 'none'); };
+    on('f15', cl.f15); on('f31', cl.f31); on('last', cl.last); on('p2', cl.pair); on('p6', cl.pair); on('p12', cl.pair);
+    R.items.run.setAttribute('opacity', mine && !cl.run ? '1' : '0.3'); R.inp.disabled = !(mine && !cl.run);
+    const place = (rect, t) => { if (!t) { rect.setAttribute('display', 'none'); return; } const b = t.getBBox(); rect.setAttribute('x', b.x - 2); rect.setAttribute('y', b.y); rect.setAttribute('width', b.width + 4); rect.setAttribute('height', b.height); rect.removeAttribute('display'); };
+    place(R.outlines.f15, cribPegSel.f15 ? R.items.f15 : null);
+    place(R.outlines.pair, cribPegSel.pair ? R.items['p' + cribPegSel.pair] : null);
+    place(R.outlines.run, cribPegSel.run ? R.items.run : null);
+    place(R.outlines.f31, cribPegSel.f31 ? R.items.f31 : null);
+    place(R.outlines.last, cribPegSel.last ? R.items.last : null);
+    const tot = cribPegTotal();
+    R.items.totval.textContent = String(tot);
+    R.items.totlabel.setAttribute('opacity', mine ? '1' : '0.3'); R.items.totval.setAttribute('opacity', mine ? '1' : '0.3');
+    try { const vb = R.items.totval.getBBox(); R.tick.setAttribute('transform', 'translate(' + (vb.x + vb.width + 1) + ',' + (vb.y - 4) + ') scale(0.6)'); } catch (e) { }   // a superscript tick right after the count to confirm
+    R.tick.setAttribute('opacity', mine && tot > 0 ? '1' : '0.3'); R.tick.style.cursor = mine && tot > 0 ? 'pointer' : 'default';
+    R.items.show.style.display = (p && p.finished && p.turn === li) ? '' : 'none';
+  }
+
+  // ---- playing a card in the pegging: click stages it as a miniature at the top of the board; the tick plays it ----
+  function cribPegStageCard(hi) {
+    let li = cribGetLocalIdx(), p = cribState && cribState.pegging;
+    if (!p || p.turn !== li || p.finished) { cribMessage('Not your turn.'); return; }
+    let c = p.inHand[li][hi]; if (!c) return;
+    if (p.count + cribVal(c.r) > 31) { cribMessage('That card would go over 31.'); return; }
+    cribPegStaged = hi; cribRender();
+    cribMessage('Press the tick under the card to play it, or click the card to take it back.');
+  }
+  function cribPegPlayStaged() {
+    if (cribPegStaged == null) return;
+    let idx = cribPegStaged; cribPegStaged = null; cribPlayCard(idx);
+  }
+  let cribMiniG = null;
+  function cribHoleX(n) { return cribHoles && cribHoles.length >= 2 * n ? Number(cribHoles[2 * (n - 1) + 1].getAttribute('cx')) : null; }
+  function cribRenderPegMinis() {
+    const NS = 'http://www.w3.org/2000/svg', svg = document.getElementById('crib-board-svg');
+    if (!svg) return;
+    if (!cribMiniG) { cribMiniG = document.createElementNS(NS, 'g'); cribMiniG.setAttribute('id', 'crib-peg-minis'); svg.appendChild(cribMiniG); }
+    cribMiniG.innerHTML = '';
+    if (!cribState || cribState.phase !== 'pegging' || !cribState.pegging || !cribHoles || cribHoles.length < 140) return;
+    const p = cribState.pegging, li = cribGetLocalIdx();
+    const sc = 0.5, w = CRIB_CARD_W * sc, h = CRIB_CARD_H * sc, step = 24;
+    const x0 = cribHoleX(68) - 5.5;                                       // left edge of the first card: left edge of hole 68
+    let y0 = 188; try { y0 = cribNamesG.firstChild.getBBox().y; } catch (e) { }   // top of the P1 name
+    const place = (c, i, staged) => {
+      const g = document.createElementNS(NS, 'g'); g.setAttribute('transform', 'translate(' + (x0 + i * step) + ',' + y0 + ') scale(' + sc + ')');
+      const bg = document.createElementNS(NS, 'rect'); bg.setAttribute('width', CRIB_CARD_W); bg.setAttribute('height', CRIB_CARD_H); bg.setAttribute('rx', 7); bg.setAttribute('fill', 'none');
+      g.appendChild(cribBuildCardFace(c.r, c.s, CRIB_CARD_W, CRIB_CARD_H));
+      if (staged) { g.style.cursor = 'pointer'; g.addEventListener('click', () => { cribPegStaged = null; cribRender(); }); g.setAttribute('class', 'crib-peg-mini-staged'); }
+      cribMiniG.appendChild(g); return g;
+    };
+    (p.played || []).forEach((c, i) => place(c, i, false));
+    if (cribPegStaged != null && p.inHand[li] && p.inHand[li][cribPegStaged]) {
+      const i = (p.played || []).length;
+      place(p.inHand[li][cribPegStaged], i, true);
+      const tk = document.createElementNS(NS, 'g'); tk.setAttribute('id', 'crib-peg-play-tick'); tk.style.cursor = 'pointer';
+      tk.setAttribute('transform', 'translate(' + (x0 + i * step + w / 2 - 6) + ',' + (y0 + h + 4) + ') scale(0.8)');
+      tk.innerHTML = '<rect x="-3" y="-3" width="20" height="17" fill="transparent"/><path d="M0.5 6.5 Q2.5 7 4.5 10.5 Q8 3.5 13.5 -0.5" fill="none" stroke="#000" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>';
+      tk.addEventListener('click', () => cribPegPlayStaged());
+      cribMiniG.appendChild(tk);
+    }
+  }
+  // The most the latest play can be worth: 15, 31, last card, the best pair and the longest run on the table.
+  function cribPegMax(pend) {
+    const R = cribPegReality(pend); let t = 0;
+    if (R.count === 15) t += 2; if (R.count === 31) t += 2;
+    if (pend.ended && R.count !== 31) t += 1;
+    t += R.match >= 4 ? 12 : R.match === 3 ? 6 : R.match === 2 ? 2 : 0;
+    t += R.run >= 3 ? R.run : 0;
+    return t;
+  }
+  // Muggins: on your turn, whatever the opponent's play (still on the table) was worth beyond what they claimed is yours to call.
+  function cribMugAvail() {
+    if (!cribState || cribState.phase !== 'pegging' || !cribState.pegging) return 0;
+    const p = cribState.pegging, li = cribGetLocalIdx(), pend = p.pending;
+    if (!pend || pend.seat === li || p.turn !== li || p.finished) return 0;
+    return Math.max(0, cribPegMax(pend) - (pend.claimedPts || 0));
+  }
+  // kind 'claim': the points go to you.  kind 'award': the points go to the opponent whose play missed them.
+  // Either way the opponent is told (p.report) and the play's remaining value is used up.
+  async function cribMugAct(kind, n) {
+    if (!cribState || cribState.phase !== 'pegging') return false;
+    const li = cribGetLocalIdx();
+    let server = await cribLoadGame(cribState.id); if (server) cribState = server;
+    const avail = cribMugAvail();
+    if (!avail) { cribPegNote('Muggins refused: there is no missed scoring on the play, or it is not your turn.'); cribRenderBoardExtras(); return false; }
+    if (!(n >= 1)) { cribPegNote('Type the points first.'); return false; }
+    if (n > avail) { cribPegNote('Muggins refused: only ' + avail + ' was missed.'); cribRenderBoardExtras(); return false; }
+    const p = cribState.pegging, me = cribState.players[li].name, opp = 1 - li;
+    p.pending.claimedPts = cribPegMax(p.pending);          // muggins settles the play: nothing more can be claimed on it
+    if (kind === 'claim') { cribState.players[li].score += n; p.report = { to: opp, text: me + ' claimed ' + n + ' in muggins', id: cribState.moveCount + 1 }; cribState.history.push(me + ' claimed ' + n + ' in muggins'); }
+    else { cribState.players[opp].score += n; p.report = { to: opp, text: me + ' awarded you ' + n + ' in muggins', id: cribState.moveCount + 1 }; cribState.history.push(me + ' awarded ' + cribState.players[opp].name + ' ' + n + ' in muggins'); }
+    cribState.moveCount++;
+    try { cribMugRefs.inp.value = ''; cribMugRefs.inp.dispatchEvent(new Event('input')); } catch (e) { }
+    await cribSaveGame(cribState); cribBroadcastGame(cribState);
+    cribCheckWin(); cribRender();
+    return true;
+  }
+  // A claim made by clicking (or dragging your paw to) a hole in your own lane: the hole's number is your new score.
+  async function cribHoleClaim(pts) {
+    const li = cribGetLocalIdx();
+    let server = await cribLoadGame(cribState.id); if (server) cribState = server;
+    const p = cribState.pegging, pend = p && p.pending;
+    if (cribState.phase !== 'pegging' || !p) { cribRenderBoardExtras(); return; }
+    const ownRem = (pend && pend.seat === li) ? Math.max(0, cribPegMax(pend) - (pend.claimedPts || 0)) : 0;
+    if (pts <= ownRem) {
+      pend.claimedPts = (pend.claimedPts || 0) + pts; cribState.history.push(cribState.players[li].name + ' claims ' + pts);
+      cribState.players[li].score += pts; cribState.moveCount++;
+      await cribSaveGame(cribState); cribBroadcastGame(cribState); cribCheckWin(); cribRender(); return;
+    }
+    if (cribMugAvail()) { await cribMugAct('claim', pts); return; }
+    cribPegNote(ownRem ? 'Claim refused: ' + pts + ' is more than the play is worth (at most ' + ownRem + ').' : 'Nothing to claim right now.');
+    cribRenderBoardExtras();
+  }
+  // A hole in the opponent's lane (or the opponent's paw dropped on a hole): their new score, awarded through muggins.
+  async function cribHoleAward(pts) { await cribMugAct('award', pts); }
+  // ---- muggins: the word sits over hole 104 with its entry cursor, "alert" and "claim" beneath (always available) ----
+  let cribMugRefs = null;
+  function cribRenderMuggins() {
+    const NS = 'http://www.w3.org/2000/svg', svg = document.getElementById('crib-board-svg');
+    if (!svg || !cribHoles || cribHoles.length < 210) return;
+    if (!cribMugRefs) {
+      const g = document.createElementNS(NS, 'g'); g.setAttribute('id', 'crib-muggins'); g.setAttribute('font-family', 'sans-serif'); g.setAttribute('fill', 'black'); svg.appendChild(g);
+      const hx = cribHoleX(104);
+      const t = document.createElementNS(NS, 'text'); t.setAttribute('x', hx); t.setAttribute('y', cribCardRowTop + 10); t.setAttribute('font-size', 12.5); t.setAttribute('font-weight', '700'); t.style.cursor = 'pointer'; t.textContent = 'muggins';
+      g.appendChild(t);
+      try { const ext = t.getExtentOfChar(0); t.setAttribute('x', hx - ext.width / 2); } catch (e) { }   // the "m" centred over the hole
+      let bb = t.getBBox(); t.setAttribute('y', Number(t.getAttribute('y')) + (cribCardRowTop - bb.y)); bb = t.getBBox();   // its top level with the top of the hand
+      const cx = bb.x + bb.width / 2;
+      const fo = document.createElementNS(NS, 'foreignObject'); fo.setAttribute('x', cx - 14); fo.setAttribute('y', bb.y + bb.height + 3); fo.setAttribute('width', 28); fo.setAttribute('height', 16);
+      const inp = document.createElementNS('http://www.w3.org/1999/xhtml', 'input');
+      inp.type = 'text'; inp.setAttribute('inputmode', 'numeric'); inp.maxLength = 2; inp.autocomplete = 'off'; inp.setAttribute('aria-label', 'muggins points');
+      inp.style.cssText = 'border:none;border-bottom:1px solid #000;outline:none;background:transparent;box-shadow:none;padding:0;margin:0;width:100%;height:100%;font:400 12.5px sans-serif;color:#000;caret-color:#000;text-align:center;';
+      const links = [];
+      const sync = () => { const on = !!inp.value && parseInt(inp.value, 10) > 0; links.forEach(l => { l.setAttribute('opacity', on ? '1' : '0.35'); l.style.cursor = on ? 'pointer' : 'default'; }); };
+      inp.addEventListener('input', () => { inp.value = inp.value.replace(/[^0-9]/g, ''); sync(); });
+      inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') e.preventDefault(); });   // Return does nothing: claim or alert must be clicked
+      fo.appendChild(inp); g.appendChild(fo);
+      const ly = bb.y + bb.height + 3 + 16 + 11;
+      const mkLink = (label, x, fn) => { const l = document.createElementNS(NS, 'text'); l.setAttribute('x', x); l.setAttribute('y', ly); l.setAttribute('text-anchor', 'middle'); l.setAttribute('font-size', 10.5); l.setAttribute('font-weight', '400'); l.setAttribute('fill', '#555'); l.setAttribute('text-decoration', 'underline'); l.style.cursor = 'pointer'; l.textContent = label; l.addEventListener('click', fn); g.appendChild(l); return l; };
+      links.push(mkLink('alert', cx - 17, () => { if (inp.value) cribMugAct('award', parseInt(inp.value, 10)); }));
+      links.push(mkLink('claim', cx + 17, () => { if (inp.value) cribMugAct('claim', parseInt(inp.value, 10)); }));
+      sync();
+      t.addEventListener('click', () => { try { inp.focus({ preventScroll: true }); } catch (e) { } });   // clicking the word puts the cursor in the field
+      cribMugRefs = { g, t, fo, inp };
+    }
+    if (cribState && cribState.phase === 'pegging') cribMugRefs.g.removeAttribute('display'); else cribMugRefs.g.setAttribute('display', 'none');
+  }
+  // The opponent is told what muggins did.
+  let cribReportSeen = null;
+  function cribShowReport() {
+    const old = document.getElementById('crib-report-box');
+    const p = cribState && cribState.phase === 'pegging' && cribState.pegging, a = p && p.report, li = cribGetLocalIdx();
+    if (!a || a.to !== li || cribReportSeen === a.id) { if (old) old.remove(); return; }
+    if (old) return;
+    const d = document.createElement('div'); d.id = 'crib-report-box';
+    d.style.cssText = 'position:fixed;z-index:99998;left:50%;top:30%;transform:translateX(-50%);background:#fffef6;border:1px solid #8a7a52;border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,.4);padding:16px 22px;font:15px sans-serif;color:#000;max-width:340px;text-align:center;';
+    d.innerHTML = '<div style="margin-bottom:12px"></div><a href="#" id="crib-report-ok">ok</a>';
+    d.firstChild.textContent = a.text;
+    document.body.appendChild(d);
+    document.getElementById('crib-report-ok').onclick = (e) => { e.preventDefault(); cribReportSeen = a.id; d.remove(); };
+  }
+  let cribChartWasShown = false;
+  // The left-hand scoring area: empty while the crib is being made, pegging claims during the play, the hand-count chart for the show.
+  function cribBoardPhaseView() {
+    const ph = cribState && cribState.phase;
+    const chart = ph === 'counting';
+    ['crib-col15', 'crib-colpair', 'crib-colruns', 'crib-colflush', 'crib-colnobs', 'crib-handcount'].forEach(id => { const e = document.getElementById(id); if (e) { if (chart) e.removeAttribute('display'); else e.setAttribute('display', 'none'); } });
+    if (chart && !cribChartWasShown && cribCountRefs) setTimeout(() => { try { cribCountRefs.inp.focus({ preventScroll: true }); } catch (e) { } }, 0);
+    cribChartWasShown = chart;
+    try { cribRenderNames(); } catch (e) { }
+    try { cribRenderPegMinis(); cribRenderMuggins(); cribShowReport(); } catch (e) { }
+    document.querySelectorAll('#crib-cards .crib-flipall-text').forEach(t => { t.style.display = ph === 'pegging' ? 'none' : ''; });
+    const R = cribPegRefs; if (!R) return;
+    if (ph === 'pegging') R.g.removeAttribute('display'); else R.g.setAttribute('display', 'none');
+    if (ph === 'pegging') cribPegRefresh();
   }
   // Hand-count claiming: one selected row per column (most recent click wins; clicking it again clears it).
   // The a-Pair rows read as (selected 15s value + pair value), so the remembered pair row re-labels itself
@@ -2513,7 +3001,14 @@ body {
     if (cribState.discarded[li]) { cribMessage('Already sent your discards.'); return; }
     let idxArr = Array.from(cribSelectedDiscard).sort((a, b) => b - a);
     let hand = cribState.hands[li];
+    // Remember what was face-up and in what order, so the four cards left keep their faces and places.
+    let sentSet = new Set(idxArr), shiftOf = i => i - idxArr.filter(x => x < i).length;
+    let keepOrder = cribBoardOrder.filter(i => !sentSet.has(i) && hand[i]).map(shiftOf);
+    let keepFlipped = new Set(Array.from(cribFlippedSet).filter(i => !sentSet.has(i)).map(shiftOf));
     idxArr.forEach(i => { cribState.crib.push(hand[i]); hand.splice(i, 1); });
+    for (let k = keepOrder.length; k < 6; k++) keepOrder.push(k);
+    cribBoardOrder = keepOrder; cribFlippedSet = keepFlipped; cribHi = [];
+    cribFlipHandKey = li + ':' + hand.map(c => c.r + c.s).join(',');
     cribState.discarded[li] = true;
     cribSelectedDiscard = new Set();
     cribState.history.push(cribState.players[li].name + ' sent 2 to the crib');
@@ -2535,7 +3030,7 @@ body {
     cribState.pegging = {
       count: 0, played: [], turn: nonDealer, lastToPlay: null,
       inHand: [cribState.hands[0].slice(), cribState.hands[1].slice()],
-      consecutiveGo: 0
+      consecutiveGo: 0, pending: null, finished: false
     };
     cribCheckWin();
   }
@@ -2551,10 +3046,11 @@ body {
     let card = p.inHand[li][cardIdx];
     if (!card || p.count + cribVal(card.r) > 31) { cribMessage("That card would go over 31."); return; }
     p.inHand[li].splice(cardIdx, 1);
-    let res = cribScorePeggingPlay(p.played, card, p.count);
-    p.played.push(card); p.count = res.newCount; p.lastToPlay = li; p.consecutiveGo = 0;
-    if (res.points) { cribState.players[li].score += res.points; cribState.history.push(cribState.players[li].name + ' plays ' + cribCardLabel(card) + ': ' + res.detail.join(', ')); }
-    else cribState.history.push(cribState.players[li].name + ' plays ' + cribCardLabel(card) + ' (count ' + p.count + ')');
+    p.played.push(card); p.count += cribVal(card.r); p.lastToPlay = li; p.consecutiveGo = 0;
+    p.report = null;   // a muggins notice lasts until the next card is played
+    // Nothing is scored for the play: the player claims what it is worth (see cribSubmitPeg).
+    p.pending = { seat: li, seq: p.played.slice(), count: p.count, ended: false, claimed: {} };
+    cribState.history.push(cribState.players[li].name + ' plays ' + cribCardLabel(card) + ' (count ' + p.count + ')');
     cribAdvancePegTurn();
     cribState.moveCount++;
     await cribSaveGame(cribState); cribBroadcastGame(cribState);
@@ -2581,9 +3077,8 @@ body {
     let bothEmpty = p.inHand[0].length === 0 && p.inHand[1].length === 0;
     let segmentOver = (p.count === 31) || (!cribHasPlayable(0) && !cribHasPlayable(1));
     if (segmentOver && p.lastToPlay !== null) {
-      let pts = (p.count === 31) ? 0 : 1; // 31 already scored 2 in cribScorePeggingPlay; a stalled "go" scores 1 for last card played
-      if (pts) { cribState.players[p.lastToPlay].score += pts; cribState.history.push(cribState.players[p.lastToPlay].name + ' gets 1 for go'); }
-      if (bothEmpty) { cribFinishPegging(); return; }
+      if (p.pending) p.pending.ended = true;   // the last-card / 31 claims open for the player who made the final play
+      if (bothEmpty) { p.finished = true; p.turn = p.lastToPlay; return; }   // stays in pegging until "go to the show" so those claims can still be made
       p.count = 0; p.played = []; p.turn = p.lastToPlay; p.lastToPlay = null;
       // leader of next segment is whoever didn't play last, unless they have no cards
       if (p.inHand[p.turn].length === 0) p.turn = other;
@@ -2636,6 +3131,8 @@ body {
     const all = Array.from(svg.querySelectorAll('circle'));
     cribHoles = all.filter(c => c.getAttribute('fill') === 'black' && c.getAttribute('r') === '5.5');
     cribHoles.forEach(c => { c.dataset.cribHole = '1'; });
+    // Clicking a hole moves this player's back paw there, as far as the confirmed score and no further.
+    cribHoles.forEach((c, i) => { c.style.cursor = 'pointer'; c.addEventListener('click', () => cribHoleClick(Math.floor(i / 2) + 1, i % 2 === 1 ? 0 : 1)); });   // lane 1 is P0's, lane 0 is P1's
     const green = all.filter(c => c.getAttribute('fill') === 'green'); cribFinishDot = green[0] || null;
     // start dots: P0 inner (red) / P1 outer (blue) -> all white, plus a second dot "behind" each
     const startRed = all.find(c => c.getAttribute('fill') === 'red' || c.dataset.cribStart === '0');
@@ -2677,7 +3174,7 @@ body {
     for (let i = 3; i >= 0; i--) g.appendChild(backCard(DX + i * 1.4, DY - i * 1.4, dw, dh));   // face-down deck
     const lab = (txt, x, y) => { const t = document.createElementNS(NS, 'text'); t.setAttribute('x', x); t.setAttribute('y', y); t.setAttribute('text-anchor', 'middle'); t.setAttribute('font-size', 11); t.setAttribute('font-family', 'sans-serif'); t.setAttribute('font-weight', '700'); t.setAttribute('fill', '#000'); t.textContent = txt; return t; };
     g.appendChild(lab('deck', DX + dw / 2 + 2, DY + dh + 16));
-    const sw = 34, sh = 48, gx = 5, gy = 5, CX = 800, CY = 228;
+    const { sw, sh, gx, gy, CX, CY } = CRIB_SLOT;
     const crib = document.createElementNS(NS, 'g'); crib.setAttribute('id', 'crib-slots');
     for (let i = 0; i < 4; i++) {
       const x = CX + (i % 2) * (sw + gx), y = CY + Math.floor(i / 2) * (sh + gy);
@@ -2691,6 +3188,36 @@ body {
     g.appendChild(lab('crib', CX + sw + gx / 2, CY + 2 * sh + gy + 16));
     svg.appendChild(g);
     return true;
+  }
+  function cribPawDown(ev) {
+    if (ev.button === 2 || !cribState || cribState.phase === 'done') return;
+    const el = ev.currentTarget; ev.preventDefault();
+    try { el.setPointerCapture(ev.pointerId); } catch (e) { }
+    const mv = (e) => { const q = cribClientToSvg(e.clientX, e.clientY); el.setAttribute('transform', 'translate(' + q.x + ',' + q.y + ') scale(0.125) translate(-50,-50)'); };
+    const up = (e) => {
+      el.removeEventListener('pointermove', mv); el.removeEventListener('pointerup', up); el.removeEventListener('pointercancel', up);
+      try { el.releasePointerCapture(e.pointerId); } catch (x) { }
+      const q = cribClientToSvg(e.clientX, e.clientY); let best = -1, bd = 1e9;
+      cribHoles.forEach((c, i) => { const d = Math.hypot(Number(c.getAttribute('cx')) - q.x, Number(c.getAttribute('cy')) - q.y); if (d < bd) { bd = d; best = i; } });
+      if (best >= 0 && bd <= 16) cribHoleClick(Math.floor(best / 2) + 1, Number((el.dataset.cribPaw || '0:1').split(':')[0])); else cribRenderBoardExtras();
+    };
+    el.addEventListener('pointermove', mv); el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
+  }
+  function cribHoleClick(n, pi) {
+    if (!cribState || cribState.phase === 'done') return;
+    const li = cribGetLocalIdx();
+    if (pi != null && pi !== li) {   // the opponent's lane: only meaningful as a muggins award
+      const so = Math.max(0, Math.min(121, (cribState.players[pi] && cribState.players[pi].score) || 0));
+      if (cribState.phase === 'pegging' && n > so) { cribHoleAward(n - so); return; }
+      cribPegNote('That is your opponent\'s lane - it only moves to award them muggins points.'); cribRenderBoardExtras(); return;
+    }
+    const sc = Math.max(0, Math.min(121, (cribState.players[li] && cribState.players[li].score) || 0));
+    if (n > sc) {
+      if (cribState.phase === 'pegging') { cribHoleClaim(n - sc); return; }   // in the play, the hole is the claim: its number is the new score
+      cribPegNote('That hole is past your confirmed score of ' + sc + '.'); cribRenderBoardExtras(); return;
+    }
+    cribPegState[li].back = n;
+    cribRenderBoardExtras();
   }
   function cribPegPos(pi, n) {
     if (n <= 0) { const d = cribStartDots[pi][n === 0 ? 0 : 1]; return { x: Number(d.getAttribute('cx')), y: Number(d.getAttribute('cy')), el: d }; }
@@ -2722,9 +3249,21 @@ body {
         occupied.push(pos.el);
       });
     }
+    // your back paw can be picked up and dropped on a hole, like moving a peg
+    try {
+      const mine = cribGetLocalIdx();
+      const mug = cribMugAvail() > 0;   // with muggins on the table you may also pick up the opponent's back paw
+      document.querySelectorAll('#crib-paws use').forEach(u => {
+        const own = u.dataset.cribPaw === mine + ':1', theirs = u.dataset.cribPaw === (1 - mine) + ':1', live = own || (theirs && mug);
+        u.setAttribute('pointer-events', live ? 'all' : 'none'); u.style.cursor = live ? 'grab' : '';
+        if (!u.dataset.dragWired) { u.dataset.dragWired = '1'; u.addEventListener('pointerdown', cribPawDown); }
+      });
+    } catch (e) { }
     // crib holding area: one face-down card per card in the crib
-    const n = Math.min(4, ((cribState.crib && cribState.crib.length) || 0) + (cribState.phase === 'discard' ? cribSelectedDiscard.size : 0));
+    // face-down cards for what is already in the crib; this player's staged cards are drawn face-up on top (cribRenderStaged)
+    const n = Math.min(4, (cribState.crib && cribState.crib.length) || 0);
     Array.from(document.querySelectorAll('#crib-slots .crib-slot-card')).forEach((c, i) => { c.style.display = i < n ? '' : 'none'; });
+    cribRenderStaged();
   }
   function cribRender() {
     if (!cribState) return;
@@ -2743,6 +3282,7 @@ body {
     cribRenderHand(li);
     cribRenderBoardHand(li);
     try { cribRenderBoardExtras(); } catch (e) { }
+    try { cribBoardPhaseView(); } catch (e) { }
     $('crib-history').innerHTML = cribState.history.slice().reverse().slice(0, 12).map(x => '<li>' + esc(x) + '</li>').join('');
     let actionsEl = $('crib-actions');
     if (cribState.phase === 'done') {
@@ -2753,13 +3293,16 @@ body {
     if (cribState.phase === 'discard') {
       cribMessage('Hand dealt — ' + cribState.players[0].name + ' and ' + cribState.players[1].name + ' each have 6 cards on the board.');
     } else if (cribState.phase === 'pegging') {
-      if (cribState.pegging.turn === li) {
+      if (cribState.pegging.finished) {
+        cribMessage(cribState.pegging.turn === li ? 'All cards are played. Claim any points (last card, 31), then "go to the show".' : 'All cards are played. Waiting for ' + cribState.players[1 - li].name + ' to go to the show.');
+      } else if (cribState.pegging.turn === li) {
         if (!cribHasPlayable(li)) cribMessage('No playable card — say Go.');
         else cribMessage('Your play. Count is ' + cribState.pegging.count + '.');
       } else cribMessage("Waiting for " + cribState.players[1 - li].name + "'s play.");
     } else if (cribState.phase === 'counting') {
       cribMessage('Counting hands…');
     }
+    if (cribNote.until > Date.now()) cribMessage(cribNote.t);   // a refused claim stays on screen through the next redraw
   }
   function cribCardHtml(c) { return '<span class="crib-card" style="color:' + cribSuitColor(c.s) + '">' + c.r + cribSuitGlyph(c.s) + '</span>'; }
   function cribRenderHand(li) {
@@ -2780,7 +3323,7 @@ body {
         btn.onclick = () => { if (cribState.pegging.turn === li) cribPlayCard(i); };
       });
     }
-    let goBtn = $('crib-go-btn'); if (goBtn) goBtn.hidden = !(inPegging && myTurn && !cribHasPlayable(li));
+    let goBtn = $('crib-go-btn'); if (goBtn) goBtn.hidden = !(inPegging && myTurn && !cribState.pegging.finished && !cribHasPlayable(li));
     // The old "Send to Crib" discard panel is retired now that hands are
     // dealt and shown directly on the board; keep the button hidden.
     let discardBtn = $('crib-discard-btn'); if (discardBtn) discardBtn.hidden = true;
@@ -2798,14 +3341,7 @@ body {
   let gwPassArmed = 0, gwMsgTimer = null;
   function GW_TZ() { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; } catch (e) { return 'UTC'; } }
   function gwKeys() { try { return JSON.parse(localStorage.getItem('bt_gw') || '{}'); } catch (e) { return {}; } }
-  // Vault shape: { gid: { seats: { "0": {token, name}, "2": {...} } } }.  The old shape { gid: {token, seat} } is upgraded on read.
-  function gwSeatsOf(gid) { let r = gwKeys()[gid]; if (!r) return {}; if (r.seats) return r.seats; if (r.token != null) { let o = {}; o[r.seat] = { token: r.token, name: getOwner() || '' }; return o; } return {}; }
-  function gwSaveKey(gid, token, seat, name) { let k = gwKeys(), v = gwSeatsOf(gid); v[seat] = { token: token, name: name || (v[seat] && v[seat].name) || '' }; k[gid] = { seats: v }; localStorage.setItem('bt_gw', JSON.stringify(k)); }
-  // Each browser tab remembers its own seat (sessionStorage survives a reload of that tab, and keeps working even if another tab clears localStorage).
-  function gwTabMap() { try { return JSON.parse(sessionStorage.getItem('bt_gw_tab') || '{}') || {}; } catch (e) { return {}; } }
-  function gwTabRec(gid) { let r = gwTabMap()[gid]; return r && r.token ? r : null; }
-  function gwSetTabSeat(gid, seat, token) { try { let m = gwTabMap(); m[gid] = { seat: seat, token: token }; sessionStorage.setItem('bt_gw_tab', JSON.stringify(m)); } catch (e) { } }
-  function gwUrlSeat() { try { let p = new URLSearchParams(location.search).get('p'); return /^[0-5]$/.test(p || '') ? +p : null; } catch (e) { return null; } }
+  function gwSaveKey(gid, token, seat) { let k = gwKeys(); k[gid] = { token: token, seat: seat }; localStorage.setItem('bt_gw', JSON.stringify(k)); }
   async function gwApi(method, act, body, gid, token) {
     gid = gid || gw.gid; token = token === undefined ? gw.token : token;
     let url = act === 'games' ? API + '/gw/games' : API + '/gw/' + encodeURIComponent(gid) + '/' + act + (method === 'GET' ? '?tz=' + encodeURIComponent(GW_TZ()) : '');
@@ -2840,7 +3376,7 @@ body {
     $('gw-save').textContent = 'saving...';
     let r = await gwApi('POST', 'games', { name: owner, tz: GW_TZ(), seats: n }, null, null);
     if (r.s !== 201 || !r.j.token) { $('gw-save').textContent = "(couldn't save - click to retry)"; return; }
-    gw.gid = r.j.gid; gw.token = r.j.token; gw.seat = 0; gwSaveKey(gw.gid, gw.token, 0, owner); gwSetTabSeat(gw.gid, 0, gw.token);
+    gw.gid = r.j.gid; gw.token = r.j.token; gw.seat = 0; gwSaveKey(gw.gid, gw.token, 0);
     let url = LIVE_SITE + '?kind=groupwords&gw=' + encodeURIComponent(gw.gid), msg = 'Join me for a game of groupWords on BearTracks: ' + url, first = r.j;
     $('bt-headsup').classList.remove('gw-pick');
     $('bt-headsup-help').textContent = 'Join me for a game of groupWords on BearTracks:';
@@ -2855,47 +3391,21 @@ body {
 
   // ---- joining by the shared link ----
   async function gwBoot(gid) {
-    let owner = getOwner(), seats = gwSeatsOf(gid), tab = gwTabRec(gid), hint = gwUrlSeat();
+    let rec = gwKeys()[gid], owner = getOwner();
     hideEntryPage(); $('bt-headsup').hidden = true;
-    if (tab) return gwUse(gid, tab.seat, tab.token);                                   // this tab already has a seat (e.g. a reload)
-    if (hint != null && seats[hint]) return gwUse(gid, hint, seats[hint].token);       // reopened tab: p= says which seat
-    if (Object.keys(seats).length) return gwChoose(gid, seats);                        // this browser already holds seat(s): ask which one this tab is
+    if (rec && rec.token) { gw.gid = gid; gw.token = rec.token; gw.seat = rec.seat; return gwEnter(); }
     if (!owner) { postRegisterTarget = 'groupwords'; $('setup').hidden = false; renderBoxes(); return; }
     return gwJoin(gid, owner, false);
   }
-  function gwUse(gid, seat, token) { gw.gid = gid; gw.token = token; gw.seat = +seat; gwSetTabSeat(gid, +seat, token); return gwEnter(); }
-  function gwBackdrop() { gwNoticeClose(); $('setup').hidden = false; $('box-start').hidden = true; $('box-register').hidden = true; $('setup').classList.add('gw-nodlg'); }
-  function gwChoose(gid, seats) {
-    gwBackdrop();
-    let b = Object.keys(seats).map(function (n) { return ['Continue as ' + (seats[n].name || ('player ' + (+n + 1))), function () { gwUse(gid, n, seats[n].token); }]; });
-    b.push(['Add another player in this tab', function () { gwAskName(gid); }]);
-    gwNotice('This browser already holds a seat in this game. Which player is this tab?', b);
-  }
-  function gwAskName(gid) {
-    gwBackdrop();
-    let d = document.createElement('div'); d.id = 'gw-notice';
-    let p = document.createElement('p'); p.textContent = 'Name for the new player (any name, no registration needed):'; d.appendChild(p);
-    let i = document.createElement('input'); i.maxLength = 24; i.autocomplete = 'off'; i.style.cssText = 'display:block;margin:8px auto;font:inherit;text-align:center'; d.appendChild(i);
-    let go = function () { let n = i.value.trim(); if (n) gwJoin(gid, n, false); else i.focus(); };
-    let ok = document.createElement('button'); ok.textContent = 'Join'; ok.onclick = go; d.appendChild(ok);
-    let bk = document.createElement('button'); bk.textContent = 'Back'; bk.onclick = function () { gwBoot(gid); }; d.appendChild(bk);
-    i.onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); go(); } };
-    document.body.appendChild(d); setTimeout(function () { i.focus(); }, 50);
-  }
   async function gwJoin(gid, owner, restore) {
-    gwBackdrop();
+    gwNoticeClose(); $('setup').hidden = false; $('box-start').hidden = true; $('box-register').hidden = true; $('setup').classList.add('gw-nodlg');
     let r = await gwApi('POST', 'join', { name: owner, tz: GW_TZ(), restore: !!restore }, gid, null);
     if (r.s === 200 || r.s === 201) {
-      let tok = r.j.token || ((gwSeatsOf(gid)[r.j.seat] || {}).token);
-      if (r.j.token) gwSaveKey(gid, r.j.token, r.j.seat, owner);
-      return gwUse(gid, r.j.seat, tok);
+      if (r.j.token) gwSaveKey(gid, r.j.token, r.j.seat);
+      gw.gid = gid; gw.token = r.j.token || (gwKeys()[gid] || {}).token; gw.seat = r.j.seat; return gwEnter();
     }
     let back = ['Back to Foyer', gwLeave];
-    if (r.s === 409 && /taken/.test(r.j.error || '')) {
-      let sv = gwSeatsOf(gid), mine = Object.keys(sv).find(function (n) { return (sv[n].name || '').toLowerCase() === owner.toLowerCase(); });
-      if (mine != null) return gwUse(gid, mine, sv[mine].token);   // this browser already holds that seat: just use it, don't re-key it
-      return gwNotice('This game already has a player named ' + owner + '.', [['Restore my seat', function () { gwJoin(gid, owner, true); }], ['Use a different name', function () { gwAskName(gid); }], back]);
-    }
+    if (r.s === 409 && /taken/.test(r.j.error || '')) return gwNotice('This game already has a player named ' + owner + '.', [['Restore my seat', function () { gwJoin(gid, owner, true); }], back]);
     if (r.s === 409) return gwNotice('This game is full.', [back]);
     if (r.s === 404) return gwNotice(restore ? 'No seat with that name was found.' : 'That game was not found.', [back]);
     gwNotice('Could not join right now. Please try again.', [back]);
@@ -2923,7 +3433,7 @@ body {
   }
   async function gwEnter(first) {
     hideEntryPage(); $('setup').hidden = true; $('bt-headsup').hidden = true; gwNoticeClose(); gwBuild(); $('gw-game').hidden = false;
-    try { let u = new URL(location.href); u.searchParams.set('kind', 'groupwords'); u.searchParams.set('gw', gw.gid); u.searchParams.set('p', String(gw.seat)); u.searchParams.delete('invite'); history.replaceState(null, '', u.pathname + u.search + u.hash); } catch (e) { }
+    try { let u = new URL(location.href); u.searchParams.set('kind', 'groupwords'); u.searchParams.set('gw', gw.gid); u.searchParams.delete('invite'); history.replaceState(null, '', u.pathname + u.search + u.hash); } catch (e) { }
     if (first && first.me) { gw.st = first; gwRender(); }
     await gwRefresh(); gwConnect();
     clearInterval(gw.poll); gw.poll = setInterval(function () { if (!document.hidden) gwRefresh(); }, 30000);
@@ -2972,10 +3482,9 @@ body {
     if (r.s === 200) { gw.shown[it.n] = r.j; gwRender(); } else gwRefresh();
   }
   function gwLink(text, fn) { let a = document.createElement('a'); a.href = '#'; a.className = 'gw-link'; a.textContent = text; a.onclick = function (e) { e.preventDefault(); e.stopPropagation(); fn(); }; return a; }
-  const GW_AZ = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
   function gwMakeCard(it) {
     let c = document.createElement('div'); c.className = 'gw-card';
-    c.innerHTML = '<div class="gw-inner"><div class="gw-face gw-front"><div class="gw-hd"><div class="gw-nm"><b></b><i class="gw-sol"></i></div><span></span></div><div class="gw-rw"><div class="gw-az">' + GW_AZ.map(function (L) { return '<i>' + L + '</i>'; }).join('') + '</div><div class="gw-rows"></div></div></div><div class="gw-face gw-back"><div class="gw-lab"></div><div class="gw-pass"></div></div></div>';
+    c.innerHTML = '<div class="gw-inner"><div class="gw-face gw-front"><div class="gw-hd"><b></b><span></span></div><div class="gw-rows"></div></div><div class="gw-face gw-back"><div class="gw-lab"></div><div class="gw-pass"></div></div></div>';
     c.onclick = function () { let cur = gw.items.find(function (x) { return x.n === it.n; }); if (cur) gwClick(cur); };
     return c;
   }
@@ -2997,35 +3506,20 @@ body {
     el.classList.toggle('mine', mine && me.status === 'playing');
     el.classList.toggle('can', mine || !!it.flip);
     el.querySelector('.gw-lab').textContent = it.name + (it.score != null ? '   ' + it.score : '');
-    el.querySelector('.gw-pass').textContent = it.pass ? (it.noshow ? 'no-show' : 'Pass') : '';
+    el.querySelector('.gw-pass').textContent = it.pass ? 'Pass' : '';
     el.querySelector('.gw-hd b').textContent = it.name;
-    let sp = el.querySelector('.gw-hd span'), rows = [], letters = false, cur = '', sol = '';
+    let sp = el.querySelector('.gw-hd span'), rows = [], letters = false, cur = '';
     sp.textContent = '';
     if (mine) {
       rows = me.rows; letters = true;
-      if (me.status === 'failed' && me.word) sol = me.word;
       if (me.status === 'playing') { cur = gw.cur; sp.appendChild(gwLink('Pass', gwPass)); }
-      else { sp.appendChild(document.createTextNode((me.status === 'pass' ? (me.rows.length ? 'Pass' : 'no-show') : me.score) + ' ')); if (me.canNewDay) sp.appendChild(gwLink('New word', gwNewDay)); }
+      else { sp.appendChild(document.createTextNode((me.status === 'pass' ? 'Pass' : me.score) + ' ')); if (me.canNewDay) sp.appendChild(gwLink('New word', gwNewDay)); }
     } else if (shown) {
       letters = shown.word !== undefined;
       rows = shown.rows.map(function (x) { return Array.isArray(x) ? { g: '', c: x } : x; });
-      sp.textContent = it.pass ? (it.noshow ? 'no-show' : 'Pass') : (it.score != null ? String(it.score) : '');
-      if (letters && it.score === 7) sol = shown.word;
+      sp.textContent = it.pass ? 'Pass' : (it.score != null ? String(it.score) : '');
     }
-    el.querySelector('.gw-sol').textContent = sol ? 'solution: ' + sol : '';
-    let used = {}; if (letters) rows.forEach(function (x) { if (x && x.g) for (let q = 0; q < x.g.length; q++) used[x.g[q]] = 1; });
-    let az = el.querySelector('.gw-az'); az.style.visibility = letters ? 'visible' : 'hidden';
-    Array.prototype.forEach.call(az.children, function (c) { c.classList.toggle('u', !!used[c.textContent]); });
     el.querySelector('.gw-rows').innerHTML = gwRowsHtml(rows, cur, letters);
-    gwFit(el);
-  }
-  // Longer names get a smaller font (down to 45%) until they fit; ellipsis only as a last resort.
-  function gwFit(el) {
-    [['.gw-hd b', '--gwkb'], ['.gw-lab', '--gwkl']].forEach(function (p) {
-      let n = el.querySelector(p[0]); if (!n) return;
-      el.style.removeProperty(p[1]);
-      let k = 1; while (n.scrollWidth > n.clientWidth + 1 && k > 0.45) { k -= 0.05; el.style.setProperty(p[1], k.toFixed(2)); }
-    });
   }
   function gwRender() {
     let st = gw.st; if (!st) return;
@@ -3046,10 +3540,9 @@ body {
       let r = Math.ceil(n / c), w = Math.min((Wd - gap * (c - 1)) / c, (Ht - gap * (r - 1)) / r / 1.4);
       if (w > best.w) best = { w: w, c: c };
     }
-    let w = Math.max(60, best.w * (n === 6 ? 0.9 : 1));
+    let w = Math.max(60, best.w);
     document.documentElement.style.setProperty('--gwcw', w + 'px'); t.style.setProperty('--gwgap', gap + 'px'); t.innerHTML = '';
     for (let i = 0; i < n; i += best.c) { let row = document.createElement('div'); row.className = 'gw-row'; gw.items.slice(i, i + best.c).forEach(function (it) { row.appendChild(it.el); }); t.appendChild(row); }
-    gw.items.forEach(function (it) { if (!it.empty && it.el) gwFit(it.el); });
   }
   // ================= END groupWords MODULE =================
 
