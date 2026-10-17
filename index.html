@@ -566,8 +566,15 @@ body {
 .gw-hd span { white-space: nowrap; }
 .gw-link { color: #8a3b2e; text-decoration: underline; cursor: pointer; }
 .gw-rw { position: relative; }
-.gw-az { position: absolute; left: 0; right: 0; bottom: 100%; margin-bottom: 3px; display: flex; justify-content: space-between; font-size: calc(var(--gwcw) * .048); line-height: 1; color: #2b2620; text-transform: lowercase; pointer-events: none; }
-.gw-az i { font-style: normal; transition: opacity .35s; }
+.gw-az { position: absolute; right: 0; bottom: 100%; margin-bottom: 3px; display: flex; flex-direction: column; align-items: flex-start; font-size: calc(var(--gwcw) * .04); line-height: 1.05; color: #2b2620; text-transform: lowercase; pointer-events: none; }
+.gw-azr { display: flex; }
+.gw-azr.r2 { margin-left: calc(var(--gwcw) * .0215); }
+.gw-azr.r3 { margin-left: calc(var(--gwcw) * .0645); }
+.gw-az i { font-style: normal; width: calc(var(--gwcw) * .043); text-align: center; transition: opacity .35s; }
+.gw-ps { position: absolute; left: 0; right: 0; bottom: calc(var(--gwcw) * .02); text-align: center; font-size: calc(var(--gwcw) * .045); line-height: 1.1; text-transform: lowercase; }
+.gw-ps:empty { display: none; }
+.gw-nm { max-width: calc(var(--gwcw) * .44); }
+.gw-hd span { line-height: 1; }
 .gw-az i.u { opacity: .28; }
 .gw-rows { display: grid; gap: var(--g); }
 .gw-r { display: grid; grid-template-columns: repeat(5, var(--t)); gap: var(--g); }
@@ -2972,10 +2979,10 @@ body {
     if (r.s === 200) { gw.shown[it.n] = r.j; gwRender(); } else gwRefresh();
   }
   function gwLink(text, fn) { let a = document.createElement('a'); a.href = '#'; a.className = 'gw-link'; a.textContent = text; a.onclick = function (e) { e.preventDefault(); e.stopPropagation(); fn(); }; return a; }
-  const GW_AZ = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+  const GW_KB = ['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'];
   function gwMakeCard(it) {
     let c = document.createElement('div'); c.className = 'gw-card';
-    c.innerHTML = '<div class="gw-inner"><div class="gw-face gw-front"><div class="gw-hd"><div class="gw-nm"><b></b><i class="gw-sol"></i></div><span></span></div><div class="gw-rw"><div class="gw-az">' + GW_AZ.map(function (L) { return '<i>' + L + '</i>'; }).join('') + '</div><div class="gw-rows"></div></div></div><div class="gw-face gw-back"><div class="gw-lab"></div><div class="gw-pass"></div></div></div>';
+    c.innerHTML = '<div class="gw-inner"><div class="gw-face gw-front"><div class="gw-hd"><div class="gw-nm"><b></b><i class="gw-sol"></i></div><span></span></div><div class="gw-rw"><div class="gw-az">' + GW_KB.map(function (r, i) { return '<div class="gw-azr r' + (i + 1) + '">' + r.split('').map(function (L) { return '<i>' + L + '</i>'; }).join('') + '</div>'; }).join('') + '</div><div class="gw-rows"></div></div><div class="gw-ps"></div></div><div class="gw-face gw-back"><div class="gw-lab"></div><div class="gw-pass"></div></div></div>';
     c.onclick = function () { let cur = gw.items.find(function (x) { return x.n === it.n; }); if (cur) gwClick(cur); };
     return c;
   }
@@ -2999,13 +3006,13 @@ body {
     el.querySelector('.gw-lab').textContent = it.name + (it.score != null ? '   ' + it.score : '');
     el.querySelector('.gw-pass').textContent = it.pass ? (it.noshow ? 'no-show' : 'Pass') : '';
     el.querySelector('.gw-hd b').textContent = it.name;
-    let sp = el.querySelector('.gw-hd span'), rows = [], letters = false, cur = '', sol = '';
-    sp.textContent = '';
+    let sp = el.querySelector('.gw-hd span'), ps = el.querySelector('.gw-ps'), rows = [], letters = false, cur = '', sol = '';
+    sp.textContent = ''; ps.textContent = '';
     if (mine) {
       rows = me.rows; letters = true;
       if (me.status === 'failed' && me.word) sol = me.word;
-      if (me.status === 'playing') { cur = gw.cur; sp.appendChild(gwLink('Pass', gwPass)); }
-      else { sp.appendChild(document.createTextNode((me.status === 'pass' ? (me.rows.length ? 'Pass' : 'no-show') : me.score) + ' ')); if (me.canNewDay) sp.appendChild(gwLink('New word', gwNewDay)); }
+      if (me.status === 'playing') { cur = gw.cur; ps.appendChild(gwLink('pass', gwPass)); }
+      else { sp.appendChild(document.createTextNode((me.status === 'pass' ? (me.rows.length ? 'Pass' : 'no-show') : me.score) + ' ')); if (me.canNewDay) ps.appendChild(gwLink('new word', gwNewDay)); }
     } else if (shown) {
       letters = shown.word !== undefined;
       rows = shown.rows.map(function (x) { return Array.isArray(x) ? { g: '', c: x } : x; });
@@ -3015,7 +3022,7 @@ body {
     el.querySelector('.gw-sol').textContent = sol ? 'solution: ' + sol : '';
     let used = {}; if (letters) rows.forEach(function (x) { if (x && x.g) for (let q = 0; q < x.g.length; q++) used[x.g[q]] = 1; });
     let az = el.querySelector('.gw-az'); az.style.visibility = letters ? 'visible' : 'hidden';
-    Array.prototype.forEach.call(az.children, function (c) { c.classList.toggle('u', !!used[c.textContent]); });
+    Array.prototype.forEach.call(az.querySelectorAll('i'), function (c) { c.classList.toggle('u', !!used[c.textContent]); });
     el.querySelector('.gw-rows').innerHTML = gwRowsHtml(rows, cur, letters);
     gwFit(el);
   }
