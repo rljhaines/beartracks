@@ -1986,7 +1986,7 @@ body {
     else if (ph === 'counting') {
       const S = cribShowCtx();
       if (!S) { if (li === 1 - cribState.dealer) link('deal next hand', () => cribDealNext()); }
-      else if (S.other === li && S.sh.counted) link(S.step < 2 ? 'next count' : 'deal next hand', () => (S.step < 2 ? cribShowNext() : cribDealNext()));
+      else if (S.other === li && S.sh.counted) link(S.step < 2 ? 'next count' : 'deal next hand', () => (S.step < 2 ? cribShowNext() : cribDealNext()));   // the muggins taker moves on, so there is always a chance to take muggins
     }
     if (ph !== 'pegging' || !p || p.finished) { try { svg.appendChild(cribNamesG); } catch (e) { } return; }
     const place = (c, i, staged) => {
@@ -3265,7 +3265,7 @@ body {
     const S = cribShowCtx();
     if (!S || S.other !== li || !S.sh.counted || S.step >= 2) { cribRender(); return; }
     cribState.show = { step: S.step + 1, counted: false, claimedPts: 0, muggDone: false, report: S.sh.report || null };
-    cribState.history.push(cribState.players[1 - li].name + ' counts ' + (S.step + 1 === 2 ? 'the crib' : 'the dealer\'s hand') + ' next');
+    cribState.history.push(cribState.players[cribState.dealer].name + ' counts ' + (S.step + 1 === 2 ? 'the crib' : 'the dealer\'s hand') + ' next');
     cribState.moveCount++;
     await cribSaveGame(cribState); cribBroadcastGame(cribState);
     cribRender();
@@ -3458,7 +3458,7 @@ body {
       if (cribState.phase === 'pegging' || cribState.phase === 'counting') { cribHoleClaim(n - sc); return; }   // in the play and the show, the hole is the claim: its number is the new score
       cribPegNote('That hole is past your confirmed score of ' + sc + '.'); cribRenderBoardExtras(); return;
     }
-    cribPegState[li].back = n;
+    cribPegNote('Your rear paw only moves ahead of your front paw, and only by a claim.');   // never to a hole behind the front paw
     cribRenderBoardExtras();
   }
   function cribPegPos(pi, n) {
