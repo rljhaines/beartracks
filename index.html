@@ -1946,6 +1946,12 @@ body {
     const d = cribStartDots[seat][1], x = Number(d.getAttribute('cx')) - 14, y = Number(d.getAttribute('cy'));
     const a = document.createElementNS(NS, 'path'); a.setAttribute('d', 'M ' + (x - 3.5) + ' ' + (y - 4) + ' L ' + (x + 3.5) + ' ' + y + ' L ' + (x - 3.5) + ' ' + (y + 4) + ' Z');
     a.setAttribute('fill', '#555'); a.setAttribute('opacity', '0.75'); cribTurnG.appendChild(a);
+    // and the same arrow just left of that player's name (P1 on the upper line, P0 on the lower)
+    if (cribHoles && cribHoles.length >= 106) {
+      const nx = Number(cribHoles[2 * 52 + 1].getAttribute('cx')) - 7, ny = 214.25777868061553 - (seat === 1 ? 16 : 0) - 4;
+      const b = document.createElementNS(NS, 'path'); b.setAttribute('d', 'M ' + (nx - 3) + ' ' + (ny - 3.5) + ' L ' + (nx + 3) + ' ' + ny + ' L ' + (nx - 3) + ' ' + (ny + 3.5) + ' Z');
+      b.setAttribute('fill', '#555'); b.setAttribute('opacity', '0.75'); cribTurnG.appendChild(b);
+    }
   }
   function cribPegRefresh() {
     const R = cribPegRefs; if (!R || !cribState || cribState.phase !== 'pegging') return;
