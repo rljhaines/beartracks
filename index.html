@@ -1233,7 +1233,7 @@ body {
     let slots = Array.from(cardsG.querySelectorAll('.crib-card-slot'))
       .sort((a, b) => Number(a.dataset.cribCardSlot) - Number(b.dataset.cribCardSlot));
     // Cards sent to the crib leave the row at once: the cards still in the hand close up (kept in their order) and the row re-centres.
-    let inRow = i => !!hand[i] && !cribSelectedDiscard.has(i) && i !== cribPegStaged;
+    let inRow = i => !!hand[i] && !cribSelectedDiscard.has(i);
     cribBoardOrder = cribBoardOrder.filter(inRow).concat(cribBoardOrder.filter(i => !inRow(i)));
     let nCards = cribBoardOrder.filter(inRow).length;
     cribRowShift = nCards > 0 && nCards < 6 ? (6 - nCards) / 2 * (cribCardW + cribCardGap) : 0;
@@ -1250,7 +1250,9 @@ body {
       let flipped = cribFlippedSet.has(handIndex) && !!c;
       face.style.display = flipped ? '' : 'none';
       back.style.display = flipped ? 'none' : '';
-      slot.style.display = (c && !cribSelectedDiscard.has(handIndex) && handIndex !== cribPegStaged) ? '' : 'none';  // a card sent to the crib leaves its place in the hand
+      slot.style.display = (c && !cribSelectedDiscard.has(handIndex)) ? '' : 'none';
+      { const ghost = !!c && handIndex === cribPegStaged, fl = slot.querySelector('.crib-card-flip'), tk = slot.querySelector('.crib-card-tick');
+        if (fl) fl.style.opacity = ghost ? '0.25' : '1'; if (tk) tk.style.display = ghost ? '' : 'none'; }  // a card sent to the crib leaves its place in the hand
       slot.style.opacity = '1';
     });
     cribSyncHighlights();
@@ -1474,7 +1476,7 @@ body {
       let m = /translate\(([-\d.]+),/.exec(slot.getAttribute('transform') || '');
       let curX = m ? parseFloat(m[1]) : cribDrag.baseX;
       let target = Math.round((curX - cribCardRowLeft - cribRowShift) / (cribCardW + cribCardGap));
-      let nHand = ((cribState && cribState.hands && cribState.hands[cribGetLocalIdx()]) || []).filter((c, i) => c && !cribSelectedDiscard.has(i)).length || 6;
+      let nHand = ((cribState && cribState.phase === 'pegging' && cribState.pegging ? cribState.pegging.inHand[cribGetLocalIdx()] : (cribState && cribState.hands && cribState.hands[cribGetLocalIdx()])) || []).filter((c, i) => c && !cribSelectedDiscard.has(i)).length || 6;
       target = Math.max(0, Math.min(Math.min(5, nHand - 1), target));
       if (target !== posIndex) {
         let movedVal = cribBoardOrder.splice(posIndex, 1)[0];
@@ -1536,6 +1538,13 @@ body {
       hiRect.setAttribute('fill', 'none'); hiRect.setAttribute('stroke', '#e8a400'); hiRect.setAttribute('stroke-width', 4);
       hiRect.setAttribute('pointer-events', 'none'); hiRect.style.display = 'none';
       g.appendChild(hiRect);
+      // while a card is staged for play, its slot shows a ghost of the card with a tick in the middle to confirm the play
+      const tk = document.createElementNS(NS, 'g'); tk.setAttribute('class', 'crib-card-tick'); tk.style.display = 'none'; tk.style.cursor = 'pointer';
+      tk.setAttribute('transform', 'translate(' + (cardW / 2 - 14.5) + ',' + (cardH / 2 - 12) + ') scale(2.2)');
+      tk.innerHTML = '<rect x="-4" y="-4" width="22" height="20" fill="transparent"/><path d="M0.5 6.5 Q2.5 7 4.5 10.5 Q8 3.5 13.5 -0.5" fill="none" stroke="#000" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>';
+      tk.addEventListener('pointerdown', (e) => { e.stopPropagation(); });
+      tk.addEventListener('click', (e) => { e.stopPropagation(); cribPegPlayStaged(); });
+      g.appendChild(tk);
       g.addEventListener('pointerdown', (ev) => cribCardPointerDown(ev, i));
       g.addEventListener('contextmenu', (ev) => cribCardContextMenu(ev, g));
       cardsG.appendChild(g);
@@ -1953,26 +1962,18 @@ body {
     cribMiniG.innerHTML = '';
     if (!cribState || cribState.phase !== 'pegging' || !cribState.pegging || !cribHoles || cribHoles.length < 140) return;
     const p = cribState.pegging, li = cribGetLocalIdx();
-    const sc = 0.5, w = CRIB_CARD_W * sc, h = CRIB_CARD_H * sc, step = 24;
+    const w = CRIB_SLOT.sw / 2, h = CRIB_SLOT.sh / 2, sx = w / CRIB_CARD_W, sy = h / CRIB_CARD_H, step = w + 3;   // half the size of the cards in the crib, side by side
     const x0 = cribHoleX(68) - 5.5;                                       // left edge of the first card: left edge of hole 68
-    let y0 = 188; try { y0 = cribNamesG.firstChild.getBBox().y; } catch (e) { }   // top of the P1 name
+    let y0 = 188; try { y0 = cribNamesG.firstChild.getBBox().y; } catch (e) { }   // top of every card: top of the P1 name
     const place = (c, i, staged) => {
-      const g = document.createElementNS(NS, 'g'); g.setAttribute('transform', 'translate(' + (x0 + i * step) + ',' + y0 + ') scale(' + sc + ')');
-      const bg = document.createElementNS(NS, 'rect'); bg.setAttribute('width', CRIB_CARD_W); bg.setAttribute('height', CRIB_CARD_H); bg.setAttribute('rx', 7); bg.setAttribute('fill', 'none');
+      const g = document.createElementNS(NS, 'g'); g.setAttribute('transform', 'translate(' + (x0 + i * step) + ',' + y0 + ') scale(' + sx + ',' + sy + ')');
       g.appendChild(cribBuildCardFace(c.r, c.s, CRIB_CARD_W, CRIB_CARD_H));
       if (staged) { g.style.cursor = 'pointer'; g.addEventListener('click', () => { cribPegStaged = null; cribRender(); }); g.setAttribute('class', 'crib-peg-mini-staged'); }
       cribMiniG.appendChild(g); return g;
     };
     (p.played || []).forEach((c, i) => place(c, i, false));
-    if (cribPegStaged != null && p.inHand[li] && p.inHand[li][cribPegStaged]) {
-      const i = (p.played || []).length;
-      place(p.inHand[li][cribPegStaged], i, true);
-      const tk = document.createElementNS(NS, 'g'); tk.setAttribute('id', 'crib-peg-play-tick'); tk.style.cursor = 'pointer';
-      tk.setAttribute('transform', 'translate(' + (x0 + i * step + w / 2 - 6) + ',' + (y0 + h + 4) + ') scale(0.8)');
-      tk.innerHTML = '<rect x="-3" y="-3" width="20" height="17" fill="transparent"/><path d="M0.5 6.5 Q2.5 7 4.5 10.5 Q8 3.5 13.5 -0.5" fill="none" stroke="#000" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>';
-      tk.addEventListener('click', () => cribPegPlayStaged());
-      cribMiniG.appendChild(tk);
-    }
+    if (cribPegStaged != null && p.inHand[li] && p.inHand[li][cribPegStaged]) place(p.inHand[li][cribPegStaged], (p.played || []).length, true);
+    try { svg.appendChild(cribNamesG); } catch (e) { }   // keep the names on top if a long run of cards reaches them
   }
   // The most the latest play can be worth: 15, 31, last card, the best pair and the longest run on the table.
   function cribPegMax(pend) {
@@ -2170,7 +2171,7 @@ body {
   // Backup and restore are offered only while a registered player is in the Foyer.
   function updateBackupVisibility() { try { let b = $('entry-backup'); if (b) b.hidden = !getOwner(); } catch (e) { } }
   function showEntryPage() { let el = $('entry-home'); if (!el) return; updateBackupVisibility(); try { $('bt-headsup').classList.remove('gw-pick'); $('setup').classList.remove('gw-nodlg'); } catch (e) { } el.hidden = false; $('setup').hidden = true; $('bt-headsup').hidden = true; let owner = getOwner(); $('entry-welcome').textContent = owner ? 'Welcome, ' + owner : 'Welcome'; }
-  function hideEntryPage() { let el = $('entry-home'); if (el) el.hidden = true; }
+  function hideEntryPage() { let el = $('entry-home'); if (el) el.hidden = true; try { $('game').style.display = ''; } catch (e) { } }
   function entryWordage() { postRegisterTarget = 'wordage'; hideEntryPage(); let owner = getOwner(); if (owner) handleBegin(); else { $('setup').hidden = false; renderBoxes(); } }
   function entryCribbage() { postRegisterTarget = 'cribbage'; hideEntryPage(); $('setup').hidden = false; renderBoxes(); }
   async function enterGameDirect(gameObj, playerIndex) { if (!gameObj) return false; let g = cloneRacks(gameObj); let li = (playerIndex === 0 || playerIndex === 1) ? playerIndex : null; if (li === null) { li = 0; let owner = (getOwner() || '').toLowerCase(); for (let i = 0; i < g.players.length; i++) if ((g.players[i].name || '').toLowerCase() === owner) li = i; } $('bt-headsup').hidden = true; state = g; setTabSeat(g.id, li); mirrorPassword(gateName()); initBroadcastChannel(g.id); initComm(g.id); $('setup').hidden = true; hideEntryPage(); render(); ensureCommPanel(); pendingGameForHeadsUp = null; scheduleFit(); try { let url = new URL(location.href); url.searchParams.set('game', g.id); url.searchParams.delete('p'); url.searchParams.delete('invite'); history.replaceState(null, '', url.pathname + url.search + url.hash); } catch (e) { } return true; }
@@ -2178,7 +2179,7 @@ body {
   async function populateEntryGames() { updateBackupVisibility(); let owner = getOwner(), underwayEl = $('underway-games'), pendingEl = $('pending-games'); if (!underwayEl || !pendingEl) return; underwayEl.innerHTML = ''; pendingEl.innerHTML = ''; if (!owner) { underwayEl.innerHTML = '<div class="entry-empty"><a href="#" id="entry-register-link" style="color:inherit;text-decoration:underline;cursor:pointer">Register</a> to see your games.</div>'; { let rl = $('entry-register-link'); if (rl) rl.onclick = function (ev) { ev.preventDefault(); hideEntryPage(); $('setup').hidden = false; renderBoxes(); }; } } else { let ids = getAllGameIds(), games = []; for (let i = 0; i < ids.length; i++) { try { let g = await loadGame(ids[i]); if (!g || !g.players) continue; let mine = g.players.some(p => (p.name || '').toLowerCase() === owner.toLowerCase()); if (mine) games.push(g); } catch (e) { } } if (!games.length) underwayEl.innerHTML = '<div class="entry-empty">No underway games.</div>'; games.forEach(g => { let my = g.players.findIndex(p => (p.name || '').toLowerCase() === owner.toLowerCase()); let opp = g.players[1 - my]?.name || 'Opponent'; let b = document.createElement('button'); b.className = 'entry-game'; b.textContent = opp; b.onclick = () => enterGameDirect(g, my); underwayEl.appendChild(b); }); }
     let pids = getPendingInviteIds(); if (!pids.length) pendingEl.innerHTML = '<div class="entry-empty">No pending games.</div>'; else { let found = 0; for (let i = 0; i < pids.length; i++) { try { let inv = await loadInvite(pids[i]); if (!inv) { forgetPendingInvite(pids[i]); continue; } let b = document.createElement('button'); b.className = 'entry-game'; b.textContent = inv.invitedBy || 'Pending game'; b.onclick = () => openPendingInvite(inv); pendingEl.appendChild(b); found++; } catch (e) { } } if (!found) pendingEl.innerHTML = '<div class="entry-empty">No pending games.</div>'; }
   }
-  function initEntryPaws() { let canvas = $('entry-paws'); if (!canvas || canvas.dataset.ready) return; canvas.dataset.ready = '1'; let ctx = canvas.getContext('2d'); const colors = ['#c94a3c','#e68a82','#2e8aa8','#86c2cc']; const pad = new Path2D('M 20 56 C 20 46 35 42 50 42 C 65 42 80 46 80 56 C 84 70 78 86 50 92 C 22 86 16 70 20 56 Z'); const toes = [[23,28,14],[50,15,16],[77,28,14]]; let W=0,H=0; const walkers = Array.from({length:61}, () => ({nx:Math.random(),ny:Math.random(),ang:Math.random()*Math.PI*2,speed:.4+Math.random()*.9,color:colors[Math.floor(Math.random()*colors.length)]})); function resize(){let dpr=window.devicePixelRatio||1;W=canvas.clientWidth;H=canvas.clientHeight;canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);ctx.setTransform(dpr,0,0,dpr,0,0)} function drawPaw(w){let k=Math.min(W,H)/15*.6/100;ctx.save();ctx.translate(w.nx*W,w.ny*H);ctx.rotate(w.ang+Math.PI/2);ctx.scale(k,k);ctx.translate(-50,-50);ctx.fillStyle=w.color;toes.forEach(([x,y,r])=>{ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill()});ctx.fill(pad);ctx.restore()} let last=performance.now(); function tick(now){ctx.globalAlpha=.85;let dt=Math.min((now-last)/1000,.05);last=now;ctx.clearRect(0,0,W,H);walkers.forEach(w=>{w.ang+=(Math.random()-.5)*.15*(dt*60);let x=w.nx*W+Math.cos(w.ang)*w.speed*Math.min(W,H)/15*dt;let y=w.ny*H+Math.sin(w.ang)*w.speed*Math.min(W,H)/15*dt;let m=Math.min(W,H)*.01;if(x<m||x>W-m){w.ang=Math.PI-w.ang;x=Math.min(W-m,Math.max(m,x))}if(y<m||y>H-m){w.ang=-w.ang;y=Math.min(H-m,Math.max(m,y))}w.nx=x/W;w.ny=y/H;drawPaw(w)});ctx.globalAlpha=1;requestAnimationFrame(tick)} new ResizeObserver(resize).observe(canvas);resize();requestAnimationFrame(tick); }
+  function initEntryPaws() { let canvas = $('entry-paws'); if (!canvas) return; if (canvas.dataset.ready) { if (canvas._start) canvas._start(); return; } canvas.dataset.ready = '1'; let ctx = canvas.getContext('2d'); const colors = ['#c94a3c','#e68a82','#2e8aa8','#86c2cc']; const pad = new Path2D('M 20 56 C 20 46 35 42 50 42 C 65 42 80 46 80 56 C 84 70 78 86 50 92 C 22 86 16 70 20 56 Z'); const toes = [[23,28,14],[50,15,16],[77,28,14]]; let W=0,H=0; const walkers = Array.from({length:61}, () => ({nx:Math.random(),ny:Math.random(),ang:Math.random()*Math.PI*2,speed:.4+Math.random()*.9,color:colors[Math.floor(Math.random()*colors.length)]})); function resize(){let dpr=window.devicePixelRatio||1;W=canvas.clientWidth;H=canvas.clientHeight;canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);ctx.setTransform(dpr,0,0,dpr,0,0)} function drawPaw(w){let k=Math.min(W,H)/15*.6/100;ctx.save();ctx.translate(w.nx*W,w.ny*H);ctx.rotate(w.ang+Math.PI/2);ctx.scale(k,k);ctx.translate(-50,-50);ctx.fillStyle=w.color;toes.forEach(([x,y,r])=>{ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill()});ctx.fill(pad);ctx.restore()} let last=performance.now(); function tick(now){ctx.globalAlpha=.85;let dt=Math.min((now-last)/1000,.05);last=now;ctx.clearRect(0,0,W,H);walkers.forEach(w=>{w.ang+=(Math.random()-.5)*.15*(dt*60);let x=w.nx*W+Math.cos(w.ang)*w.speed*Math.min(W,H)/15*dt;let y=w.ny*H+Math.sin(w.ang)*w.speed*Math.min(W,H)/15*dt;let m=Math.min(W,H)*.01;if(x<m||x>W-m){w.ang=Math.PI-w.ang;x=Math.min(W-m,Math.max(m,x))}if(y<m||y>H-m){w.ang=-w.ang;y=Math.min(H-m,Math.max(m,y))}w.nx=x/W;w.ny=y/H;drawPaw(w)});ctx.globalAlpha=1;if($('entry-home').hidden){running=false;return}requestAnimationFrame(tick)} let running=true; canvas._start=function(){if(running)return;running=true;last=performance.now();requestAnimationFrame(tick)}; new ResizeObserver(resize).observe(canvas);resize();requestAnimationFrame(tick); }
   function $(id) { return document.getElementById(id) }  
   function has(a, r, c) { for (var i = 0; i < a.length; i++)if (a[i][0] === r && a[i][1] === c) return true; return false }  
   function premium(r, c) { if (has(TW, r, c)) return 'TW'; if (has(DW, r, c)) return 'DW'; if (has(TL, r, c)) return 'TL'; if (has(DL, r, c)) return 'DL'; return '' }  
@@ -2909,7 +2910,7 @@ body {
   async function cribEnterGame(g, seat) {
     cribState = g; setTabSeat(g.id, seat); cribInitBroadcast(g.id);
     hideCribbageLanding(); hideEntryPage(); $('setup').hidden = true;
-    let cg = $('cribbage-game'); if (cg) cg.hidden = false; cribLayoutBoard();
+    let cg = $('cribbage-game'); if (cg) cg.hidden = false; try { $('game').style.display = 'none'; } catch (e) { } cribLayoutBoard();
     try { mirrorPassword(gateName()); } catch (e) { }
     cribRender();
     try { let url = new URL(location.href); url.searchParams.set('game', g.id); url.searchParams.set('kind', 'cribbage'); url.searchParams.delete('p'); url.searchParams.delete('invite'); history.replaceState(null, '', url.pathname + url.search + url.hash); } catch (e) { }
@@ -3331,7 +3332,7 @@ body {
 
   // ---- wiring ----
   function cribBackToFoyer() {
-    let cg = $('cribbage-game'); if (cg) cg.hidden = true;
+    let cg = $('cribbage-game'); if (cg) cg.hidden = true; try { $('game').style.display = ''; } catch (e) { }
     hideCribbageLanding();
     try { let url = new URL(location.href); url.searchParams.delete('game'); url.searchParams.delete('kind'); url.searchParams.delete('p'); history.replaceState(null, '', url.pathname + url.search + url.hash); } catch (e) { }
     showEntryPage(); initEntryPaws(); populateEntryGames();
@@ -3553,6 +3554,7 @@ body {
     let iid = params.get("invite"); let gid = params.get("game"); let pParam = params.get("p"); let kindParam = params.get("kind");
     let owner = getOwner(); let hasState = false;
     if (kindParam === 'cribbage') {
+      try { $('game').style.display = 'none'; } catch (e) { }
       if (gid) {
         absorbSeatKey(gid, pParam);
         let cg = await cribLoadGame(gid);
