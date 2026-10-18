@@ -2941,9 +2941,33 @@ body {
   }
   function cribInitBroadcast(id) {
     if (location.protocol === 'file:') return;
+    try { cribConnectWs(id); } catch (e) { }
     try { if (cribGameChannel) cribGameChannel.close(); cribGameChannel = new BroadcastChannel('bt_crib_' + id); cribGameChannel.onmessage = function (e) { if (e.data && e.data.game) cribApplyExternalState(e.data.game); }; } catch (e) { }
   }
-  function cribBroadcastGame(g) { if (location.protocol === 'file:') return; try { if (cribGameChannel) cribGameChannel.postMessage({ game: g }); } catch (e) { } }
+  function cribBroadcastGame(g) { cribPing(); if (location.protocol === 'file:') return; try { if (cribGameChannel) cribGameChannel.postMessage({ game: g }); } catch (e) { } }
+  // A silent "look again" nudge over the game's existing socket: after every save (and on arrival) each player's page fetches the state at once,
+  // instead of waiting for the next poll. No game state travels over the socket.
+  let cribWs = null, cribWsGid = null, cribPulling = false;
+  function cribConnectWs(id) {
+    if (location.protocol === 'file:' || !id) return;
+    let tok = null; try { tok = getSeatToken(id, cribGetLocalIdx()); } catch (e) { }
+    if (!tok) return;
+    if (cribWs && cribWsGid === id && cribWs.readyState <= 1) return;
+    try { if (cribWs) { let old = cribWs; cribWs = null; old.close(); } } catch (e) { }
+    cribWsGid = id;
+    try {
+      const ws = new WebSocket(WS_URL + '?game=' + encodeURIComponent(id) + '&user=' + encodeURIComponent(getOwner() || 'anon'), ['bt.' + tok]);
+      ws.onopen = () => { try { ws.send(JSON.stringify({ t: 'crib-refresh', id: id })); } catch (e) { } };   // announce arrival: the other page learns of a new opponent's name at once
+      ws.onmessage = (ev) => { try { const m = JSON.parse(ev.data); if (m && m.t === 'crib-refresh' && cribState && cribState.id === id) cribPullNow(); } catch (e) { } };
+      ws.onclose = () => { if (cribWs === ws) { cribWs = null; setTimeout(() => { if (cribState && cribState.id === id) cribConnectWs(id); }, 3000); } };
+      cribWs = ws;
+    } catch (e) { }
+  }
+  function cribPing() { try { if (cribWs && cribWs.readyState === 1 && cribState) cribWs.send(JSON.stringify({ t: 'crib-refresh', id: cribState.id })); } catch (e) { } }
+  async function cribPullNow() {
+    if (cribPulling || !cribState || !cribState.id) return; cribPulling = true;
+    try { let g = await cribLoadGame(cribState.id); if (g) cribApplyExternalState(g); } catch (e) { } finally { cribPulling = false; }
+  }
   function cribApplyExternalState(g) {
     if (!g || !g.id || !cribState || g.id !== cribState.id) return;
     if (typeof g.moveCount === 'number' && typeof cribState.moveCount === 'number' && g.moveCount < cribState.moveCount) return;
@@ -2955,9 +2979,11 @@ body {
       if (!cribState || !cribState.id || cribState.phase === 'done') return;
       let li = cribGetLocalIdx();
       let myTurn = cribIsMyTurn(li);
-      if (myTurn) return; // nothing to refresh while it's our move
       let g = await cribLoadGame(cribState.id);
-      if (g) cribApplyExternalState(g);
+      if (!g) return;
+      // On your own move the page is left alone unless something actually changed (a new move, or the opponent's name arriving).
+      if (myTurn && !(g.moveCount > cribState.moveCount || g.players[0].name !== cribState.players[0].name || g.players[1].name !== cribState.players[1].name)) return;
+      cribApplyExternalState(g);
     } catch (e) { }
   }, 1500);
 
