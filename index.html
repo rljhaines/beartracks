@@ -1273,7 +1273,7 @@ body {
   function cribCanStage() { return !!cribState && cribState.phase === 'discard' && !(cribState.discarded && cribState.discarded[cribGetLocalIdx()]); }
   function cribUpdateLinks() {
     let t = document.getElementById('crib-send-link');
-    if (t) { let on = cribCanStage() && cribHi.length > 0; t.setAttribute('opacity', on ? '1' : '0.4'); }
+    if (t) { let on = cribCanStage() && cribHi.length > 0; t.setAttribute('opacity', on ? '1' : '0.4'); t.style.display = cribCanStage() ? '' : 'none'; }   // gone when there is nothing to send
   }
   function cribToggleHighlight(hi) {
     let i = cribHi.indexOf(hi);
@@ -1565,8 +1565,9 @@ body {
       // "send to crib" - sends the border-highlighted card(s)
       const s2 = document.createElementNS(NS, 'text');
       s2.setAttribute('id', 'crib-send-link'); s2.setAttribute('class', 'crib-flipall-text');
-      s2.setAttribute('x', rowLeft + 4 * (cardW + gap) + cardW / 2); s2.setAttribute('y', flipAllY); s2.setAttribute('text-anchor', 'middle');
-      s2.setAttribute('font-size', 13); s2.setAttribute('font-weight', '700'); s2.setAttribute('fill', '#2b4a63'); s2.setAttribute('text-decoration', 'underline');
+      let sendFs = 11; try { const cx2 = document.createElement('canvas').getContext('2d'); cx2.font = 'bold 100px sans-serif'; sendFs = Math.floor(cardW * 0.97 / cx2.measureText('send to crib').width * 100 * 10) / 10; } catch (e) { }   // as wide as a card
+      s2.setAttribute('x', rowLeft + 3 * (cardW + gap) + cardW / 2); s2.setAttribute('y', flipAllY - 1); s2.setAttribute('text-anchor', 'middle');
+      s2.setAttribute('font-size', sendFs); s2.setAttribute('font-weight', '700'); s2.setAttribute('fill', '#2b4a63'); s2.setAttribute('text-decoration', 'underline');
       s2.textContent = 'send to crib';
       s2.addEventListener('click', () => cribSendHighlighted());
       cardsG.appendChild(s2);
@@ -1928,6 +1929,24 @@ body {
       t.textContent = String(cribState.players[pi].score); cribNamesG.appendChild(t);
     });
   }
+  // A small, quiet arrow just behind the rear paw's starting dot, on the row of the player whose move it is.
+  let cribTurnG = null;
+  function cribTurnSeat() {
+    if (!cribState) return -1;
+    if (cribState.phase === 'pegging' && cribState.pegging) return cribState.pegging.turn;
+    if (cribState.phase === 'counting') { const S = cribShowCtx(); return S ? (S.sh.counted ? S.other : S.counter) : 1 - cribState.dealer; }
+    return -1;
+  }
+  function cribRenderTurnArrow() {
+    const NS = 'http://www.w3.org/2000/svg', svg = document.getElementById('crib-board-svg');
+    if (!svg || !cribStartDots) return;
+    if (!cribTurnG) { cribTurnG = document.createElementNS(NS, 'g'); cribTurnG.setAttribute('id', 'crib-turn-arrow'); cribTurnG.setAttribute('pointer-events', 'none'); svg.appendChild(cribTurnG); }
+    cribTurnG.innerHTML = '';
+    const seat = cribTurnSeat(); if (seat !== 0 && seat !== 1) return;
+    const d = cribStartDots[seat][1], x = Number(d.getAttribute('cx')) - 14, y = Number(d.getAttribute('cy'));
+    const a = document.createElementNS(NS, 'path'); a.setAttribute('d', 'M ' + (x - 3.5) + ' ' + (y - 4) + ' L ' + (x + 3.5) + ' ' + y + ' L ' + (x - 3.5) + ' ' + (y + 4) + ' Z');
+    a.setAttribute('fill', '#555'); a.setAttribute('opacity', '0.75'); cribTurnG.appendChild(a);
+  }
   function cribPegRefresh() {
     const R = cribPegRefs; if (!R || !cribState || cribState.phase !== 'pegging') return;
     const li = cribGetLocalIdx(), p = cribState.pegging, pend = p && p.pending, mine = !!pend && pend.seat === li && !pend.heels, cl = (pend && pend.claimed) || {};
@@ -2139,6 +2158,8 @@ body {
     try { cribRenderNames(); } catch (e) { }
     try { cribRenderPegMinis(); cribRenderMuggins(); cribShowReport(); } catch (e) { }
     document.querySelectorAll('#crib-cards .crib-flipall-text').forEach(t => { t.style.display = (ph === 'pegging' || (ph === 'counting' && t.id === 'crib-send-link')) ? 'none' : ''; });
+    try { cribUpdateLinks(); } catch (e) { }
+    try { cribRenderTurnArrow(); } catch (e) { }
     const R = cribPegRefs; if (!R) return;
     if (ph === 'pegging') R.g.removeAttribute('display'); else R.g.setAttribute('display', 'none');
     if (ph === 'pegging') cribPegRefresh();
