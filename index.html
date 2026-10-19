@@ -1208,7 +1208,7 @@ body {
   // card's face-up/down state follows it when reordered.
   let cribBoardOrder = [0, 1, 2, 3, 4, 5];
   let cribHi = [], cribPegStaged = null;  // highlighted (border) hand cards, oldest first; the two most recently selected keep the border
-  const CRIB_SLOT = { CX: 800, CY: 228, sw: 34, sh: 48, gx: 5, gy: 5 };  // the four crib holding slots on the board
+  const CRIB_SLOT = { CX: 788, CY: 227, sw: 39, sh: 55, gx: 5, gy: 5 };  // the four crib holding slots on the board
   let cribFlippedSet = new Set();
   let cribFlipHandKey = null;
   let cribCardRowLeft = 0, cribCardW = 80, cribCardGap = 14, cribCardRowTop = 355, cribRowShift = 0;  // cribRowShift: sideways shift that centres a short hand in the row
@@ -1902,7 +1902,6 @@ body {
     let server = await cribLoadGame(cribState.id); if (server) cribState = server;
     let p = cribState.pegging;
     if (cribState.phase !== 'pegging' || !p || !p.finished || p.turn !== li) return;
-    if (cribPegHold()) { cribPegNote(CRIB_HOLD_MSG()); cribRender(); return; }
     cribFinishPegging();
     cribState.moveCount++;
     await cribSaveGame(cribState); cribBroadcastGame(cribState);
@@ -1982,7 +1981,6 @@ body {
     let li = cribGetLocalIdx(), p = cribState && cribState.pegging;
     if (!p || p.turn !== li || p.finished) { cribMessage('Not your turn.'); return; }
     if (p.needCut) { cribMessage('The deck has not been cut yet.'); return; }
-    if (cribPegHold()) { cribPegNote(CRIB_HOLD_MSG()); return; }
     let c = p.inHand[li][hi]; if (!c) return;
     if (p.count + cribVal(c.r) > 31) { cribMessage('That card would go over 31.'); return; }
     cribPegStaged = hi; cribRender();
@@ -2001,12 +1999,12 @@ body {
     cribMiniG.innerHTML = '';
     if (!cribState || !cribHoles || cribHoles.length < 140) return;
     const ph = cribState.phase, p = cribState.pegging, li = cribGetLocalIdx();
-    const w = CRIB_SLOT.sw / 2 * 4 / 3, h = CRIB_SLOT.sh / 2 * 4 / 3, sx = w / CRIB_CARD_W, sy = h / CRIB_CARD_H, step = w + 3;   // two-thirds the size of the cards in the crib, side by side
+    const w = 34 / 2 * 4 / 3, h = 48 / 2 * 4 / 3, sx = w / CRIB_CARD_W, sy = h / CRIB_CARD_H, step = w + 3;   // two-thirds the size of the cards in the crib, side by side
     const x0 = cribHoleX(68) - 5.5;                                       // left edge of the first card: left edge of hole 68
     let y0 = 188; try { y0 = cribNamesG.firstChild.getBBox().y; } catch (e) { }   // top of every card: top of the P1 name
     // The play is over: the space the miniatures used holds the link that moves on.
     const link = (label, fn) => {
-      const t = document.createElementNS(NS, 'text'); t.setAttribute('x', x0); t.setAttribute('y', y0 + 11); t.setAttribute('font-family', 'sans-serif'); t.setAttribute('font-size', 12.5); t.setAttribute('font-weight', '700');
+      const t = document.createElementNS(NS, 'text'); t.setAttribute('x', cribHoleX(64) - 5.5); t.setAttribute('y', y0 + 11); t.setAttribute('font-family', 'sans-serif'); t.setAttribute('font-size', 12.5); t.setAttribute('font-weight', '700');
       t.setAttribute('fill', '#2b4a63'); t.setAttribute('text-decoration', 'underline'); t.style.cursor = 'pointer'; t.setAttribute('id', 'crib-next-link'); t.textContent = label; t.addEventListener('click', fn); cribMiniG.appendChild(t);
     };
     if (ph === 'pegging' && p && p.finished) { if (p.turn === li) link('go to the show', () => cribGoToShow()); }
@@ -3192,15 +3190,14 @@ body {
       consecutiveGo: 0, goBy: null, pending: null, finished: false, needCut: true
     };
   }
-  // The non-dealer cuts: frac (0 = shallow, 1 = deep) is how long the deck was held, up to five seconds.
-  async function cribDoCut(frac) {
+  // The non-dealer cuts: k is how many cards were lifted (ten a second while the deck is held); the next card is turned up.
+  async function cribDoCut(k) {
     const li = cribGetLocalIdx();
     let server = await cribLoadGame(cribState.id); if (server) cribState = server;
     const p = cribState.pegging;
     if (cribState.phase !== 'pegging' || !p || !p.needCut || li !== 1 - cribState.dealer) { cribRender(); return; }
     const deck = cribState.deckRemaining, n = deck.length;
-    const f = Math.max(0, Math.min(1, Number(frac) || 0));
-    const idx = Math.max(4, Math.min(n - 4, 4 + Math.floor(f * (n - 8))));   // at least four cards in each packet
+    const idx = Math.max(4, Math.min(n - 4, Math.floor(Number(k) || 0)));   // at least four cards in each packet
     cribState.starter = deck.splice(idx, 1)[0];
     p.needCut = false;
     cribState.history.push(cribState.players[li].name + ' cuts the deck: ' + cribCardLabel(cribState.starter) + ' is turned up');
@@ -3225,14 +3222,6 @@ body {
     await cribSaveGame(cribState); cribBroadcastGame(cribState);
     cribRender();
   }
-  // A series that has just ended (31, or nobody can play) leaves points - last card, 31, anything on the final play - for the player who made the
-  // last play. The other player must wait for them to claim it (or take what is left as muggins) before playing, going or going to the show.
-  function cribPegHold() {
-    const p = cribState && cribState.pegging, pend = p && p.pending, li = cribGetLocalIdx();
-    if (!p || !pend || !pend.ended || pend.heels || pend.seat === li) return 0;
-    return Math.max(0, cribPegMax(pend) - (pend.claimedPts || 0));
-  }
-  const CRIB_HOLD_MSG = function () { return cribState.players[1 - cribGetLocalIdx()].name + ' has not claimed the last card yet. Wait for it, or take what is left with muggins.'; };
   function cribHasPlayable(seat) {
     let p = cribState.pegging;
     return p.inHand[seat].some(c => p.count + cribVal(c.r) <= 31);
@@ -3243,7 +3232,6 @@ body {
     let p = cribState.pegging;
     if (!p || p.turn !== li) { cribMessage('Not your turn.'); return; }
     if (p.needCut) { cribMessage('The deck has not been cut yet.'); return; }
-    if (cribPegHold()) { cribPegNote(CRIB_HOLD_MSG()); cribRender(); return; }
     let card = p.inHand[li][cardIdx];
     if (!card || p.count + cribVal(card.r) > 31) { cribMessage("That card would go over 31."); return; }
     p.inHand[li].splice(cardIdx, 1);
@@ -3263,7 +3251,6 @@ body {
     let server = await cribLoadGame(cribState.id); if (server) cribState = server;
     let p = cribState.pegging;
     if (!p || p.turn !== li || p.finished || p.needCut) { cribMessage('Not your turn.'); return; }
-    if (cribPegHold()) { cribPegNote(CRIB_HOLD_MSG()); cribRender(); return; }
     if (cribHasPlayable(li)) { cribMessage('You have a playable card.'); return; }
     if (!p.inHand[li].length) { cribMessage('You have no cards left to go with.'); return; }
     cribState.history.push(cribState.players[li].name + ' says Go');
@@ -3288,14 +3275,16 @@ body {
       let lead = 1 - last; if (!p.inHand[lead].length) lead = last;   // the player who did not make the last play leads the next count
       p.turn = lead; p.lastToPlay = null;
     };
+    const canPlay = (seat) => p.inHand[seat].some(c => p.count + cribVal(c.r) <= 31);
     if (kind === 'play') {
       if (p.count === 31 || bothEmpty) return endSegment();
-      if (p.goBy !== null && p.goBy !== undefined) { if (!p.inHand[me].length) return endSegment(); return; }   // the opponent said Go: keep playing
+      if (p.goBy !== null && p.goBy !== undefined) { if (!p.inHand[me].length || !canPlay(me)) return endSegment(); return; }   // the opponent said Go: keep playing while you can; when you cannot the series is over (no second Go)
       if (p.inHand[other].length) p.turn = other;
       return;
     }
     // Go
     if ((p.goBy !== null && p.goBy !== undefined) || !p.inHand[other].length) return endSegment();
+    if (!canPlay(other)) return endSegment();   // the player who made the last play cannot go on either: no second Go is needed, last card is theirs to claim
     p.goBy = me; p.turn = other;
   }
   function cribFinishPegging() {
@@ -3440,7 +3429,7 @@ body {
         '<use href="#crib-cardback-scene" x="4" y="4" width="' + (cw - 8) + '" height="' + (ch - 8) + '"/>';
       return c;
     };
-    const DX = 714, DY = 236, dw = 57, dh = 80;
+    const DX = 712, DY = 236, dw = 57, dh = 80;
     for (let i = 3; i >= 0; i--) g.appendChild(backCard(DX + i * 1.4, DY - i * 1.4, dw, dh));   // face-down deck
     const lab = (txt, x, y) => { const t = document.createElementNS(NS, 'text'); t.setAttribute('x', x); t.setAttribute('y', y); t.setAttribute('text-anchor', 'middle'); t.setAttribute('font-size', 11); t.setAttribute('font-family', 'sans-serif'); t.setAttribute('font-weight', '700'); t.setAttribute('fill', '#000'); t.textContent = txt; return t; };
     g.appendChild(lab('deck', DX + dw / 2 + 2, DY + dh + 16));
@@ -3460,25 +3449,31 @@ body {
     mkLines(heelsG, ['click to', 'claim', 'heels'], DX + dw / 2, DY + 34, 9, '600', '#2b4a63');
     heelsG.addEventListener('click', () => cribHeelsClaim());
     g.appendChild(heelsG);
-    // Holding the deck cuts it: the top packet slides up and to the right (never past the deck's right edge) and thickens the longer you hold;
-    // letting go turns up the starter. There is no time-out. A plain click (no hold) cuts shallow with no animation.
+    // Holding the deck cuts it: cards peel off the top and rise, up and to the right (never past the deck's right edge), ten a second;
+    // letting go turns up the card after the ones lifted. There is no time-out. A plain click (no hold) cuts shallow with no animation.
     cribDeckRefs = { starterG, cutG, liftG, msgG, hit, heelsG, DX, DY, dw, dh, starterKey: '', cutting: false };
     {
-      let t0 = 0, raf = 0, shown = false;
-      const HOLD_MS = 220, FULL_MS = 5000;   // a press shorter than HOLD_MS is a click; a hold of FULL_MS is the deepest cut
-      const lift = (held) => {
-        const f = Math.min(1, held / FULL_MS), e = Math.min(1, Math.max(0, (held - HOLD_MS) / 500)), ee = e * e * (3 - 2 * e);
-        const n = 1 + Math.floor(f * 8), dx = 4.2 * ee, dy = -10 * ee;   // 4.2 is how far the back of the deck sticks out to the right
-        liftG.innerHTML = ''; for (let i = n - 1; i >= 0; i--) liftG.appendChild(backCard(DX + dx, DY + dy - i * 1.4, dw, dh));
+      let t0 = 0, raf = 0, lifted = 0;
+      const HOLD_MS = 220, CARD_MS = 100;   // a press shorter than HOLD_MS is a click; after that a card rises every CARD_MS
+      const maxLift = () => Math.max(4, ((cribState && cribState.deckRemaining) ? cribState.deckRemaining.length : 40) - 4);
+      const raise = (j) => {   // card j (0 = the top one) glides up from the deck; deeper cards sit a little further up and right, like the deck itself
+        const w = document.createElementNS(NS, 'g'); w.style.transition = 'transform 180ms ease-out'; w.style.transform = 'translate(0px,0px)';
+        w.appendChild(backCard(DX, DY, dw, dh)); liftG.insertBefore(w, liftG.firstChild);   // deeper cards go behind
+        const dx = Math.min(4.2, 0.115 * j), dy = -(5 + 0.4 * j);
+        requestAnimationFrame(() => requestAnimationFrame(() => { w.style.transform = 'translate(' + dx + 'px,' + dy + 'px)'; }));
       };
-      const finish = () => { const held = performance.now() - t0; cancelAnimationFrame(raf); raf = 0; shown = false; cribDeckRefs.cutting = false; liftG.innerHTML = ''; msgG.removeAttribute('display'); hit.removeEventListener('pointerup', up); hit.removeEventListener('pointercancel', up); cribDoCut(Math.min(1, held / FULL_MS)); };
+      const finish = () => { const held = performance.now() - t0; cancelAnimationFrame(raf); raf = 0; cribDeckRefs.cutting = false; liftG.innerHTML = ''; msgG.removeAttribute('display'); hit.removeEventListener('pointerup', up); hit.removeEventListener('pointercancel', up); cribDoCut(Math.min(maxLift(), Math.floor(held / CARD_MS))); };
       const up = () => finish();
       hit.addEventListener('pointerdown', (ev) => {
         if (cribDeckRefs.cutting) return;
-        ev.preventDefault(); cribDeckRefs.cutting = true; t0 = performance.now(); shown = false;
+        ev.preventDefault(); cribDeckRefs.cutting = true; t0 = performance.now(); lifted = 0; liftG.innerHTML = '';
         try { hit.setPointerCapture(ev.pointerId); } catch (e) { }
         hit.addEventListener('pointerup', up); hit.addEventListener('pointercancel', up);
-        const tick = () => { const held = performance.now() - t0; if (held >= HOLD_MS) { if (!shown) { shown = true; msgG.setAttribute('display', 'none'); } lift(held); } raf = requestAnimationFrame(tick); };
+        const tick = () => {
+          const held = performance.now() - t0;
+          if (held >= HOLD_MS) { msgG.setAttribute('display', 'none'); const want = Math.min(maxLift(), Math.floor(held / CARD_MS)); while (lifted < want) raise(lifted++); }
+          raf = requestAnimationFrame(tick);
+        };
         tick();
       });
     }
@@ -3639,13 +3634,11 @@ body {
       if (cribState.pegging.needCut) {
         cribMessage(li === 1 - cribState.dealer ? 'Press and hold the deck to cut it.' : 'Waiting for ' + cribState.players[1 - cribState.dealer].name + ' to cut the deck.');
       } else if (cribState.pegging.finished) {
-        cribMessage(cribState.pegging.turn === li ? (cribPegHold() ? CRIB_HOLD_MSG() : 'All cards are played. Take any muggins, then "go to the show".') : 'All cards are played. Claim your last card (and 31) now; ' + cribState.players[1 - li].name + ' goes to the show.');
-      } else if (cribPegHold()) {
-        cribMessage(CRIB_HOLD_MSG());
+        cribMessage(cribState.pegging.turn === li ? 'All cards are played. Take any muggins, then "go to the show".' : 'All cards are played. Claim your last card (and 31) now; ' + cribState.players[1 - li].name + ' goes to the show.');
       } else if (cribState.pegging.turn === li) {
         if (!cribHasPlayable(li)) cribMessage('No playable card - click go.');
         else cribMessage('Your play. Count is ' + cribState.pegging.count + '.');
-      } else cribMessage(cribState.pegging.pending && cribState.pegging.pending.ended && cribState.pegging.pending.seat === li && cribPegMax(cribState.pegging.pending) > (cribState.pegging.pending.claimedPts || 0) ? 'The play is over. Claim your last card (or 31) now.' : "Waiting for " + cribState.players[1 - li].name + "'s play.");
+      } else cribMessage("Waiting for " + cribState.players[1 - li].name + "'s play.");
     } else if (cribState.phase === 'counting') {
       const S = cribShowCtx();
       if (!S) cribMessage(li === 1 - cribState.dealer ? 'The show. Click "deal next hand".' : 'The show. Waiting for ' + cribState.players[1 - cribState.dealer].name + ' to deal the next hand.');
