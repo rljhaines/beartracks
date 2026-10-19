@@ -549,7 +549,7 @@ body {
 #gw-game { position: fixed; inset: 0; z-index: 6; background: var(--paper, #f6f0e4); color: #2b2620; overflow: hidden; display: flex; flex-direction: column; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); font-family: Georgia, "Times New Roman", serif; }
 #gw-game[hidden] { display: none; }
 #gw-msg { position: absolute; top: 6px; left: 0; right: 0; text-align: center; font-size: 14px; pointer-events: none; z-index: 2; }
-#gw-table { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px; gap: var(--gwgap, 10px); }
+#gw-table { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; align-content: center; margin: auto; width: 100%; padding: 8px; gap: var(--gwgap, 10px); }
 .gw-row { display: flex; justify-content: center; gap: var(--gwgap, 10px); }
 .gw-card { width: var(--gwcw); height: calc(var(--gwcw) * 1.4); perspective: 1200px; --t: calc(var(--gwcw) * .165); --g: calc(var(--gwcw) * .015); user-select: none; -webkit-user-select: none; }
 .gw-card.can { cursor: pointer; }
@@ -558,10 +558,24 @@ body {
 .gw-face { position: absolute; inset: 0; box-sizing: border-box; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: calc(var(--gwcw) * .05); border: 1px solid #cfc4ad; box-shadow: 0 2px 8px rgba(43,38,32,.18); }
 .gw-front { background: #fffdf7; padding: calc(var(--gwcw) * .05); display: flex; flex-direction: column; align-items: center; }
 .gw-card.mine .gw-front { outline: 3px solid #8a3b2e; outline-offset: 2px; }
-.gw-hd { width: 100%; height: calc(var(--gwcw) * .2); display: flex; justify-content: space-between; align-items: center; font-size: calc(var(--gwcw) * .07); letter-spacing: .04em; gap: .5em; }
-.gw-hd b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gw-hd { width: 100%; height: calc(var(--gwcw) * .2); display: flex; justify-content: space-between; align-items: flex-start; font-size: calc(var(--gwcw) * .07); letter-spacing: .04em; gap: .5em; line-height: 1.15; }
+.gw-nm { min-width: 0; display: flex; flex-direction: column; }
+.gw-hd b { font-size: calc(var(--gwcw) * .07 * var(--gwkb, 1)); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gw-sol { font-size: calc(var(--gwcw) * .048); letter-spacing: .03em; opacity: .8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gw-sol:empty { display: none; }
+.gw-nm b:empty + .gw-sol { margin-top: calc(var(--gwcw) * .015); }
 .gw-hd span { white-space: nowrap; }
 .gw-link { color: #8a3b2e; text-decoration: underline; cursor: pointer; }
+.gw-rw { position: relative; }
+.gw-az { position: absolute; left: 50%; transform: translateX(-50%); white-space: nowrap; bottom: 100%; margin-bottom: calc(var(--gwcw) * .0384); display: flex; flex-direction: column; align-items: flex-start; font-size: calc(var(--gwcw) * .055); line-height: 1.05; color: #2b2620; text-transform: lowercase; pointer-events: none; }
+.gw-azr { display: flex; }
+.gw-azr.r2 { margin-left: calc(var(--gwcw) * .04); }
+.gw-azr.r3 { margin-left: calc(var(--gwcw) * .12); }
+.gw-az i { font-style: normal; width: calc(var(--gwcw) * .08); text-align: center; transition: opacity .35s; }
+.gw-ps { position: absolute; left: 0; right: 0; bottom: calc(var(--gwcw) * .02); text-align: center; font-size: calc(var(--gwcw) * .045); line-height: 1.1; text-transform: lowercase; }
+.gw-ps:empty { display: none; }
+.gw-hd span { line-height: 1; }
+.gw-az i.u { opacity: .28; }
 .gw-rows { display: grid; gap: var(--g); }
 .gw-r { display: grid; grid-template-columns: repeat(5, var(--t)); gap: var(--g); }
 .gw-t { width: var(--t); height: var(--t); box-sizing: border-box; border: 2px solid #cfc4ad; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: calc(var(--gwcw) * .1); color: #fff; }
@@ -571,7 +585,7 @@ body {
 .gw-t.c2 { background: #5a8f5a; border-color: #5a8f5a; }
 .gw-back { transform: rotateY(180deg); background: repeating-linear-gradient(45deg, #7b3a2e 0 7px, #8f4636 7px 14px); display: flex; align-items: center; justify-content: center; }
 .gw-back::before { content: ""; position: absolute; inset: calc(var(--gwcw) * .05); border: 2px solid #f6f0e4; border-radius: calc(var(--gwcw) * .03); opacity: .8; }
-.gw-lab { position: relative; background: #f6f0e4; padding: .4em .9em; border-radius: 99px; font-size: calc(var(--gwcw) * .09); max-width: 80%; overflow: hidden; text-overflow: ellipsis; white-space: pre; }
+.gw-lab { position: relative; background: #f6f0e4; padding: .4em .9em; border-radius: 99px; font-size: calc(var(--gwcw) * .09 * var(--gwkl, 1)); max-width: 80%; overflow: hidden; text-overflow: ellipsis; white-space: pre; }
 .gw-lab:empty { display: none; }
 .gw-pass { position: absolute; top: calc(var(--gwcw) * .08); right: calc(var(--gwcw) * .1); color: #f6f0e4; font-size: calc(var(--gwcw) * .07); letter-spacing: .06em; }
 #gw-inp { position: fixed; top: 0; left: 0; width: 1px; height: 1px; opacity: 0; font-size: 16px; border: 0; padding: 0; }
@@ -3687,7 +3701,14 @@ body {
   let gwPassArmed = 0, gwMsgTimer = null;
   function GW_TZ() { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; } catch (e) { return 'UTC'; } }
   function gwKeys() { try { return JSON.parse(localStorage.getItem('bt_gw') || '{}'); } catch (e) { return {}; } }
-  function gwSaveKey(gid, token, seat) { let k = gwKeys(); k[gid] = { token: token, seat: seat }; localStorage.setItem('bt_gw', JSON.stringify(k)); }
+  // Vault shape: { gid: { seats: { "0": {token, name}, "2": {...} } } }.  The old shape { gid: {token, seat} } is upgraded on read.
+  function gwSeatsOf(gid) { let r = gwKeys()[gid]; if (!r) return {}; if (r.seats) return r.seats; if (r.token != null) { let o = {}; o[r.seat] = { token: r.token, name: getOwner() || '' }; return o; } return {}; }
+  function gwSaveKey(gid, token, seat, name) { let k = gwKeys(), v = gwSeatsOf(gid); v[seat] = { token: token, name: name || (v[seat] && v[seat].name) || '' }; k[gid] = { seats: v }; localStorage.setItem('bt_gw', JSON.stringify(k)); }
+  // Each browser tab remembers its own seat (sessionStorage survives a reload of that tab, and keeps working even if another tab clears localStorage).
+  function gwTabMap() { try { return JSON.parse(sessionStorage.getItem('bt_gw_tab') || '{}') || {}; } catch (e) { return {}; } }
+  function gwTabRec(gid) { let r = gwTabMap()[gid]; return r && r.token ? r : null; }
+  function gwSetTabSeat(gid, seat, token) { try { let m = gwTabMap(); m[gid] = { seat: seat, token: token }; sessionStorage.setItem('bt_gw_tab', JSON.stringify(m)); } catch (e) { } }
+  function gwUrlSeat() { try { let p = new URLSearchParams(location.search).get('p'); return /^[0-5]$/.test(p || '') ? +p : null; } catch (e) { return null; } }
   async function gwApi(method, act, body, gid, token) {
     gid = gid || gw.gid; token = token === undefined ? gw.token : token;
     let url = act === 'games' ? API + '/gw/games' : API + '/gw/' + encodeURIComponent(gid) + '/' + act + (method === 'GET' ? '?tz=' + encodeURIComponent(GW_TZ()) : '');
@@ -3722,7 +3743,7 @@ body {
     $('gw-save').textContent = 'saving...';
     let r = await gwApi('POST', 'games', { name: owner, tz: GW_TZ(), seats: n }, null, null);
     if (r.s !== 201 || !r.j.token) { $('gw-save').textContent = "(couldn't save - click to retry)"; return; }
-    gw.gid = r.j.gid; gw.token = r.j.token; gw.seat = 0; gwSaveKey(gw.gid, gw.token, 0);
+    gw.gid = r.j.gid; gw.token = r.j.token; gw.seat = 0; gwSaveKey(gw.gid, gw.token, 0, owner); gwSetTabSeat(gw.gid, 0, gw.token);
     let url = LIVE_SITE + '?kind=groupwords&gw=' + encodeURIComponent(gw.gid), msg = 'Join me for a game of groupWords on BearTracks: ' + url, first = r.j;
     $('bt-headsup').classList.remove('gw-pick');
     $('bt-headsup-help').textContent = 'Join me for a game of groupWords on BearTracks:';
@@ -3737,21 +3758,47 @@ body {
 
   // ---- joining by the shared link ----
   async function gwBoot(gid) {
-    let rec = gwKeys()[gid], owner = getOwner();
+    let owner = getOwner(), seats = gwSeatsOf(gid), tab = gwTabRec(gid), hint = gwUrlSeat();
     hideEntryPage(); $('bt-headsup').hidden = true;
-    if (rec && rec.token) { gw.gid = gid; gw.token = rec.token; gw.seat = rec.seat; return gwEnter(); }
+    if (tab) return gwUse(gid, tab.seat, tab.token);                                   // this tab already has a seat (e.g. a reload)
+    if (hint != null && seats[hint]) return gwUse(gid, hint, seats[hint].token);       // reopened tab: p= says which seat
+    if (Object.keys(seats).length) return gwChoose(gid, seats);                        // this browser already holds seat(s): ask which one this tab is
     if (!owner) { postRegisterTarget = 'groupwords'; $('setup').hidden = false; renderBoxes(); return; }
     return gwJoin(gid, owner, false);
   }
+  function gwUse(gid, seat, token) { gw.gid = gid; gw.token = token; gw.seat = +seat; gwSetTabSeat(gid, +seat, token); return gwEnter(); }
+  function gwBackdrop() { gwNoticeClose(); $('setup').hidden = false; $('box-start').hidden = true; $('box-register').hidden = true; $('setup').classList.add('gw-nodlg'); }
+  function gwChoose(gid, seats) {
+    gwBackdrop();
+    let b = Object.keys(seats).map(function (n) { return ['Continue as ' + (seats[n].name || ('player ' + (+n + 1))), function () { gwUse(gid, n, seats[n].token); }]; });
+    b.push(['Add another player in this tab', function () { gwAskName(gid); }]);
+    gwNotice('This browser already holds a seat in this game. Which player is this tab?', b);
+  }
+  function gwAskName(gid) {
+    gwBackdrop();
+    let d = document.createElement('div'); d.id = 'gw-notice';
+    let p = document.createElement('p'); p.textContent = 'Name for the new player (any name, no registration needed):'; d.appendChild(p);
+    let i = document.createElement('input'); i.maxLength = 24; i.autocomplete = 'off'; i.style.cssText = 'display:block;margin:8px auto;font:inherit;text-align:center'; d.appendChild(i);
+    let go = function () { let n = i.value.trim(); if (n) gwJoin(gid, n, false); else i.focus(); };
+    let ok = document.createElement('button'); ok.textContent = 'Join'; ok.onclick = go; d.appendChild(ok);
+    let bk = document.createElement('button'); bk.textContent = 'Back'; bk.onclick = function () { gwBoot(gid); }; d.appendChild(bk);
+    i.onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); go(); } };
+    document.body.appendChild(d); setTimeout(function () { i.focus(); }, 50);
+  }
   async function gwJoin(gid, owner, restore) {
-    gwNoticeClose(); $('setup').hidden = false; $('box-start').hidden = true; $('box-register').hidden = true; $('setup').classList.add('gw-nodlg');
+    gwBackdrop();
     let r = await gwApi('POST', 'join', { name: owner, tz: GW_TZ(), restore: !!restore }, gid, null);
     if (r.s === 200 || r.s === 201) {
-      if (r.j.token) gwSaveKey(gid, r.j.token, r.j.seat);
-      gw.gid = gid; gw.token = r.j.token || (gwKeys()[gid] || {}).token; gw.seat = r.j.seat; return gwEnter();
+      let tok = r.j.token || ((gwSeatsOf(gid)[r.j.seat] || {}).token);
+      if (r.j.token) gwSaveKey(gid, r.j.token, r.j.seat, owner);
+      return gwUse(gid, r.j.seat, tok);
     }
     let back = ['Back to Foyer', gwLeave];
-    if (r.s === 409 && /taken/.test(r.j.error || '')) return gwNotice('This game already has a player named ' + owner + '.', [['Restore my seat', function () { gwJoin(gid, owner, true); }], back]);
+    if (r.s === 409 && /taken/.test(r.j.error || '')) {
+      let sv = gwSeatsOf(gid), mine = Object.keys(sv).find(function (n) { return (sv[n].name || '').toLowerCase() === owner.toLowerCase(); });
+      if (mine != null) return gwUse(gid, mine, sv[mine].token);   // this browser already holds that seat: just use it, don't re-key it
+      return gwNotice('This game already has a player named ' + owner + '.', [['Restore my seat', function () { gwJoin(gid, owner, true); }], ['Use a different name', function () { gwAskName(gid); }], back]);
+    }
     if (r.s === 409) return gwNotice('This game is full.', [back]);
     if (r.s === 404) return gwNotice(restore ? 'No seat with that name was found.' : 'That game was not found.', [back]);
     gwNotice('Could not join right now. Please try again.', [back]);
@@ -3779,7 +3826,7 @@ body {
   }
   async function gwEnter(first) {
     hideEntryPage(); $('setup').hidden = true; $('bt-headsup').hidden = true; gwNoticeClose(); gwBuild(); $('gw-game').hidden = false;
-    try { let u = new URL(location.href); u.searchParams.set('kind', 'groupwords'); u.searchParams.set('gw', gw.gid); u.searchParams.delete('invite'); history.replaceState(null, '', u.pathname + u.search + u.hash); } catch (e) { }
+    try { let u = new URL(location.href); u.searchParams.set('kind', 'groupwords'); u.searchParams.set('gw', gw.gid); u.searchParams.set('p', String(gw.seat)); u.searchParams.delete('invite'); history.replaceState(null, '', u.pathname + u.search + u.hash); } catch (e) { }
     if (first && first.me) { gw.st = first; gwRender(); }
     await gwRefresh(); gwConnect();
     clearInterval(gw.poll); gw.poll = setInterval(function () { if (!document.hidden) gwRefresh(); }, 30000);
@@ -3828,9 +3875,10 @@ body {
     if (r.s === 200) { gw.shown[it.n] = r.j; gwRender(); } else gwRefresh();
   }
   function gwLink(text, fn) { let a = document.createElement('a'); a.href = '#'; a.className = 'gw-link'; a.textContent = text; a.onclick = function (e) { e.preventDefault(); e.stopPropagation(); fn(); }; return a; }
+  const GW_KB = ['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'];
   function gwMakeCard(it) {
     let c = document.createElement('div'); c.className = 'gw-card';
-    c.innerHTML = '<div class="gw-inner"><div class="gw-face gw-front"><div class="gw-hd"><b></b><span></span></div><div class="gw-rows"></div></div><div class="gw-face gw-back"><div class="gw-lab"></div><div class="gw-pass"></div></div></div>';
+    c.innerHTML = '<div class="gw-inner"><div class="gw-face gw-front"><div class="gw-hd"><div class="gw-nm"><b></b><i class="gw-sol"></i></div><span></span></div><div class="gw-rw"><div class="gw-az">' + GW_KB.map(function (r, i) { return '<div class="gw-azr r' + (i + 1) + '">' + r.split('').map(function (L) { return '<i>' + L + '</i>'; }).join('') + '</div>'; }).join('') + '</div><div class="gw-rows"></div></div><div class="gw-ps"></div></div><div class="gw-face gw-back"><div class="gw-lab"></div><div class="gw-pass"></div></div></div>';
     c.onclick = function () { let cur = gw.items.find(function (x) { return x.n === it.n; }); if (cur) gwClick(cur); };
     return c;
   }
@@ -3852,20 +3900,35 @@ body {
     el.classList.toggle('mine', mine && me.status === 'playing');
     el.classList.toggle('can', mine || !!it.flip);
     el.querySelector('.gw-lab').textContent = it.name + (it.score != null ? '   ' + it.score : '');
-    el.querySelector('.gw-pass').textContent = it.pass ? 'Pass' : '';
-    el.querySelector('.gw-hd b').textContent = it.name;
-    let sp = el.querySelector('.gw-hd span'), rows = [], letters = false, cur = '';
-    sp.textContent = '';
+    el.querySelector('.gw-pass').textContent = it.pass ? (it.noshow ? 'no-show' : 'Pass') : '';
+    el.querySelector('.gw-hd b').textContent = mine ? '' : it.name;
+    let sp = el.querySelector('.gw-hd span'), ps = el.querySelector('.gw-ps'), rows = [], letters = false, cur = '', sol = '';
+    sp.textContent = ''; ps.textContent = '';
     if (mine) {
       rows = me.rows; letters = true;
-      if (me.status === 'playing') { cur = gw.cur; sp.appendChild(gwLink('Pass', gwPass)); }
-      else { sp.appendChild(document.createTextNode((me.status === 'pass' ? 'Pass' : me.score) + ' ')); if (me.canNewDay) sp.appendChild(gwLink('New word', gwNewDay)); }
+      if (me.status === 'failed' && me.word) sol = me.word;
+      if (me.status === 'playing') { cur = gw.cur; ps.appendChild(gwLink('pass', gwPass)); }
+      else { sp.appendChild(document.createTextNode((me.status === 'pass' ? (me.rows.length ? 'Pass' : 'no-show') : me.score) + ' ')); if (me.canNewDay) ps.appendChild(gwLink('new word', gwNewDay)); }
     } else if (shown) {
       letters = shown.word !== undefined;
       rows = shown.rows.map(function (x) { return Array.isArray(x) ? { g: '', c: x } : x; });
-      sp.textContent = it.pass ? 'Pass' : (it.score != null ? String(it.score) : '');
+      sp.textContent = it.pass ? (it.noshow ? 'no-show' : 'Pass') : (it.score != null ? String(it.score) : '');
+      if (letters && it.score === 7) sol = shown.word;
     }
+    el.querySelector('.gw-sol').textContent = sol ? 'solution: ' + sol : '';
+    let used = {}; if (letters) rows.forEach(function (x) { if (x && x.g) for (let q = 0; q < x.g.length; q++) used[x.g[q]] = 1; });
+    let az = el.querySelector('.gw-az'); az.style.visibility = (mine && me.status === 'playing') ? 'visible' : 'hidden';
+    Array.prototype.forEach.call(az.querySelectorAll('i'), function (c) { c.classList.toggle('u', !!used[c.textContent]); });
     el.querySelector('.gw-rows').innerHTML = gwRowsHtml(rows, cur, letters);
+    gwFit(el);
+  }
+  // Longer names get a smaller font (down to 45%) until they fit; ellipsis only as a last resort.
+  function gwFit(el) {
+    [['.gw-hd b', '--gwkb'], ['.gw-lab', '--gwkl']].forEach(function (p) {
+      let n = el.querySelector(p[0]); if (!n) return;
+      el.style.removeProperty(p[1]);
+      let k = 1; while (n.scrollWidth > n.clientWidth + 1 && k > 0.45) { k -= 0.05; el.style.setProperty(p[1], k.toFixed(2)); }
+    });
   }
   function gwRender() {
     let st = gw.st; if (!st) return;
@@ -3886,9 +3949,10 @@ body {
       let r = Math.ceil(n / c), w = Math.min((Wd - gap * (c - 1)) / c, (Ht - gap * (r - 1)) / r / 1.4);
       if (w > best.w) best = { w: w, c: c };
     }
-    let w = Math.max(60, best.w);
+    let w = Math.max(60, best.w * (n === 6 ? 0.9 : 1));
     document.documentElement.style.setProperty('--gwcw', w + 'px'); t.style.setProperty('--gwgap', gap + 'px'); t.innerHTML = '';
     for (let i = 0; i < n; i += best.c) { let row = document.createElement('div'); row.className = 'gw-row'; gw.items.slice(i, i + best.c).forEach(function (it) { row.appendChild(it.el); }); t.appendChild(row); }
+    gw.items.forEach(function (it) { if (!it.empty && it.el) gwFit(it.el); });
   }
   // ================= END groupWords MODULE =================
 
