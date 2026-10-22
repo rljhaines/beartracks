@@ -1728,6 +1728,10 @@ body {
       });
       fo.appendChild(inp);
       hc.appendChild(fo);
+      try { if (!document.getElementById('crib-blink-style')) { const st = document.createElement('style'); st.id = 'crib-blink-style'; st.textContent = '.crib-blink{animation:cribblink 1s steps(1) infinite}@keyframes cribblink{50%{opacity:0}}'; document.head.appendChild(st); } } catch (e) { }
+      const zero = document.createElementNS(NS, 'text');   // a hand worth nothing: a red blinking 0 stands in the field until something is typed
+      zero.textContent = '0'; zero.setAttribute('x', Number(fo.getAttribute('x')) + 1); zero.setAttribute('y', label.getAttribute('y')); zero.setAttribute('font-size', 12.5); zero.setAttribute('font-weight', '700');
+      zero.setAttribute('fill', '#d00'); zero.setAttribute('pointer-events', 'none'); zero.setAttribute('class', 'crib-blink'); zero.setAttribute('display', 'none'); hc.appendChild(zero);
       // the tick that claims the count (superscript, like the one in the pegging table)
       const stick = document.createElementNS(NS, 'g'); stick.setAttribute('id', 'crib-show-tick'); stick.style.cursor = 'pointer';
       stick.setAttribute('transform', 'translate(' + (lb.x + lb.width + spaceW + 20) + ',' + (lb.y - 4) + ') scale(0.6)');
@@ -1745,7 +1749,7 @@ body {
         hc.appendChild(r); return r;
       };
       const flushText = document.querySelector('#crib-colflush text'), nobsText = document.querySelector('#crib-colnobs text');
-      cribCountRefs = { pairTexts, f15Texts, runTexts, flushText, nobsText, inp, stick, outlines: { f15: mkOutline(), pair: mkOutline(), runs: mkOutline(), flush: mkOutline(), nobs: mkOutline() }, setPrev: v => { prev = v; } };
+      cribCountRefs = { pairTexts, f15Texts, runTexts, flushText, nobsText, inp, zero, stick, outlines: { f15: mkOutline(), pair: mkOutline(), runs: mkOutline(), flush: mkOutline(), nobs: mkOutline() }, setPrev: v => { prev = v; } };
       const wire = (texts, key) => texts.forEach((t, i) => {
         t.style.cursor = 'pointer';
         t.addEventListener('click', () => {
@@ -1808,8 +1812,19 @@ body {
     inp.addEventListener('input', () => { if (inp.value !== '' && !/^[3-7]$/.test(inp.value)) inp.value = ''; cribPegRunTyped(inp); });
     inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); cribSubmitPeg(); } });
     fo.appendChild(inp); g.appendChild(fo);
-    mk('f31', '31 for 2', 6, false, () => cribPegPick('f31'));
-    mk('last', 'last card', 7, false, () => cribPegPick('last'));
+    // The last play of a count is claimed in one go: "31 for [claim]" or "last card for [claim]", the claim being everything that play is worth.
+    const mkFin = (key, label, row) => {
+      const t = mk(key, label, row, false, null), b = t.getBBox();
+      const fo2 = document.createElementNS(NS, 'foreignObject');
+      fo2.setAttribute('x', b.x + b.width + 4); fo2.setAttribute('y', b.y - 3); fo2.setAttribute('width', 22); fo2.setAttribute('height', b.height + 2);
+      const i2 = document.createElementNS('http://www.w3.org/1999/xhtml', 'input');
+      i2.type = 'text'; i2.setAttribute('inputmode', 'numeric'); i2.maxLength = 2; i2.autocomplete = 'off'; i2.setAttribute('aria-label', label + ' claim'); i2.disabled = true;
+      i2.style.cssText = 'border:none;border-bottom:1px solid #000;outline:none;background:transparent;box-shadow:none;padding:0;margin:0;width:100%;height:100%;font:400 12.5px sans-serif;color:#000;caret-color:#000;text-align:center;';
+      i2.addEventListener('input', () => { i2.value = i2.value.replace(/[^0-9]/g, ''); cribPegRefresh(); });
+      i2.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); cribSubmitPeg(); } });
+      fo2.appendChild(i2); g.appendChild(fo2); return i2;
+    };
+    const finInps = { f31: mkFin('f31', '31 for', 6), last: mkFin('last', 'last card for', 7) };
     // total row: "total" ends under the last "2" of "a pair is 12"; the sum follows, then the tick
     const pr = p12.getBBox(), rightEdge = pr.x + pr.width;
     const tl = mk('totlabel', 'total', 8, false, null); tl.setAttribute('text-anchor', 'end'); tl.setAttribute('x', rightEdge);
@@ -1822,7 +1837,7 @@ body {
     mk('go', 'go', 8, false, () => cribSayGo());   // under the "la" of "last card": a player with no playable card says Go
     const outlines = {};
     CRIB_PEG_SEL_ORDER.forEach(k => { const r = document.createElementNS(NS, 'rect'); r.setAttribute('fill', 'none'); r.setAttribute('stroke', '#000'); r.setAttribute('stroke-width', '0.75'); r.setAttribute('rx', 2); r.setAttribute('pointer-events', 'none'); r.setAttribute('display', 'none'); g.appendChild(r); outlines[k] = r; });
-    cribPegRefs = { g, items, inp, fo, tick, outlines, ax };
+    cribPegRefs = { g, items, inp, fo, tick, outlines, ax, fin: finInps };
   }
   // What is really on the table for the latest play.
   function cribPegReality(pend) {
@@ -1877,13 +1892,33 @@ body {
   }
   function cribPegTotal() {
     const pend = cribPegPending(); if (!pend) return 0;
+    const pg = cribState.pegging;
+    if (pg && pg.hold) { const k = pend.count === 31 ? 'f31' : 'last', f = cribPegRefs && cribPegRefs.fin && cribPegRefs.fin[k]; return f ? (parseInt(f.value || '0', 10) || 0) : 0; }
     let t = 0;
     if (cribPegSel.f15) t += 2; if (cribPegSel.pair) t += cribPegSel.pair; if (cribPegSel.run) t += cribPegSel.run;
     if (cribPegSel.f31) t += 2; if (cribPegSel.last) t += 1;
     return t;
   }
+  // The final claim of a count ("31 for [n]" / "last card for [n]"): n is the total for that play; it can be raised until "next count".
+  async function cribSubmitFinal() {
+    let li = cribGetLocalIdx();
+    let server = await cribLoadGame(cribState.id); if (server) cribState = server;
+    const p = cribState.pegging, hd = p && p.hold, pend = p && p.pending, R = cribPegRefs;
+    if (cribState.phase !== 'pegging' || !hd || hd.seat !== li || !pend || !R) { cribRender(); return; }
+    const key = pend.count === 31 ? 'f31' : 'last', v = parseInt(R.fin[key].value || '0', 10) || 0, max = cribPegMax(pend), cur = pend.claimedPts || 0;
+    if (v > max) { cribPegNote('Claim refused: that is more than the play is worth (at most ' + max + ').'); return; }
+    if (v <= cur) { cribPegNote(cur ? 'You have claimed ' + cur + '. To claim more, enter a larger total, or advance your front paw.' : 'Enter what the play is worth first.'); return; }
+    pend.claimed = pend.claimed || {}; pend.claimed[key] = true; pend.claimedPts = v;
+    cribState.players[li].score += v - cur;
+    cribState.history.push(cribState.players[li].name + ' claims ' + (key === 'f31' ? '31' : 'last card') + ' for ' + v);
+    cribState.moveCount++;
+    await cribSaveGame(cribState); cribBroadcastGame(cribState);
+    cribRender();
+    cribClaimTip();
+  }
   async function cribSubmitPeg() {
     if (!cribState || cribState.phase !== 'pegging') return;
+    if (cribState.pegging && cribState.pegging.hold) { await cribSubmitFinal(); return; }
     let li = cribGetLocalIdx();
     const picked = [];
     if (cribPegSel.f15) picked.push(['f15']); if (cribPegSel.pair) picked.push(['pair', cribPegSel.pair]); if (cribPegSel.run) picked.push(['run', cribPegSel.run]);
@@ -1911,16 +1946,23 @@ body {
     await cribSaveGame(cribState); cribBroadcastGame(cribState);
     cribRender();
   }
-  async function cribGoToShow() {
+  // "next count" / "go to the show": each player clicks once; when both have, play moves on.
+  // "next count": only the player who made the last play can click it. It ends their claim; whatever was not claimed is lost.
+  async function cribHoldPress() {
     let li = cribGetLocalIdx();
     let server = await cribLoadGame(cribState.id); if (server) cribState = server;
-    let p = cribState.pegging;
-    if (cribState.phase !== 'pegging' || !p || !p.finished || p.turn !== li) return;
-    cribFinishPegging();
+    let p = cribState.pegging, hd = p && p.hold;
+    if (cribState.phase !== 'pegging' || !hd || hd.seat !== li) { cribRender(); return; }
+    if (!(p.pending && p.pending.claimedPts > 0)) { cribPegNote('Claim your last card (or 31) first.'); cribRender(); return; }
+    p.hold = null; p.pending = null;
+    if (hd.kind === 'show') cribFinishPegging();
+    else { p.count = 0; p.played = []; p.lastToPlay = null; p.goBy = null; p.consecutiveGo = 0; p.turn = hd.lead; }
     cribState.moveCount++;
+    cribCheckWin();
     await cribSaveGame(cribState); cribBroadcastGame(cribState);
     cribRender();
   }
+  const cribGoToShow = cribHoldPress;
   // Player names with their scores: P0 on the "pegging" row, P1 one line above, both starting over hole 53.
   let cribNamesG = null;
   function cribRenderNames() {
@@ -1948,7 +1990,7 @@ body {
   function cribTurnSeat() {
     if (!cribState) return -1;
     if (cribState.phase === 'pegging' && cribState.pegging) return cribState.pegging.turn;
-    if (cribState.phase === 'counting') { const S = cribShowCtx(); return S ? (S.sh.counted ? S.other : S.counter) : 1 - cribState.dealer; }
+    if (cribState.phase === 'counting') { const S = cribShowCtx(); return S ? S.active : 1 - cribState.dealer; }
     return -1;
   }
   function cribRenderTurnArrow() {
@@ -1969,32 +2011,42 @@ body {
   }
   function cribPegRefresh() {
     const R = cribPegRefs; if (!R || !cribState || cribState.phase !== 'pegging') return;
-    const li = cribGetLocalIdx(), p = cribState.pegging, pend = p && p.pending, mine = !!pend && pend.seat === li && !pend.heels, cl = (pend && pend.claimed) || {};
+    const li = cribGetLocalIdx(), p = cribState.pegging, pend = p && p.pending, hd = p && p.hold;
+    const mine = !!pend && pend.seat === li && !pend.heels && !hd, cl = (pend && pend.claimed) || {};
+    const inHold = !!hd && hd.seat === li && !!pend;                       // the final play of a count: one claim, the rest of the table is off
+    const finKey = inHold ? (pend.count === 31 ? 'f31' : 'last') : null;
     const key = String(cribState.moveCount) + ':' + li;
-    if (key !== cribPegSelKey) { cribPegSelKey = key; cribPegSel = { f15: false, pair: 0, run: 0, f31: false, last: false }; R.inp.value = ''; }
+    if (key !== cribPegSelKey) { cribPegSelKey = key; cribPegSel = { f15: false, pair: 0, run: 0, f31: false, last: false }; R.inp.value = ''; if (!inHold) { R.fin.f31.value = ''; R.fin.last.value = ''; } }
     const on = (k, claimed) => { const t = R.items[k]; const live = mine && !claimed; t.setAttribute('opacity', live ? '1' : '0.3'); t.style.cursor = live ? 'pointer' : 'default'; t.setAttribute('text-decoration', claimed ? 'line-through' : 'none'); };
-    on('f15', cl.f15); on('f31', cl.f31); on('last', cl.last); on('p2', cl.pair); on('p6', cl.pair); on('p12', cl.pair);
+    on('f15', cl.f15); on('p2', cl.pair); on('p6', cl.pair); on('p12', cl.pair);
+    ['f31', 'last'].forEach(k => {
+      const t = R.items[k], f = R.fin[k], live = finKey === k;
+      t.setAttribute('opacity', live ? '1' : '0.3'); t.style.cursor = 'default'; t.setAttribute('text-decoration', 'none');
+      f.disabled = !live; f.parentNode.setAttribute('opacity', live ? '1' : '0.3');
+      if (live && f.value === '' && (pend.claimedPts || 0) > 0) f.value = String(pend.claimedPts);
+      if (!live && !inHold) f.value = f.value;   // untouched
+    });
     R.items.run.setAttribute('opacity', mine && !cl.run ? '1' : '0.3'); R.inp.disabled = !(mine && !cl.run);
     const place = (rect, t) => { if (!t) { rect.setAttribute('display', 'none'); return; } const b = t.getBBox(); rect.setAttribute('x', b.x - 2); rect.setAttribute('y', b.y); rect.setAttribute('width', b.width + 4); rect.setAttribute('height', b.height); rect.removeAttribute('display'); };
     place(R.outlines.f15, cribPegSel.f15 ? R.items.f15 : null);
     place(R.outlines.pair, cribPegSel.pair ? R.items['p' + cribPegSel.pair] : null);
     place(R.outlines.run, cribPegSel.run ? R.items.run : null);
-    place(R.outlines.f31, cribPegSel.f31 ? R.items.f31 : null);
-    place(R.outlines.last, cribPegSel.last ? R.items.last : null);
-    const tot = cribPegTotal();
+    place(R.outlines.f31, null); place(R.outlines.last, null);
+    const usable = mine || inHold, tot = cribPegTotal();
     R.items.totval.textContent = String(tot);
-    R.items.totlabel.setAttribute('opacity', mine ? '1' : '0.3'); R.items.totval.setAttribute('opacity', mine ? '1' : '0.3');
+    R.items.totlabel.setAttribute('opacity', usable ? '1' : '0.3'); R.items.totval.setAttribute('opacity', usable ? '1' : '0.3');
     try { const vb = R.items.totval.getBBox(); R.tick.setAttribute('transform', 'translate(' + (vb.x + vb.width + 1) + ',' + (vb.y - 4) + ') scale(0.6)'); } catch (e) { }   // a superscript tick right after the count to confirm
-    R.tick.setAttribute('opacity', mine && tot > 0 ? '1' : '0.3'); R.tick.style.cursor = mine && tot > 0 ? 'pointer' : 'default';
-    const canGo = !!p && !p.finished && !p.needCut && p.turn === li && p.inHand[li].length > 0 && !cribHasPlayable(li);
+    R.tick.setAttribute('opacity', usable && tot > 0 ? '1' : '0.3'); R.tick.style.cursor = usable && tot > 0 ? 'pointer' : 'default';
+    const canGo = !!p && !p.finished && !p.hold && !p.needCut && p.turn === li && p.inHand[li].length > 0 && !cribHasPlayable(li);
     R.items.go.setAttribute('opacity', canGo ? '1' : '0.3'); R.items.go.style.cursor = canGo ? 'pointer' : 'default';
   }
 
   // ---- playing a card in the pegging: click stages it as a miniature at the top of the board; the tick plays it ----
   function cribPegStageCard(hi) {
     let li = cribGetLocalIdx(), p = cribState && cribState.pegging;
-    if (!p || p.turn !== li || p.finished) { cribMessage('Not your turn.'); return; }
+    if (!p || p.turn !== li || p.finished || p.hold) { cribMessage('Not your turn.'); return; }
     if (p.needCut) { cribMessage('The deck has not been cut yet.'); return; }
+    if (p.pending && p.pending.heels && !(p.pending.claimedPts > 0)) { cribMessage('A Jack was turned up: nibs are claimed by the dealer or awarded by the pone before the first card is played.'); return; }
     let c = p.inHand[li][hi]; if (!c) return;
     if (p.count + cribVal(c.r) > 31) { cribMessage('That card would go over 31.'); return; }
     cribPegStaged = hi; cribRender();
@@ -2017,17 +2069,18 @@ body {
     const x0 = cribHoleX(68) - 5.5;                                       // left edge of the first card: left edge of hole 68
     let y0 = 188; try { y0 = cribNamesG.firstChild.getBBox().y; } catch (e) { }   // top of every card: top of the P1 name
     // The play is over: the space the miniatures used holds the link that moves on.
-    const link = (label, fn) => {
-      const t = document.createElementNS(NS, 'text'); t.setAttribute('x', cribHoleX(64) - 5.5); t.setAttribute('y', y0 + 11); t.setAttribute('font-family', 'sans-serif'); t.setAttribute('font-size', 12.5); t.setAttribute('font-weight', '700');
+    const link = (label, fn, yOff, wait, xAt) => {
+      const t = document.createElementNS(NS, 'text'); t.setAttribute('x', xAt != null ? xAt : cribHoleX(64) - 5.5); t.setAttribute('y', y0 + (yOff == null ? 11 : yOff)); t.setAttribute('font-family', 'sans-serif'); t.setAttribute('font-size', 12.5); t.setAttribute('font-weight', '700');
+      if (wait) { t.setAttribute('fill', '#555'); t.setAttribute('font-weight', '400'); t.setAttribute('id', 'crib-next-wait'); t.textContent = label; cribMiniG.appendChild(t); return; }
       t.setAttribute('fill', '#2b4a63'); t.setAttribute('text-decoration', 'underline'); t.style.cursor = 'pointer'; t.setAttribute('id', 'crib-next-link'); t.textContent = label; t.addEventListener('click', fn); cribMiniG.appendChild(t);
     };
-    if (ph === 'pegging' && p && p.finished) { if (p.turn === li) link('go to the show', () => cribGoToShow()); }
+    const fade = (el, ok) => { if (!ok && el) { el.setAttribute('opacity', '0.35'); el.style.cursor = 'default'; } };
+    if (ph === 'pegging' && p && p.hold) { if (p.hold.seat === li) { link('next count', () => cribHoldPress(), 11 + h + 40, false, x0); fade(cribMiniG.lastChild, !!(p.pending && p.pending.claimedPts > 0)); } }   // below the cards and the count; only the player who made the last play has it
     else if (ph === 'counting') {
       const S = cribShowCtx();
-      if (!S) { if (li === 1 - cribState.dealer) link('deal next hand', () => cribDealNext()); }
-      else if (S.other === li && S.sh.counted && S.step >= 1) link(S.step < 2 ? 'next count' : 'deal next hand', () => (S.step < 2 ? cribShowNext() : cribDealNext()));   // the muggins taker moves on, so there is always a chance to take muggins
+      if (S && S.active === li) { link(S.step === 2 ? 'deal next hand' : 'next count', () => (S.step === 2 ? cribDealNext() : cribShowNext())); fade(cribMiniG.lastChild, S.sh.fin || S.sh.counted); }
     }
-    if (ph !== 'pegging' || !p || p.finished) { try { svg.appendChild(cribNamesG); } catch (e) { } return; }
+    if (ph !== 'pegging' || !p || (p.finished && !p.hold)) { try { svg.appendChild(cribNamesG); } catch (e) { } return; }
     const place = (c, i, staged) => {
       const g = document.createElementNS(NS, 'g'); g.setAttribute('transform', 'translate(' + (x0 + i * step) + ',' + y0 + ') scale(' + sx + ',' + sy + ')');
       g.appendChild(cribBuildCardFace(c.r, c.s, CRIB_CARD_W, CRIB_CARD_H));
@@ -2060,13 +2113,13 @@ body {
   // Muggins: on your turn, whatever the opponent's play (still on the table) was worth beyond what they claimed is yours to call.
   function cribMugAvail() {
     if (cribState && cribState.phase === 'counting') {   // in the show: whatever the counter's claim fell short of the real count
-      const S = cribShowCtx(), li = cribGetLocalIdx();
-      if (!S || S.counter === li || !S.sh.counted) return 0;
-      return Math.max(0, S.parts.total - (S.sh.claimedPts || 0));
+      const m = cribState.show && cribState.show.mug, li = cribGetLocalIdx();
+      if (!m || !m.open || m.seat !== li) return 0;
+      return Math.max(0, cribShowPartsAt(m.step).total - (m.claimed || 0));
     }
-    if (!cribState || cribState.phase !== 'pegging' || !cribState.pegging) return 0;
+    if (!CRIB_MUGGINS_IN_PEGGING || !cribState || cribState.phase !== 'pegging' || !cribState.pegging) return 0;
     const p = cribState.pegging, li = cribGetLocalIdx(), pend = p.pending;
-    if (!pend || pend.heels || pend.seat === li || p.turn !== li) return 0;
+    if (!pend || pend.heels || pend.seat === li || (p.turn !== li && !p.hold)) return 0;
     return Math.max(0, cribPegMax(pend) - (pend.claimedPts || 0));
   }
   // kind 'claim': the points go to you.  kind 'award': the points go to the opponent whose play missed them.
@@ -2080,7 +2133,7 @@ body {
     if (!(n >= 1)) { cribPegNote('Type the points first.'); return false; }
     if (n > avail) { cribPegNote('Muggins refused: only ' + avail + ' was missed.'); cribRenderBoardExtras(); return false; }
     const counting = cribState.phase === 'counting', p = counting ? cribState.show : cribState.pegging, me = cribState.players[li].name, opp = 1 - li;
-    if (counting) { p.claimedPts = cribShowCtx().parts.total; p.muggDone = true; }   // muggins settles the count
+    if (counting) { p.mug.open = false; p.mug.claimed = cribShowPartsAt(p.mug.step).total; }   // muggins settles the count
     else p.pending.claimedPts = cribPegMax(p.pending);          // muggins settles the play: nothing more can be claimed on it
     if (kind === 'claim') { cribState.players[li].score += n; p.report = { to: opp, text: me + ' claimed ' + n + ' in muggins', id: cribState.moveCount + 1 }; cribState.history.push(me + ' claimed ' + n + ' in muggins'); }
     else { cribState.players[opp].score += n; p.report = { to: opp, text: me + ' awarded you ' + n + ' in muggins', id: cribState.moveCount + 1 }; cribState.history.push(me + ' awarded ' + cribState.players[opp].name + ' ' + n + ' in muggins'); }
@@ -2095,30 +2148,35 @@ body {
   async function cribHoleClaim(pts) {
     const li = cribGetLocalIdx();
     let server = await cribLoadGame(cribState.id); if (server) cribState = server;
-    if (cribState.phase === 'counting') {   // in the show the hole is the claim for your own count, or muggins on the opponent's
+    if (cribState.phase === 'counting') {   // in the show the hole adds to your own claim until you click "next count", or is muggins on the opponent's count
       const S = cribShowOwn();
-      if (S && S.counter === li && !S.sh.counted) { await cribShowClaim(pts); return; }
+      const mine = !!S && S.counter === li && !S.sh.fin, own = mine ? Math.max(0, S.parts.total - (S.sh.claimedPts || 0)) : 0;
+      if (mine && pts <= own) { await cribShowClaim((S.sh.claimedPts || 0) + pts); return; }
       if (cribMugAvail()) { await cribMugAct('claim', pts); return; }
-      cribPegNote(S && S.counter === li ? 'You have already counted this one.' : 'Nothing to claim right now.'); cribRenderBoardExtras(); return;
+      cribPegNote(mine ? (own ? 'Claim refused: only ' + own + ' more is in the ' + S.what + '.' : 'You have claimed all the ' + S.what + ' is worth.') : 'Nothing to claim right now.'); cribRenderBoardExtras(); return;
     }
     const p = cribState.pegging, pend = p && p.pending;
     if (cribState.phase !== 'pegging' || !p) { cribRenderBoardExtras(); return; }
-    if (pend && pend.heels) {   // heels are worth exactly 2, claimed by the dealer before the first card is played
+    if (pend && pend.heels) {   // heels (nibs) are worth exactly 2, claimed by the dealer before the first card is played
       if (pend.seat === li && pts === 2) { await cribHeelsClaim(); return; }
-      cribPegNote(pend.seat === li ? 'Heels are worth 2: that is two holes ahead of your front paw.' : 'Nothing to claim right now.'); cribRenderBoardExtras(); return;
+      cribPegNote(pend.seat === li ? 'Nibs are worth 2: that is two holes ahead of your front paw.' : 'Nothing to claim right now.'); cribRenderBoardExtras(); return;
     }
     const ownRem = (pend && pend.seat === li) ? Math.max(0, cribPegMax(pend) - (pend.claimedPts || 0)) : 0;
     if (pts <= ownRem) {
       pend.claimedPts = (pend.claimedPts || 0) + pts; cribState.history.push(cribState.players[li].name + ' claims ' + pts);
       cribState.players[li].score += pts; cribState.moveCount++;
-      cribCheckWin(); await cribSaveGame(cribState); cribBroadcastGame(cribState); cribRender(); return;
+      cribCheckWinUnlessClaiming(); await cribSaveGame(cribState); cribBroadcastGame(cribState); cribRender(); return;
     }
     if (cribMugAvail()) { await cribMugAct('claim', pts); return; }
     cribPegNote(ownRem ? 'Claim refused: ' + pts + ' is more than the play is worth (at most ' + ownRem + ').' : 'Nothing to claim right now.');
     cribRenderBoardExtras();
   }
   // A hole in the opponent's lane (or the opponent's paw dropped on a hole): their new score, awarded through muggins.
-  async function cribHoleAward(pts) { await cribMugAct('award', pts); }
+  async function cribHoleAward(pts) {
+    const p = cribState && cribState.pegging, pend = p && p.pending;
+    if (cribState && cribState.phase === 'pegging' && pend && pend.heels && pend.seat !== cribGetLocalIdx() && pts === 2) { await cribHeelsAward(); return; }
+    await cribMugAct('award', pts);
+  }
   // ---- muggins: the word sits over hole 104 with its entry cursor, "alert" and "claim" beneath (always available) ----
   let cribMugRefs = null;
   function cribRenderMuggins() {
@@ -2149,7 +2207,7 @@ body {
       t.addEventListener('click', () => { try { inp.focus({ preventScroll: true }); } catch (e) { } });   // clicking the word puts the cursor in the field
       cribMugRefs = { g, t, fo, inp };
     }
-    if (cribState && (cribState.phase === 'pegging' || cribState.phase === 'counting')) cribMugRefs.g.removeAttribute('display'); else cribMugRefs.g.setAttribute('display', 'none');
+    if (cribState && (cribState.phase === 'counting' || (CRIB_MUGGINS_IN_PEGGING && cribState.phase === 'pegging'))) cribMugRefs.g.removeAttribute('display'); else cribMugRefs.g.setAttribute('display', 'none');
     try { cribMugCentre(); } catch (e) { }
   }
   // Horizontally the muggins block is centred under the "3" of "31 for 2"; its height is unchanged.
@@ -2175,9 +2233,29 @@ body {
     document.body.appendChild(d);
     document.getElementById('crib-report-ok').onclick = (e) => { e.preventDefault(); cribReportSeen = a.id; d.remove(); };
   }
-  let cribChartWasShown = false;
+  let cribChartWasShown = false, cribShowStepKey = '';
+  // The first claim of a count brings up a reminder; it can be switched off for this game or for all games.
+  function cribTipOff() {
+    try { if (localStorage.getItem('bt_crib_tip_all') === '1') return true; const m = JSON.parse(localStorage.getItem('bt_crib_tip_games') || '{}'); return !!(cribState && m[cribState.id]); } catch (e) { return false; }
+  }
+  function cribClaimTip() {
+    if (cribTipOff() || document.getElementById('crib-tip')) return;
+    const d = document.createElement('div'); d.id = 'crib-tip';
+    d.style.cssText = 'position:fixed;z-index:99997;left:50%;top:26%;transform:translateX(-50%);background:#fffef6;border:1px solid #8a7a52;border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,.4);padding:16px 22px;font:15px sans-serif;color:#000;max-width:400px;text-align:center;';
+    const msg = document.createElement('div'); msg.style.marginBottom = '12px';
+    msg.textContent = 'Prior to submitting "next count", you can advance your front paw manually if you have claimed too few points, or, alternatively, click the hole to which that paw is to advance. Multiple instances over-claiming will result in penalties.';
+    const ok = document.createElement('a'); ok.href = '#'; ok.textContent = 'ok'; ok.onclick = (e) => { e.preventDefault(); d.remove(); };
+    const off = document.createElement('div'); off.style.cssText = 'font-size:11px;margin-top:10px;color:#444;';
+    off.appendChild(document.createTextNode('disable this message for: '));
+    const mk = (label, fn) => { const a = document.createElement('a'); a.href = '#'; a.textContent = label; a.onclick = (e) => { e.preventDefault(); try { fn(); } catch (x) { } d.remove(); }; return a; };
+    off.appendChild(mk('this game', () => { const m = JSON.parse(localStorage.getItem('bt_crib_tip_games') || '{}'); m[cribState.id] = 1; localStorage.setItem('bt_crib_tip_games', JSON.stringify(m)); }));
+    off.appendChild(document.createTextNode(' · '));
+    off.appendChild(mk('all games', () => { localStorage.setItem('bt_crib_tip_all', '1'); }));
+    d.appendChild(msg); d.appendChild(ok); d.appendChild(off); document.body.appendChild(d);
+  }
   // The left-hand scoring area: empty while the crib is being made, pegging claims during the play, the hand-count chart for the show.
   function cribBoardPhaseView() {
+    try { const sk = cribState && cribState.phase === 'counting' && cribState.show ? cribState.id + ':' + cribState.show.step : ''; if (sk !== cribShowStepKey) { cribShowStepKey = sk; if (sk) cribCountReset(); } } catch (e) { }
     const ph = cribState && cribState.phase;
     const chart = ph === 'counting';
     ['crib-col15', 'crib-colpair', 'crib-colruns', 'crib-colflush', 'crib-colnobs', 'crib-handcount'].forEach(id => { const e = document.getElementById(id); if (e) { if (chart) e.removeAttribute('display'); else e.setAttribute('display', 'none'); } });
@@ -2196,6 +2274,16 @@ body {
   // Hand-count claiming: one selected row per column (most recent click wins; clicking it again clears it).
   // The a-Pair rows read as (selected 15s value + pair value), so the remembered pair row re-labels itself
   // whenever the 15s selection changes.
+  const CRIB_MUGGINS_IN_PEGGING = false;   // by the rules, points missed in the play are simply lost; muggins is for the show
+  // While a claim is still open (a final-play claim in the pegging, or the counter's own claim in the show) the game is not decided: a player who
+  // passes 121 on a tick wins when they click "next count" / "deal next hand".
+  function cribClaimOpen() {
+    if (!cribState) return false;
+    if (cribState.phase === 'pegging') return !!(cribState.pegging && cribState.pegging.hold);
+    if (cribState.phase === 'counting') return !!(cribState.show && !cribState.show.fin);
+    return false;
+  }
+  function cribCheckWinUnlessClaiming() { if (!cribClaimOpen()) cribCheckWin(); }
   const CRIB_IMPOSSIBLE_COUNTS = [19, 25, 26, 27];
   const CRIB_RUN_DEFAULTS = ['## ## ##', '## ## ## ##', '## ## ## ## ##'];
   // Every combination a real hand (4 cards + starter) can produce, enumerated from all possible deals:
@@ -2216,11 +2304,11 @@ body {
   // During the show the table works only for the player whose count it is, until they have claimed it.
   function cribShowLive() {
     if (!cribState || cribState.phase !== 'counting') return true;
-    const S = cribShowOwn(); return !!S && S.counter === cribGetLocalIdx() && !S.sh.counted;
+    const S = cribShowOwn(); return !!S && S.counter === cribGetLocalIdx() && !S.sh.fin;
   }
   // After the pone has counted, the dealer's own hand is next, so the dealer simply starts counting it (no "next count" to click).
   // Until the dealer does, muggins on the pone's count is still theirs to take.
-  function cribShowReady() { const S = cribShowCtx(); return !!S && S.step === 0 && S.sh.counted && cribGetLocalIdx() === cribState.dealer; }
+  function cribShowReady() { return false; }   // retired: the dealer no longer starts counting on their own; both players click next count
   function cribShowOwn() {
     const S = cribShowCtx(); if (!S || !cribShowReady()) return S;
     const d = cribState.dealer, cards = cribState.hands[d];
@@ -2282,7 +2370,15 @@ body {
       R.inp.value = String(total); R.setPrev(R.inp.value);
     } else if (active) { R.inp.value = cribHeldInput; R.setPrev(cribHeldInput); }
     else { R.inp.value = ''; R.setPrev(''); }
-    try { const on = active && R.inp.value !== ''; R.stick.setAttribute('opacity', on ? '1' : '0.3'); R.stick.style.cursor = on ? 'pointer' : 'default'; } catch (e) { }
+    let zh = false;
+    try {
+      const S2 = cribState && cribState.phase === 'counting' ? cribShowOwn() : null;
+      zh = !!S2 && active && S2.parts.total === 0 && R.inp.value === '';
+      R.zero.setAttribute('display', zh ? '' : 'none');
+      R.zero.classList.toggle('crib-blink', !!S2 && !S2.sh.counted);   // steady once the 0 has been claimed
+      const z = R.inp.value === '0'; R.inp.style.color = z ? '#d00' : '#000'; R.inp.style.fontWeight = z ? '700' : '400'; R.inp.classList.toggle('crib-blink', z);
+    } catch (e) { }
+    try { const on = active && (R.inp.value !== '' || zh); R.stick.setAttribute('opacity', on ? '1' : '0.3'); R.stick.style.cursor = on ? 'pointer' : 'default'; } catch (e) { }
     try {   // the tick sits like a superscript right after the typed count; with nothing typed it keeps its resting place
       const fo = R.inp.parentNode, v = R.inp.value, m = /translate\(([-\d.]+),([-\d.]+)\)/.exec(R.stick.getAttribute('transform'));
       if (!R.tickRest) R.tickRest = { x: Number(m[1]), y: Number(m[2]) };
@@ -3230,7 +3326,22 @@ body {
     if (cribState.phase !== 'pegging' || !pend || !pend.heels || pend.seat !== li || pend.claimedPts > 0 || (p.played || []).length) { cribRender(); return; }
     pend.claimedPts = 2; pend.claimed = pend.claimed || {}; pend.claimed.heels = true;
     cribState.players[li].score += 2;
-    cribState.history.push(cribState.players[li].name + ' claims 2 for his heels');
+    cribState.history.push(cribState.players[li].name + ' claims 2 for his nibs');
+    cribState.moveCount++;
+    cribCheckWin();
+    await cribSaveGame(cribState); cribBroadcastGame(cribState);
+    cribRender();
+  }
+  // The pone awards the dealer the 2 for nibs the dealer has not claimed (before the first card is played).
+  async function cribHeelsAward() {
+    const li = cribGetLocalIdx();
+    let server = await cribLoadGame(cribState.id); if (server) cribState = server;
+    const p = cribState.pegging, pend = p && p.pending, d = cribState.dealer;
+    if (cribState.phase !== 'pegging' || !pend || !pend.heels || li === d || pend.claimedPts > 0 || (p.played || []).length) { cribRender(); return; }
+    pend.claimedPts = 2; pend.claimed = pend.claimed || {}; pend.claimed.heels = true;
+    cribState.players[d].score += 2;
+    p.report = { to: d, text: cribState.players[li].name + ' awarded you 2 for your nibs', id: cribState.moveCount + 1 };
+    cribState.history.push(cribState.players[li].name + ' awarded ' + cribState.players[d].name + ' 2 for his nibs');
     cribState.moveCount++;
     cribCheckWin();
     await cribSaveGame(cribState); cribBroadcastGame(cribState);
@@ -3246,6 +3357,8 @@ body {
     let p = cribState.pegging;
     if (!p || p.turn !== li) { cribMessage('Not your turn.'); return; }
     if (p.needCut) { cribMessage('The deck has not been cut yet.'); return; }
+    if (p.hold) { cribMessage('Waiting for the last-play player to claim and click "next count".'); return; }
+    if (p.pending && p.pending.heels && !(p.pending.claimedPts > 0)) { cribMessage('A Jack was turned up: nibs are claimed by the dealer or awarded by the pone before the first card is played.'); return; }
     let card = p.inHand[li][cardIdx];
     if (!card || p.count + cribVal(card.r) > 31) { cribMessage("That card would go over 31."); return; }
     p.inHand[li].splice(cardIdx, 1);
@@ -3264,7 +3377,7 @@ body {
     let li = cribGetLocalIdx();
     let server = await cribLoadGame(cribState.id); if (server) cribState = server;
     let p = cribState.pegging;
-    if (!p || p.turn !== li || p.finished || p.needCut) { cribMessage('Not your turn.'); return; }
+    if (!p || p.turn !== li || p.finished || p.needCut || p.hold) { cribMessage('Not your turn.'); return; }
     if (cribHasPlayable(li)) { cribMessage('You have a playable card.'); return; }
     if (!p.inHand[li].length) { cribMessage('You have no cards left to go with.'); return; }
     cribState.history.push(cribState.players[li].name + ' says Go');
@@ -3284,10 +3397,11 @@ body {
       if (p.pending) p.pending.ended = true;   // the last-card / 31 claims open for the player who made the final play
       let last = p.lastToPlay;
       p.goBy = null; p.consecutiveGo = 0;
-      if (bothEmpty) { p.finished = true; p.turn = 1 - last; return; }   // stays in pegging until "go to the show" so those claims (and muggins) can still be made
-      p.count = 0; p.played = [];
+      // Play stops here until BOTH players have clicked "next count" (or "go to the show"), so neither can miss a claim or muggins.
+      // Play stays with the player who made the last play until they have claimed last card / 31 and click "next count": the arrow stays on them.
+      if (bothEmpty) { p.finished = true; p.turn = last; p.hold = { kind: 'show', seat: last }; return; }
       let lead = 1 - last; if (!p.inHand[lead].length) lead = last;   // the player who did not make the last play leads the next count
-      p.turn = lead; p.lastToPlay = null;
+      p.turn = last; p.hold = { kind: 'count', seat: last, lead: lead };   // the table (count and cards) stays until the hold is released
     };
     const canPlay = (seat) => p.inHand[seat].some(c => p.count + cribVal(c.r) <= 31);
     if (kind === 'play') {
@@ -3302,18 +3416,23 @@ body {
     p.goBy = me; p.turn = other;
   }
   function cribFinishPegging() {
-    // Nothing is scored here: the pone counts first, then the dealer's hand, then the crib. Each count is claimed (table, hole or paw) and open to muggins.
+    // Nothing is scored here: the pone counts first, then the dealer's hand, then the crib. Each count is claimed (table, hole or paw) until its counter
+    // clicks "next count"; then the other player's turn begins, and muggins on that count is one of their claims.
     cribState.phase = 'counting';
-    cribState.show = { step: 0, counted: false, claimedPts: 0, muggDone: false, report: null };
+    cribState.show = { step: 0, counted: false, claimedPts: 0, fin: false, mug: null, report: null };
     cribState.history.push('The show: ' + cribState.players[1 - cribState.dealer].name + ' counts first');
   }
   // What is being counted now: step 0 the pone's hand, step 1 the dealer's hand, step 2 the crib (the dealer's).
+  // step 0 the pone's hand, step 1 the dealer's hand, step 2 the crib (the dealer's).  active = whose turn it is: the counter until they click
+  // "next count" (sh.fin), then the other player (who may take muggins on that count, and for steps 1 and 2 moves play on).
+  function cribShowCardsAt(step) { const d = cribState.dealer; return step === 2 ? cribState.crib : cribState.hands[step === 0 ? 1 - d : d]; }
+  function cribShowPartsAt(step) { return cribShowParts(cribShowCardsAt(step), cribState.starter, step === 2); }
   function cribShowCtx() {
     if (!cribState || cribState.phase !== 'counting' || !cribState.show || !cribState.starter) return null;
     const sh = cribState.show, dealer = cribState.dealer, step = sh.step | 0;
     const counter = step === 0 ? 1 - dealer : dealer, isCrib = step === 2;
-    const cards = isCrib ? cribState.crib : cribState.hands[counter];
-    return { sh, step, counter, other: 1 - counter, isCrib, cards, parts: cribShowParts(cards, cribState.starter, isCrib), what: step === 0 ? 'hand' : step === 1 ? 'hand' : 'crib' };
+    const cards = cribShowCardsAt(step);
+    return { sh, step, counter, other: 1 - counter, active: sh.fin ? 1 - counter : counter, isCrib, cards, parts: cribShowParts(cards, cribState.starter, isCrib), what: step === 0 ? 'hand' : step === 1 ? 'hand' : 'crib' };
   }
   // The real makeup of a hand: how many fifteens and pairs, the longest run, the flush and the nobs, and the program's total.
   function cribShowParts(cards, starter, isCrib) {
@@ -3329,50 +3448,77 @@ body {
     return { n15, pairs, run, flush, nobs, total: cribScoreHand(cards, starter, isCrib).total };
   }
   // The counter claims the count (the hand-count field, the table picks that feed it, a hole or a dragged paw). More than the hand is worth is refused.
+  // The counter claims the count (the hand-count field, the table picks that feed it, a hole or a dragged paw). More than the hand is worth is refused.
+  // The claim stays open - it can be raised - until the counter clicks "next count".
   async function cribShowClaim(total) {
     const li = cribGetLocalIdx();
     let server = await cribLoadGame(cribState.id); if (server) cribState = server;
-    if (cribShowReady()) {   // the dealer starts on the hand: the show moves on to it
-      const S0 = cribShowCtx();
-      cribState.show = { step: 1, counted: false, claimedPts: 0, muggDone: false, report: S0.sh.report || null };
-      cribState.history.push(cribState.players[cribState.dealer].name + ' counts the dealer\'s hand');
-    }
     const S = cribShowCtx();
-    if (!S || S.counter !== li || S.sh.counted) { cribPegNote(S && S.counter === li ? 'You have already counted this one.' : 'It is not your count.'); cribRender(); return false; }
+    if (!S || S.counter !== li || S.sh.fin) { cribPegNote('It is not your count.'); cribRender(); return false; }
     if (!(total >= 0) || total > S.parts.total) { cribPegNote('Claim refused: that is more than the ' + S.what + ' is worth.'); cribRenderBoardExtras(); return false; }
-    const me = cribState.players[li].name;
-    cribState.players[li].score += total; S.sh.counted = true; S.sh.claimedPts = total; S.sh.report = null;
-    cribState.history.push(me + ' counts ' + (S.isCrib ? 'the crib' : 'a hand') + ': ' + total);
+    const cur = S.sh.claimedPts || 0;
+    if (S.sh.counted && total <= cur) { cribPegNote('You have claimed ' + cur + '. To claim more, enter a larger total, or advance your front paw.'); cribRenderBoardExtras(); return false; }
+    const first = !S.sh.counted;
+    cribState.players[li].score += total - cur; S.sh.counted = true; S.sh.claimedPts = total; S.sh.report = null;
+    cribState.history.push(cribState.players[li].name + ' counts ' + (S.isCrib ? 'the crib' : 'a hand') + ': ' + total);
     cribState.moveCount++;
-    try { cribCountReset(); } catch (e) { }
-    cribCheckWin();
     await cribSaveGame(cribState); cribBroadcastGame(cribState);
     cribRender();
     return true;
   }
   async function cribShowSubmit() {
     const R = cribCountRefs; if (!R) return;
-    if (R.inp.value === '') { cribPegNote('Pick what you are counting in the table (or type the count) first, then press the tick.'); return; }
-    await cribShowClaim(parseInt(R.inp.value, 10));
+    if (R.inp.value === '') {
+      const S = cribShowCtx();
+      if (S && S.counter === cribGetLocalIdx() && !S.sh.fin && S.parts.total === 0) { if (await cribShowClaim(0)) cribClaimTip(); return; }   // a hand worth nothing: the blinking 0
+      cribPegNote('Pick what you are counting in the table (or type the count) first, then press the tick.'); return;
+    }
+    if (await cribShowClaim(parseInt(R.inp.value, 10))) cribClaimTip();
   }
   // The player who is not counting (the muggins taker) moves on once the count has been claimed (and any muggins taken).
+  // "next count": ends the counter's claim (step 0 and 1) and passes the turn on; or, for the pone after the dealer's hand, hands the turn back to the dealer for the crib.
   async function cribShowNext() {
     const li = cribGetLocalIdx();
     let server = await cribLoadGame(cribState.id); if (server) cribState = server;
     const S = cribShowCtx();
-    if (!S || S.other !== li || !S.sh.counted || S.step >= 2) { cribRender(); return; }
-    cribState.show = { step: S.step + 1, counted: false, claimedPts: 0, muggDone: false, report: S.sh.report || null };
-    cribState.history.push(cribState.players[cribState.dealer].name + ' counts ' + (S.step + 1 === 2 ? 'the crib' : 'the dealer\'s hand') + ' next');
+    if (!S || S.active !== li || S.step >= 2 && !S.sh.fin) { cribRender(); return; }
+    if (!S.sh.fin && !S.sh.counted) { cribPegNote('Claim your count first (a hand worth nothing is claimed with the blinking 0).'); cribRender(); return; }
+    const sh = S.sh, dn = cribState.players[cribState.dealer].name;
+    if (!sh.fin) {
+      sh.mug = { step: S.step, seat: S.other, claimed: sh.claimedPts || 0, open: true };   // muggins on this count is the other player's to take on their turn
+      if (S.step === 0) { sh.step = 1; sh.counted = false; sh.claimedPts = 0; cribState.history.push(dn + ' counts the dealer\'s hand next'); }
+      else sh.fin = true;
+    } else if (S.step === 1) {
+      sh.step = 2; sh.fin = false; sh.counted = false; sh.claimedPts = 0; sh.mug = null;
+      cribState.history.push(dn + ' counts the crib next');
+    } else { cribRender(); return; }
     cribState.moveCount++;
+    cribCheckWin();
     await cribSaveGame(cribState); cribBroadcastGame(cribState);
     cribRender();
   }
-  // The new dealer (the pone) deals the next hand once the crib has been counted.
+  // The crib's counter (the dealer) clicks "deal next hand" only to pass the deal; the new dealer (the pone) then clicks it to deal.
+  // Until the new dealer deals, muggins on the crib is still theirs to take.
+  // The crib's counter (the dealer) clicks "deal next hand" to finish the crib count and pass the deal; the new dealer (the pone), after any muggins on the crib, clicks it to deal.
   async function cribDealNext() {
     let li = cribGetLocalIdx();
     let server = await cribLoadGame(cribState.id); if (server) cribState = server;
     const S0 = cribShowCtx();
-    if (cribState.phase !== 'counting' || li !== 1 - cribState.dealer || (S0 && !(S0.step === 2 && S0.sh.counted))) { cribRender(); return; }
+    if (cribState.phase !== 'counting' || !S0 || S0.step !== 2) { cribRender(); return; }
+    const dealer = cribState.dealer;
+    if (!S0.sh.fin) {
+      if (li !== dealer) { cribRender(); return; }
+      if (!S0.sh.counted) { cribPegNote('Claim the crib first (a crib worth nothing is claimed with the blinking 0).'); cribRender(); return; }
+      S0.sh.mug = { step: 2, seat: 1 - dealer, claimed: S0.sh.claimedPts || 0, open: true };
+      S0.sh.fin = true;
+      cribState.history.push(cribState.players[li].name + ' passes the deal to ' + cribState.players[1 - li].name);
+      cribState.moveCount++;
+      cribCheckWin();
+      await cribSaveGame(cribState); cribBroadcastGame(cribState);
+      cribRender();
+      return;
+    }
+    if (li !== 1 - dealer) { cribRender(); return; }
     let deck = cribShuffle(cribFreshDeck());
     cribState.hands = [deck.splice(0, 6), deck.splice(0, 6)];
     cribState.deckRemaining = deck;
@@ -3460,8 +3606,8 @@ body {
     cutG.appendChild(hit); g.appendChild(cutG);
     const heelsG = document.createElementNS(NS, 'g'); heelsG.setAttribute('id', 'crib-heels'); heelsG.setAttribute('display', 'none'); heelsG.setAttribute('pointer-events', 'all'); heelsG.style.cursor = 'pointer';
     const hr = document.createElementNS(NS, 'rect'); hr.setAttribute('x', DX + 3); hr.setAttribute('y', DY + 22); hr.setAttribute('width', dw - 6); hr.setAttribute('height', 36); hr.setAttribute('rx', 3); hr.setAttribute('fill', '#fffef6'); hr.setAttribute('fill-opacity', '0.94'); hr.setAttribute('stroke', '#8a7a52'); heelsG.appendChild(hr);
-    mkLines(heelsG, ['click to', 'claim', 'heels'], DX + dw / 2, DY + 34, 9, '600', '#2b4a63');
-    heelsG.addEventListener('click', () => cribHeelsClaim());
+    mkLines(heelsG, ['claim', 'nibs'], DX + dw / 2, DY + 40, 10, '600', '#2b4a63');
+    heelsG.addEventListener('click', () => { if (cribGetLocalIdx() === cribState.dealer) cribHeelsClaim(); else cribHeelsAward(); });
     g.appendChild(heelsG);
     // Holding the deck cuts it: cards peel off the top and rise, up and to the right (never past the deck's right edge), ten a second;
     // letting go turns up the card after the ones lifted. There is no time-out. A plain click (no hold) cuts shallow with no animation.
@@ -3537,7 +3683,8 @@ body {
     const cutting = ph === 'pegging' && !!p && !!p.needCut && li === 1 - cribState.dealer;   // only the non-dealer, whose cut it is by the rules, is prompted
     if (cutting) D.cutG.removeAttribute('display'); else if (!D.cutting) D.cutG.setAttribute('display', 'none');
     const pend = p && p.pending;
-    const heels = ph === 'pegging' && !!pend && !!pend.heels && !(pend.claimedPts > 0) && li === cribState.dealer && !(p.played || []).length;
+    const heels = ph === 'pegging' && !!pend && !!pend.heels && !(pend.claimedPts > 0) && !(p.played || []).length;   // the dealer claims, the pone awards
+    try { const tl = D.heelsG.querySelectorAll('text'); if (tl[0]) tl[0].textContent = li === cribState.dealer ? 'claim' : 'award'; } catch (e) { }
     if (heels) D.heelsG.removeAttribute('display'); else D.heelsG.setAttribute('display', 'none');
   }
   function cribPawDown(ev) {
@@ -3647,19 +3794,26 @@ body {
     } else if (cribState.phase === 'pegging') {
       if (cribState.pegging.needCut) {
         cribMessage(li === 1 - cribState.dealer ? 'Press and hold the deck to cut it.' : 'Waiting for ' + cribState.players[1 - cribState.dealer].name + ' to cut the deck.');
-      } else if (cribState.pegging.finished) {
-        cribMessage(cribState.pegging.turn === li ? 'All cards are played. Take any muggins, then "go to the show".' : 'All cards are played. Claim your last card (and 31) now; ' + cribState.players[1 - li].name + ' goes to the show.');
+      } else if (cribState.pegging.pending && cribState.pegging.pending.heels && !(cribState.pegging.pending.claimedPts > 0)) {
+        cribMessage(li === cribState.dealer ? 'A Jack is turned up: click "claim nibs" on the deck.' : 'A Jack is turned up: click "award nibs" on the deck (or wait for ' + cribState.players[cribState.dealer].name + ' to claim them) before you play.');
+      } else if (cribState.pegging.hold) {
+        const hd = cribState.pegging.hold, nm = cribState.players[hd.seat].name;
+        cribMessage(hd.seat === li ? (hd.kind === 'show' ? 'All cards are played. ' : 'The count is over. ') + 'Claim your last card (or 31), then click "next count".' : 'Waiting for ' + nm + ' to claim last card (or 31).');
       } else if (cribState.pegging.turn === li) {
         if (!cribHasPlayable(li)) cribMessage('No playable card - click go.');
         else cribMessage('Your play. Count is ' + cribState.pegging.count + '.');
       } else cribMessage("Waiting for " + cribState.players[1 - li].name + "'s play.");
     } else if (cribState.phase === 'counting') {
       const S = cribShowCtx();
-      if (!S) cribMessage(li === 1 - cribState.dealer ? 'The show. Click "deal next hand".' : 'The show. Waiting for ' + cribState.players[1 - cribState.dealer].name + ' to deal the next hand.');
+      if (!S) cribMessage('The show.');
       else {
-        const what = S.isCrib ? 'the crib' : S.step === 0 ? 'the pone\'s hand' : 'the dealer\'s hand', cn = cribState.players[S.counter].name;
-        if (S.counter === li) cribMessage(S.sh.counted ? 'You counted ' + what + ' for ' + S.sh.claimedPts + '. Waiting for ' + cribState.players[S.other].name + ' to move on.' : 'Your count: ' + what + '. Use the table (or click a hole, or drag your paw), then press the tick.');
-        else cribMessage(S.sh.counted ? cn + ' counted ' + what + ' for ' + S.sh.claimedPts + '. Take any muggins' + (S.step === 0 ? ', or count your hand.' : ', then click "' + (S.step < 2 ? 'next count' : 'deal next hand') + '".') : 'Waiting for ' + cn + ' to count ' + what + '.');
+        const nm = n => cribState.players[n].name, what = S.isCrib ? 'the crib' : S.step === 0 ? 'the pone\'s hand' : 'the dealer\'s hand';
+        const lbl = S.step === 2 ? 'deal next hand' : 'next count', m = cribState.show.mug, mugMine = !!m && m.open && m.seat === li;
+        if (S.active === li && !S.sh.fin) {
+          cribMessage((mugMine ? nm(1 - li) + ' counted ' + (m.step === 0 ? 'the pone\'s hand' : 'the dealer\'s hand') + ' for ' + m.claimed + '. You can claim any points they missed in that hand. ' : '') + (S.sh.counted ? 'You have claimed ' + S.sh.claimedPts + ' for ' + what + '. Claim more if you need to, then click "' + lbl + '".' : 'Your count: ' + what + '. Use the table (or click a hole, or drag your paw), then press the tick.'));
+        } else if (S.active === li) {
+          cribMessage(nm(S.counter) + ' counted ' + what + ' for ' + S.sh.claimedPts + '. Claim any points they missed, then click "' + lbl + '"' + (S.step === 2 ? ' to deal.' : '.'));
+        } else cribMessage(S.sh.fin ? 'Waiting for ' + nm(S.active) + ' to review the count and click "' + lbl + '".' : 'Waiting for ' + nm(S.counter) + ' to count ' + what + '.');
       }
     }
     if (cribNote.until > Date.now()) cribMessage(cribNote.t);   // a refused claim stays on screen through the next redraw
