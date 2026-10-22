@@ -1222,9 +1222,9 @@ body {
   // card's face-up/down state follows it when reordered.
   let cribBoardOrder = [0, 1, 2, 3, 4, 5];
   let cribHi = [], cribPegStaged = null;  // highlighted (border) hand cards, oldest first; the two most recently selected keep the border
-  const CRIB_SLOT = { CX: 788, CY: 227, sw: 39, sh: 55, gx: 5, gy: 5 };  // the four crib holding slots on the board
+  const CRIB_SLOT = { CX: 788, CY: 226, sw: 39, sh: 55, gx: 5, gy: 5 };  // the four crib holding slots on the board
   let cribFlippedSet = new Set();
-  let cribFlipHandKey = null;
+  let cribFlipHandKey = null, cribHandStep = -1;
   let cribCardRowLeft = 0, cribCardW = 80, cribCardGap = 14, cribCardRowTop = 355, cribRowShift = 0;  // cribRowShift: sideways shift that centres a short hand in the row
   function cribRenderBoardHand(li) {
     if (!cribState) return;
@@ -1241,9 +1241,12 @@ body {
       cribBoardOrder = [0, 1, 2, 3, 4, 5];
       cribHi = [];
       cribFlipHandKey = key;
+      cribHandStep = -2;
       if (cribState.phase === 'counting') cribFlippedSet = new Set(hand.map((c, i) => i));   // at the show your four cards lie face-up
       cribCountReset();
     }
+    { const stp = cribState.phase === 'counting' && cribState.show ? cribState.show.step : -1;
+      if (stp !== cribHandStep) { cribHandStep = stp; if (stp === 2) cribFlippedSet = new Set(); else if (stp >= 0) cribFlippedSet = new Set(hand.map((c, i) => i)); } }   // the crib is counted with the hand face down
     if (pegNow) cribFlippedSet = new Set(hand.map((c, i) => i));   // during the play your own cards are all face-up
     let slots = Array.from(cardsG.querySelectorAll('.crib-card-slot'))
       .sort((a, b) => Number(a.dataset.cribCardSlot) - Number(b.dataset.cribCardSlot));
@@ -1517,7 +1520,7 @@ body {
     const cardsG = document.getElementById('crib-cards');
     cribEnsureCardBackDefsForGame(document.getElementById('crib-board-svg'), cribState);
     for (let i = 0; i < 6; i++) {
-      const x = rowLeft + i * (cardW + gap), y = rowTop;
+      const x = rowLeft + i * (cardW + gap), y = rowTop + 1;
       const g = document.createElementNS(NS, 'g');
       g.setAttribute('class', 'crib-card-slot');
       g.setAttribute('transform', 'translate(' + x + ',' + y + ')');
@@ -1706,7 +1709,9 @@ body {
       label.setAttribute('x', is12.x); label.setAttribute('y', hcY);
       label.setAttribute('text-anchor', 'start');
       label.setAttribute('font-size', 12.5); label.setAttribute('font-weight', '400');
-      label.textContent = 'hand count';
+      const wordSp = document.createElementNS(NS, 'tspan'); wordSp.textContent = 'hand'; wordSp.setAttribute('id', 'crib-count-word');
+      const restSp = document.createElementNS(NS, 'tspan'); restSp.textContent = ' count';
+      label.appendChild(wordSp); label.appendChild(restSp);
       hc.appendChild(label);
       const lb = label.getBBox();
       let spaceW = 3.5;
@@ -1728,7 +1733,7 @@ body {
       });
       fo.appendChild(inp);
       hc.appendChild(fo);
-      try { if (!document.getElementById('crib-blink-style')) { const st = document.createElement('style'); st.id = 'crib-blink-style'; st.textContent = '.crib-blink{animation:cribblink 1s steps(1) infinite}@keyframes cribblink{50%{opacity:0}}'; document.head.appendChild(st); } } catch (e) { }
+      try { if (!document.getElementById('crib-blink-style')) { const st = document.createElement('style'); st.id = 'crib-blink-style'; st.textContent = '.crib-blink{animation:cribblink 1s steps(1) infinite}@keyframes cribblink{50%{opacity:0}}.crib-flash{animation:cribflash .334s steps(1) 3}@keyframes cribflash{0%{fill-opacity:1}50%{fill-opacity:0}}'; document.head.appendChild(st); } } catch (e) { }
       const zero = document.createElementNS(NS, 'text');   // a hand worth nothing: a red blinking 0 stands in the field until something is typed
       zero.textContent = '0'; zero.setAttribute('x', Number(fo.getAttribute('x')) + 1); zero.setAttribute('y', label.getAttribute('y')); zero.setAttribute('font-size', 12.5); zero.setAttribute('font-weight', '700');
       zero.setAttribute('fill', '#d00'); zero.setAttribute('pointer-events', 'none'); zero.setAttribute('class', 'crib-blink'); zero.setAttribute('display', 'none'); hc.appendChild(zero);
@@ -1749,13 +1754,24 @@ body {
         hc.appendChild(r); return r;
       };
       const flushText = document.querySelector('#crib-colflush text'), nobsText = document.querySelector('#crib-colnobs text');
-      cribCountRefs = { pairTexts, f15Texts, runTexts, flushText, nobsText, inp, zero, stick, outlines: { f15: mkOutline(), pair: mkOutline(), runs: mkOutline(), flush: mkOutline(), nobs: mkOutline() }, setPrev: v => { prev = v; } };
+      const runSups = [];   // x2 x3 x4 after the run of three, x2 after the run of four
+      [[0, 2], [0, 3], [0, 4], [1, 2]].forEach(([row, m]) => {
+        const s = document.createElementNS(NS, 'text'); s.textContent = 'x' + m; s.setAttribute('font-size', 8.5); s.setAttribute('font-weight', '400'); s.style.cursor = 'pointer';
+        s.addEventListener('click', () => {
+          if (s.dataset.cribOff === '1') return;
+          if (cribSelReal.runs === row && (cribSelReal.rmult || 1) === m) { cribSelReal.rmult = 1; cribCountRefresh(); return; }
+          if (!cribShowPickOk('runs', row, m)) return;
+          cribSelReal.runs = row; cribSelReal.rmult = m; cribCountRefresh();
+        });
+        hc.appendChild(s); runSups.push({ el: s, row: row, m: m });
+      });
+      cribCountRefs = { word: wordSp, runSups, pairTexts, f15Texts, runTexts, flushText, nobsText, inp, zero, stick, outlines: { f15: mkOutline(), pair: mkOutline(), runs: mkOutline(), flush: mkOutline(), nobs: mkOutline() }, setPrev: v => { prev = v; } };
       const wire = (texts, key) => texts.forEach((t, i) => {
         t.style.cursor = 'pointer';
         t.addEventListener('click', () => {
           if (t.dataset.cribOff === '1') return;
           if (cribSelReal[key] !== i && !cribShowPickOk(key, i)) return;
-          cribSelReal[key] = (cribSelReal[key] === i) ? null : i; cribCountRefresh();
+          cribSelReal[key] = (cribSelReal[key] === i) ? null : i; if (key === 'runs') cribSelReal.rmult = 1; cribCountRefresh();
         });
       });
       wire(f15Texts, 'f15'); wire(pairTexts, 'pair'); wire(runTexts, 'runs');
@@ -1905,11 +1921,12 @@ body {
     let server = await cribLoadGame(cribState.id); if (server) cribState = server;
     const p = cribState.pegging, hd = p && p.hold, pend = p && p.pending, R = cribPegRefs;
     if (cribState.phase !== 'pegging' || !hd || hd.seat !== li || !pend || !R) { cribRender(); return; }
-    const key = pend.count === 31 ? 'f31' : 'last', v = parseInt(R.fin[key].value || '0', 10) || 0, max = cribPegMax(pend), cur = pend.claimedPts || 0;
-    if (v > max) { cribPegNote('Claim refused: that is more than the play is worth (at most ' + max + ').'); return; }
-    if (v <= cur) { cribPegNote(cur ? 'You have claimed ' + cur + '. To claim more, enter a larger total, or advance your front paw.' : 'Enter what the play is worth first.'); return; }
-    pend.claimed = pend.claimed || {}; pend.claimed[key] = true; pend.claimedPts = v;
-    cribState.players[li].score += v - cur;
+    const key = pend.count === 31 ? 'f31' : 'last', v = parseInt(R.fin[key].value || '0', 10) || 0, max = cribPegMax(pend), cur = pend.claimedPts || 0, rem = Math.max(0, max - cur);
+    if (v < 1) { cribPegNote('Type what you are claiming first.'); return; }
+    if (v > rem) { cribPegNote(rem ? 'Claim refused: only ' + rem + ' is left to claim on this play.' : 'Claim refused: everything on this play has been claimed.'); return; }
+    pend.claimed = pend.claimed || {}; pend.claimed[key] = true; pend.claimedPts = cur + v;
+    cribState.players[li].score += v;
+    R.fin[key].value = '';
     cribState.history.push(cribState.players[li].name + ' claims ' + (key === 'f31' ? '31' : 'last card') + ' for ' + v);
     cribState.moveCount++;
     await cribSaveGame(cribState); cribBroadcastGame(cribState);
@@ -2023,7 +2040,6 @@ body {
       const t = R.items[k], f = R.fin[k], live = finKey === k;
       t.setAttribute('opacity', live ? '1' : '0.3'); t.style.cursor = 'default'; t.setAttribute('text-decoration', 'none');
       f.disabled = !live; f.parentNode.setAttribute('opacity', live ? '1' : '0.3');
-      if (live && f.value === '' && (pend.claimedPts || 0) > 0) f.value = String(pend.claimedPts);
       if (!live && !inHold) f.value = f.value;   // untouched
     });
     R.items.run.setAttribute('opacity', mine && !cl.run ? '1' : '0.3'); R.inp.disabled = !(mine && !cl.run);
@@ -2036,7 +2052,8 @@ body {
     R.items.totval.textContent = String(tot);
     R.items.totlabel.setAttribute('opacity', usable ? '1' : '0.3'); R.items.totval.setAttribute('opacity', usable ? '1' : '0.3');
     try { const vb = R.items.totval.getBBox(); R.tick.setAttribute('transform', 'translate(' + (vb.x + vb.width + 1) + ',' + (vb.y - 4) + ') scale(0.6)'); } catch (e) { }   // a superscript tick right after the count to confirm
-    R.tick.setAttribute('opacity', usable && tot > 0 ? '1' : '0.3'); R.tick.style.cursor = usable && tot > 0 ? 'pointer' : 'default';
+    const okTick = inHold ? (tot > 0 && tot <= Math.max(0, cribPegMax(pend) - (pend.claimedPts || 0))) : (usable && tot > 0);
+    R.tick.setAttribute('opacity', okTick ? '1' : '0.3'); R.tick.style.cursor = okTick ? 'pointer' : 'default';
     const canGo = !!p && !p.finished && !p.hold && !p.needCut && p.turn === li && p.inHand[li].length > 0 && !cribHasPlayable(li);
     R.items.go.setAttribute('opacity', canGo ? '1' : '0.3'); R.items.go.style.cursor = canGo ? 'pointer' : 'default';
   }
@@ -2254,8 +2271,29 @@ body {
     d.appendChild(msg); d.appendChild(ok); d.appendChild(off); document.body.appendChild(d);
   }
   // The left-hand scoring area: empty while the crib is being made, pegging claims during the play, the hand-count chart for the show.
+  let cribMugPopSeen = '';
+  function cribMugPop() {
+    try {
+      const S = cribShowCtx(), li = cribGetLocalIdx();
+      if (!S || !S.sh.fin || S.step < 1 || S.active !== li || li === cribState.dealer) return;
+      const k = cribState.id + ':' + cribState.moveCount + ':' + S.step;
+      if (cribMugPopSeen === k || document.getElementById('crib-mugpop')) return;
+      cribMugPopSeen = k;
+      const d = document.createElement('div'); d.id = 'crib-mugpop';
+      d.style.cssText = 'position:fixed;z-index:99997;left:50%;top:26%;transform:translateX(-50%);background:#fffef6;border:1px solid #8a7a52;border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,.4);padding:16px 22px;font:15px sans-serif;color:#000;max-width:360px;text-align:center;';
+      const m = document.createElement('div'); m.style.marginBottom = '12px';
+      m.textContent = 'Claim or award muggins if applicable. Select "' + (S.step === 2 ? 'deal next hand' : 'next count') + '" to continue.';
+      const ok = document.createElement('a'); ok.href = '#'; ok.textContent = 'ok'; ok.onclick = (e) => { e.preventDefault(); d.remove(); };
+      d.appendChild(m); d.appendChild(ok); document.body.appendChild(d);
+    } catch (e) { }
+  }
+  function cribFlashCrib() {
+    const els = [cribCountRefs && cribCountRefs.word, document.getElementById('crib-deck-word')].filter(Boolean);
+    els.forEach(e => e.classList.remove('crib-flash'));
+    setTimeout(() => els.forEach(e => e.classList.add('crib-flash')), 30);
+  }
   function cribBoardPhaseView() {
-    try { const sk = cribState && cribState.phase === 'counting' && cribState.show ? cribState.id + ':' + cribState.show.step : ''; if (sk !== cribShowStepKey) { cribShowStepKey = sk; if (sk) cribCountReset(); } } catch (e) { }
+    try { const sk = cribState && cribState.phase === 'counting' && cribState.show ? cribState.id + ':' + cribState.show.step : ''; if (sk !== cribShowStepKey) { cribShowStepKey = sk; if (sk) cribCountReset(); if (sk && cribState.show.step === 2) cribFlashCrib(); } } catch (e) { }
     const ph = cribState && cribState.phase;
     const chart = ph === 'counting';
     ['crib-col15', 'crib-colpair', 'crib-colruns', 'crib-colflush', 'crib-colnobs', 'crib-handcount'].forEach(id => { const e = document.getElementById(id); if (e) { if (chart) e.removeAttribute('display'); else e.setAttribute('display', 'none'); } });
@@ -2264,6 +2302,7 @@ body {
     if (chart) { try { cribCountRefresh(); } catch (e) { } }
     try { cribRenderNames(); } catch (e) { }
     try { cribRenderPegMinis(); cribRenderMuggins(); cribShowReport(); } catch (e) { }
+    cribMugPop();
     document.querySelectorAll('#crib-cards .crib-flipall-text').forEach(t => { t.style.display = (ph === 'pegging' || (ph === 'counting' && t.id === 'crib-send-link')) ? 'none' : ''; });
     try { cribUpdateLinks(); } catch (e) { }
     try { cribRenderTurnArrow(); } catch (e) { }
@@ -2290,17 +2329,17 @@ body {
   // [number of 15s, number of pairs, run points, flush points (0/4/5), nobs (0/1)].
   const CRIB_COMBOS = [[0,0,0,0,0],[0,0,0,0,1],[0,0,0,4,0],[0,0,0,5,0],[0,0,0,5,1],[0,0,3,0,0],[0,0,3,0,1],[0,0,3,4,0],[0,0,3,5,0],[0,0,3,5,1],[0,0,4,0,0],[0,0,4,0,1],[0,0,4,4,0],[0,0,4,5,0],[0,0,4,5,1],[0,0,5,0,0],[0,0,5,0,1],[0,0,5,4,0],[0,0,5,5,0],[0,0,5,5,1],[0,1,0,0,0],[0,1,0,0,1],[0,1,0,4,0],[0,1,3,0,0],[0,1,3,0,1],[0,1,3,4,0],[0,1,6,0,0],[0,1,6,0,1],[0,1,6,4,0],[0,1,8,0,0],[0,1,8,0,1],[0,1,8,4,0],[0,2,0,0,0],[0,2,0,0,1],[0,2,12,0,0],[0,2,12,0,1],[0,3,0,0,0],[0,3,0,0,1],[0,3,9,0,0],[0,3,9,0,1],[0,4,0,0,0],[0,4,0,0,1],[0,6,0,0,0],[0,6,0,0,1],[1,0,0,0,0],[1,0,0,0,1],[1,0,0,4,0],[1,0,0,5,0],[1,0,0,5,1],[1,0,3,0,0],[1,0,3,0,1],[1,0,3,4,0],[1,0,3,5,0],[1,0,3,5,1],[1,0,4,0,0],[1,0,4,0,1],[1,0,4,4,0],[1,0,4,5,0],[1,0,4,5,1],[1,0,5,0,0],[1,0,5,0,1],[1,0,5,4,0],[1,0,5,5,0],[1,0,5,5,1],[1,1,0,0,0],[1,1,0,0,1],[1,1,0,4,0],[1,1,3,0,0],[1,1,3,0,1],[1,1,3,4,0],[1,1,6,0,0],[1,1,6,0,1],[1,1,6,4,0],[1,1,8,0,0],[1,1,8,4,0],[1,2,0,0,0],[1,2,0,0,1],[1,2,12,0,0],[1,3,0,0,0],[1,3,0,0,1],[1,3,9,0,0],[1,4,0,0,0],[1,6,0,0,0],[2,0,0,0,0],[2,0,0,0,1],[2,0,0,4,0],[2,0,0,5,0],[2,0,0,5,1],[2,0,3,0,0],[2,0,3,0,1],[2,0,3,4,0],[2,0,3,5,0],[2,0,3,5,1],[2,0,4,0,0],[2,0,4,0,1],[2,0,4,4,0],[2,0,4,5,0],[2,0,4,5,1],[2,0,5,0,0],[2,0,5,4,0],[2,0,5,5,0],[2,1,0,0,0],[2,1,0,0,1],[2,1,0,4,0],[2,1,3,0,0],[2,1,3,0,1],[2,1,3,4,0],[2,1,6,0,0],[2,1,6,0,1],[2,1,6,4,0],[2,1,8,0,0],[2,1,8,4,0],[2,2,0,0,0],[2,2,0,0,1],[2,2,12,0,0],[2,3,0,0,0],[2,4,0,0,0],[3,0,0,0,0],[3,0,0,0,1],[3,0,0,4,0],[3,0,0,5,0],[3,0,0,5,1],[3,0,3,0,0],[3,0,3,0,1],[3,0,3,4,0],[3,0,3,5,0],[3,0,3,5,1],[3,0,4,0,0],[3,0,4,0,1],[3,0,4,4,0],[3,0,4,5,0],[3,0,4,5,1],[3,1,0,0,0],[3,1,0,0,1],[3,1,0,4,0],[3,1,3,0,0],[3,1,3,0,1],[3,1,3,4,0],[3,1,6,0,0],[3,1,6,0,1],[3,1,6,4,0],[3,1,8,0,0],[3,1,8,4,0],[3,2,0,0,0],[3,3,0,0,0],[3,3,0,0,1],[3,3,9,0,0],[3,4,0,0,0],[4,0,0,0,0],[4,0,0,0,1],[4,0,0,4,0],[4,0,0,5,0],[4,0,0,5,1],[4,0,4,0,0],[4,0,4,0,1],[4,0,4,4,0],[4,0,4,5,0],[4,0,4,5,1],[4,1,0,0,0],[4,1,0,0,1],[4,1,0,4,0],[4,1,3,0,0],[4,1,3,0,1],[4,1,3,4,0],[4,1,6,0,0],[4,1,6,0,1],[4,1,6,4,0],[4,2,0,0,0],[4,2,0,0,1],[4,2,12,0,0],[4,3,0,0,0],[4,3,0,0,1],[4,3,9,0,0],[4,6,0,0,0],[4,6,0,0,1],[5,2,0,0,0],[5,3,0,0,0],[5,4,0,0,0],[6,1,0,0,0],[6,1,0,0,1],[6,1,0,4,0],[6,1,3,0,0],[6,1,3,0,1],[6,1,3,4,0],[6,2,0,0,0],[6,2,0,0,1],[6,3,0,0,0],[6,4,0,0,0],[6,4,0,0,1],[6,6,0,0,0],[7,3,0,0,0],[7,3,0,0,1],[7,4,0,0,0],[7,4,0,0,1],[8,6,0,0,0],[8,6,0,0,1]];
   const CRIB_PAIR_COUNTS = [1, 2, 3, 4, 6]; // pairs represented by the five "a Pair" rows
-  const cribNewSel = () => ({ f15: null, pair: null, runs: null, flush: null, nobs: false });
+  const cribNewSel = () => ({ f15: null, pair: null, runs: null, rmult: 1, flush: null, nobs: false });
   let cribSelReal = cribNewSel(), cribCountRefs = null;
   // Is there a real hand consistent with everything claimed so far? Unclaimed categories are free.
   function cribFeasible(s) {
-    const n = s.f15 != null ? s.f15 + 1 : null, p = s.pair != null ? CRIB_PAIR_COUNTS[s.pair] : null, r = s.runs != null ? 3 + s.runs : null;
+    const n = s.f15 != null ? s.f15 + 1 : null, p = s.pair != null ? CRIB_PAIR_COUNTS[s.pair] : null, r = s.runs != null ? (3 + s.runs) * (s.rmult || 1) : null;
     const f = s.flush != null ? s.flush : null, b = s.nobs ? 1 : null;
     return CRIB_COMBOS.some(t => (n == null || t[0] === n) && (p == null || t[1] === p) && (r == null || t[2] === r) && (f == null || t[3] > 0) && (b == null || t[4] === b));
   }
   // Counting is live only while at least one card is face-up; face-down returns the chart to its
   // entry state (claims are kept and reappear when cards are flipped back up).
-  function cribCountActive() { return cribFlippedSet.size > 0 && cribShowLive(); }
+  function cribCountActive() { return (cribFlippedSet.size > 0 || !!(cribState && cribState.phase === 'counting' && cribState.show && cribState.show.step === 2)) && cribShowLive(); }
   // During the show the table works only for the player whose count it is, until they have claimed it.
   function cribShowLive() {
     if (!cribState || cribState.phase !== 'counting') return true;
@@ -2315,13 +2354,14 @@ body {
     return { sh: { step: 1, counted: false, claimedPts: 0 }, step: 1, counter: d, other: 1 - d, isCrib: false, cards, parts: cribShowParts(cards, cribState.starter, false), what: 'hand' };
   }
   // A pick in the table is checked against what the hand really holds.
-  function cribShowPickOk(key, i) {
+  function cribShowPickOk(key, i, m) {
     const S = cribState && cribState.phase === 'counting' ? cribShowOwn() : null; if (!S) return true;
     const P = S.parts;
     let bad = '';
     if (key === 'f15' && i + 1 > P.n15) bad = P.n15 ? 'The ' + S.what + ' has only ' + P.n15 + ' fifteen' + (P.n15 > 1 ? 's' : '') + '.' : 'The ' + S.what + ' has no fifteens.';
     else if (key === 'pair' && CRIB_PAIR_COUNTS[i] > P.pairs) bad = P.pairs ? 'The ' + S.what + ' has only ' + P.pairs + ' pair' + (P.pairs > 1 ? 's' : '') + '.' : 'The ' + S.what + ' has no pairs.';
     else if (key === 'runs' && 3 + i > P.run) bad = P.run ? 'The longest run is ' + P.run + '.' : 'The ' + S.what + ' has no run.';
+    else if (key === 'runs' && m > 1 && (3 + i) * m > P.runPts) bad = 'The ' + S.what + ' has ' + P.runPts + ' points in runs.';
     else if (key === 'flush' && !P.flush) bad = 'The ' + S.what + ' has no flush.';
     else if (key === 'nobs' && !P.nobs) bad = 'The ' + S.what + ' has no nobs.';
     if (bad) { cribPegNote('Claim refused: ' + bad); return false; }
@@ -2357,7 +2397,14 @@ body {
     const gray = (t, ok) => { const show = ok || !anySel; t.dataset.cribOff = (ok && active) ? '0' : '1'; t.setAttribute('opacity', show ? '1' : '0.28'); t.style.cursor = (show && active) ? 'pointer' : 'default'; };
     R.f15Texts.forEach((t, i) => gray(t, cribSel.f15 === i || cribFeasible(Object.assign({}, cribSel, { f15: i }))));
     R.pairTexts.forEach((t, i) => gray(t, cribSel.pair === i || cribFeasible(Object.assign({}, cribSel, { pair: i }))));
-    R.runTexts.forEach((t, i) => gray(t, cribSel.runs === i || cribFeasible(Object.assign({}, cribSel, { runs: i }))));
+    R.runTexts.forEach((t, i) => gray(t, cribSel.runs === i || cribFeasible(Object.assign({}, cribSel, { runs: i, rmult: 1 }))));
+    R.runSups.forEach(o => {
+      const t = R.runTexts[o.row], on = cribSel.runs === o.row && (cribSel.rmult || 1) === o.m;
+      try { const b = t.getBBox(), k = o.m - (o.row === 0 ? 2 : 2); o.el.setAttribute('x', b.x + b.width + 2 + k * 12); o.el.setAttribute('y', b.y + 7); } catch (e) { }
+      gray(o.el, on || cribFeasible(Object.assign({}, cribSel, { runs: o.row, rmult: o.m })));
+      o.el.setAttribute('font-weight', on ? '700' : '400'); o.el.setAttribute('text-decoration', on ? 'underline' : 'none');
+    });
+    try { const crib2 = cribState && cribState.phase === 'counting' && cribState.show && cribState.show.step === 2; if (R.word) R.word.textContent = crib2 ? 'crib' : 'hand'; R.inp.setAttribute('aria-label', crib2 ? 'crib count' : 'hand count'); } catch (e) { }
     gray(R.flushText, cribSel.flush != null || cribFeasible(Object.assign({}, cribSel, { flush: 4 })));
     gray(R.nobsText, cribSel.nobs || cribFeasible(Object.assign({}, cribSel, { nobs: true })));
     place(R.outlines.f15, cribSel.f15 != null ? R.f15Texts[cribSel.f15] : null);
@@ -2366,7 +2413,7 @@ body {
     place(R.outlines.flush, cribSel.flush != null ? R.flushText : null);
     place(R.outlines.nobs, cribSel.nobs ? R.nobsText : null);
     if (cribSel.f15 != null || cribSel.pair != null || cribSel.runs != null || cribSel.flush != null || cribSel.nobs) {
-      const total = offset + pairVal + (cribSel.runs != null ? 3 + cribSel.runs : 0) + (cribSel.flush != null ? cribFlushPoints() : 0) + (cribSel.nobs ? 1 : 0);
+      const total = offset + pairVal + (cribSel.runs != null ? (3 + cribSel.runs) * (cribSel.rmult || 1) : 0) + (cribSel.flush != null ? cribFlushPoints() : 0) + (cribSel.nobs ? 1 : 0);
       R.inp.value = String(total); R.setPrev(R.inp.value);
     } else if (active) { R.inp.value = cribHeldInput; R.setPrev(cribHeldInput); }
     else { R.inp.value = ''; R.setPrev(''); }
@@ -2452,7 +2499,7 @@ body {
   function render() {  
     if (!state) return;  
     let li = getLocalIdx(); let isMyTurn = (state.moveCount === 0) ? true : (state.turn === li); waiting = !isMyTurn; if (!waiting) { waitingRack = null; waitingOpp = null; }  
-    var b = $('board'); b.innerHTML = ''; for (var r = 0; r < N; r++)for (var c = 0; c < N; c++) { var btn = document.createElement('button'); btn.className = 'cell ' + premium(r, c).toLowerCase() + (anchor && anchor.r === r && anchor.c === c ? ' anchor' : ''); btn.dataset.r = r; btn.dataset.c = c; if (state.board[r][c] && isNew(r, c)) btn.draggable = true; var t2 = state.board[r][c]; var pr = premium(r, c); if (t2) { var sp = document.createElement('span'); sp.className = 'tile ' + (t2.blank ? 'blank' : ''); sp.textContent = t2.l; var b2 = document.createElement('b'); b2.textContent = t2.blank ? 0 : V[t2.l]; sp.appendChild(b2); btn.appendChild(sp); } else if (pr) { var paw = document.createElement('div'); paw.className = 'paw'; btn.appendChild(paw); var prs = document.createElement('span'); prs.className = 'label'; prs.textContent = pr; btn.appendChild(prs); } b.appendChild(btn); } var cells = b.getElementsByTagName('button'); for (var i = 0; i < cells.length; i++) { cells[i].onclick = place; cells[i].ondblclick = vertical; cells[i].ondragover = allowDrop; cells[i].ondrop = dropCell; cells[i].ondragstart = dragBoard; cells[i].onmousedown = startGesture; cells[i].onmouseup = endGesture } renderRack(); if (state.moveCount === 0) { $('scores').innerHTML = state.players.map(function (x) { return '<div class="score"><span>' + esc(x.name) + '</span><strong>' + x.score + '</strong></div>' }).join(''); } else { $('scores').innerHTML = state.players.map(function (x, i) { return '<div class="score ' + (i === state.turn ? 'active' : '') + '"><span>' + esc(x.name) + (i === state.turn ? ' - turn' : '') + '</span><strong>' + x.score + '</strong></div>' }).join(''); } $('history').innerHTML = state.history.slice().reverse().map(function (x, i) { return '<li>' + (state.history.length - i) + '. ' + esc(x) + '</li>' }).join(''); $('bag').textContent = state.bag.length + ' tiles remain.'; $('turnPill').textContent = isMyTurn ? 'Your turn (' + state.players[li].name + ')' : state.players[state.turn].name + "'s turn"; var previewPts = previewScore();  
+    var b = $('board'); b.innerHTML = ''; for (var r = 0; r < N; r++)for (var c = 0; c < N; c++) { var btn = document.createElement('button'); btn.className = 'cell ' + premium(r, c).toLowerCase() + (anchor && anchor.r === r && anchor.c === c ? ' anchor' : ''); btn.dataset.r = r; btn.dataset.c = c; if (state.board[r][c] && isNew(r, c)) btn.draggable = true; var t2 = state.board[r][c]; var pr = premium(r, c); if (t2) { var sp = document.createElement('span'); sp.className = 'tile ' + (t2.blank ? 'blank' : ''); sp.textContent = t2.l; var b2 = document.createElement('b'); b2.textContent = t2.blank ? 0 : V[t2.l]; sp.appendChild(b2); btn.appendChild(sp); } else if (pr) { var paw = document.createElement('div'); paw.className = 'paw'; btn.appendChild(paw); var prs = document.createElement('span'); prs.className = 'label'; prs.textContent = pr; btn.appendChild(prs); } b.appendChild(btn); } var cells = b.getElementsByTagName('button'); for (var i = 0; i < cells.length; i++) { cells[i].onclick = place; cells[i].ondblclick = vertical; cells[i].ondragover = allowDrop; cells[i].ondrop = dropCell; cells[i].ondragstart = dragBoard; cells[i].onmousedown = startGesture; cells[i].onmouseup = endGesture } renderRack(); if (state.moveCount === 0) { $('scores').innerHTML = state.players.map(function (x) { return '<div class="score"><span>' + esc(x.name) + '</span><strong>' + x.score + '</strong></div>' }).join(''); } else { $('scores').innerHTML = state.players.map(function (x, i) { return '<div class="score ' + (i === state.turn && !state.over ? 'active' : '') + '"><span>' + esc(x.name) + (i === state.turn && !state.over ? ' - turn' : '') + '</span><strong>' + x.score + '</strong></div>' }).join(''); } $('history').innerHTML = state.history.slice().reverse().map(function (x, i) { return '<li>' + (state.history.length - i) + '. ' + esc(x) + '</li>' }).join(''); $('bag').textContent = state.bag.length + ' tiles remain.'; $('turnPill').textContent = state.over ? 'Game over' : isMyTurn ? 'Your turn (' + state.players[li].name + ')' : state.players[state.turn].name + "'s turn"; var previewPts = previewScore();  
     var placementBase = anchor ? 'Starts at ' + String.fromCharCode(65 + anchor.c) + (anchor.r + 1) + ' ' + (anchor.d === 'H' ? 'across' : 'down') : '';  
     $('placement').textContent = placementBase + (previewPts !== null ? (placementBase ? ' • ' : '') + 'Score: ' + previewPts : '');  
     $('wordInput').disabled = !isMyTurn; $('wordInput').placeholder = isMyTurn ? 'Type word or word 8,8,0' : 'Waiting'; $('playWord').disabled = !isMyTurn; $('submitWord').disabled = !isMyTurn; $('pass').disabled = false; $('undo').disabled = !isMyTurn; $('exchg').disabled = !isMyTurn || state.moveCount === 0;  
@@ -2637,6 +2684,7 @@ body {
   function cancelExchange() { exchangeMode = false; exchSet = new Set(); var b = $('exchg'); if (b) b.classList.remove('armed'); }  
   async function exchange() {  
     if (waiting || !state) return;  
+    if (state.over) return message('The game is over.');
     let li = getLocalIdx();  
     if (state.moveCount === 0) return message("Exchange isn't available on the opening move. Play a word, or Pass to let your opponent start.");  
     if (state.turn !== li) return message('Not your turn');  
@@ -2672,9 +2720,20 @@ body {
   function b64DecodeUnicode(b64) { try { b64 = b64.replace(/-/g, '+').replace(/_/g, '/').replace(/\s/g, ''); while (b64.length % 4) b64 += '='; const bin = atob(b64); const bytes = Uint8Array.from(bin, c => c.charCodeAt(0)); return new TextDecoder().decode(bytes); } catch (e) { return null; } }  
   function tryLoadFromHash() { var h = location.hash || ''; if (h.indexOf('#s=') === 0) { try { var b64 = decodeURIComponent(h.slice(3).split('&')[0]); var txt = b64DecodeUnicode(b64); if (!txt) return null; var gs = JSON.parse(txt); if (gs) return cloneRacks(gs); } catch (e) { } } try { var q = new URLSearchParams(location.search); var qs = q.get('s'); if (qs) { var txt2 = b64DecodeUnicode(decodeURIComponent(qs)); if (!txt2) return null; var gs2 = JSON.parse(txt2); if (gs2) return cloneRacks(gs2); } } catch (e) { } return null; }
 
+  // The bag is empty and a player has played out the rack: the other rack's tile values go to that player and come off the other player's score.
+  function rackCount(pl) { return pl.rack.reduce(function (s, t) { return s + (t.blank ? 0 : (V[t.l] || 0)); }, 0); }
+  function endIfRackEmptied(g, idx) {
+    if (g.over || g.bag.length || g.players[idx].rack.length) return;
+    var me = g.players[idx], op = g.players[1 - idx], n = rackCount(op);
+    g.history.push(op.name + ' holds ' + (op.rack.map(function (t) { return t.blank ? '?' : t.l; }).join(' ') || 'no tiles') + ': -' + n + ' for ' + op.name);
+    g.history.push(me.name + ' went out: +' + n + ' for ' + me.name);
+    op.score -= n; me.score += n; g.over = true;
+    g.history.push('FINAL: ' + g.players[0].name + ' ' + g.players[0].score + ', ' + g.players[1].name + ' ' + g.players[1].score + (g.players[0].score === g.players[1].score ? ' - tie' : ' - ' + (g.players[0].score > g.players[1].score ? g.players[0].name : g.players[1].name) + ' wins'));
+  }
   async function commit() {  
     try {  
       let li = getLocalIdx();  
+      if (state.over) throw Error('The game is over.');  
       let server = null; try { server = await loadGame(state.id); } catch (e) { }  
       if (server && server.moveCount !== state.moveCount) {  
         state = cloneRacks(server); pending = []; anchor = null; pendingWord = null; selected = -1; render();  
@@ -2688,10 +2747,11 @@ body {
       if (server?.players?.[1]?.name && server.players[1].name.toLowerCase() !== "opponent") { state.players[1].name = server.players[1].name; }  
       if (server && server.bag) state.bag = server.bag.slice();  
       var words = validate(), pts = 0, nms = [];  
-      for (var i = 0; i < words.length; i++) { pts += score(words[i]); nms.push(words[i].map(function (x) { return x.t.l }).join('')); } if (pending.length === 7) pts += 50; state.undoStack = state.undoStack || []; if (state.undoStack.length > 0) state.undoStack.shift(); state.undoStack.push(snapshotForRollback()); var myIdx = getLocalIdx(); var oppIdx = 1 - myIdx; var p = state.players[myIdx]; p.score += pts; state.history.push(p.name + ': ' + nms.join(' + ') + ' for ' + pts); state.moveCount = (state.moveCount || 0) + 1; draw(state, p); state.turn = oppIdx; var myRack = p.rack.slice(); var oppName = state.players[oppIdx].name; pending = []; anchor = null; pendingWord = null; let gameToSave = JSON.parse(JSON.stringify(state)); await saveGameToCF(gameToSave); broadcastGame(gameToSave); let gsUrl = makeGameStateUrl(gameToSave); try { if (navigator.clipboard && navigator.clipboard.writeText) await navigator.clipboard.writeText(gsUrl); } catch (e) { } showShare(gsUrl, true); $('scores').innerHTML = state.players.map(function (x, i) { return '<div class="score ' + (i === state.turn ? 'active' : '') + '"><span>' + esc(x.name) + (i === state.turn ? ' - turn' : '') + '</span><strong>' + x.score + '</strong></div>' }).join(''); $('history').innerHTML = state.history.slice().reverse().map(function (x, i) { return '<li>' + (state.history.length - i) + '. ' + esc(x) + '</li>' }).join(''); $('bag').textContent = state.bag.length + ' tiles remain.'; enterWaitingMode(myRack, oppName, false);  
+      for (var i = 0; i < words.length; i++) { pts += score(words[i]); nms.push(words[i].map(function (x) { return x.t.l }).join('')); } if (pending.length === 7) pts += 50; state.undoStack = state.undoStack || []; if (state.undoStack.length > 0) state.undoStack.shift(); state.undoStack.push(snapshotForRollback()); var myIdx = getLocalIdx(); var oppIdx = 1 - myIdx; var p = state.players[myIdx]; p.score += pts; state.history.push(p.name + ': ' + nms.join(' + ') + ' for ' + pts); state.moveCount = (state.moveCount || 0) + 1; draw(state, p); state.turn = oppIdx; endIfRackEmptied(state, myIdx); var myRack = p.rack.slice(); var oppName = state.players[oppIdx].name; pending = []; anchor = null; pendingWord = null; let gameToSave = JSON.parse(JSON.stringify(state)); await saveGameToCF(gameToSave); broadcastGame(gameToSave); let gsUrl = makeGameStateUrl(gameToSave); try { if (navigator.clipboard && navigator.clipboard.writeText) await navigator.clipboard.writeText(gsUrl); } catch (e) { } showShare(gsUrl, true); $('scores').innerHTML = state.players.map(function (x, i) { return '<div class="score ' + (i === state.turn && !state.over ? 'active' : '') + '"><span>' + esc(x.name) + (i === state.turn && !state.over ? ' - turn' : '') + '</span><strong>' + x.score + '</strong></div>' }).join(''); $('history').innerHTML = state.history.slice().reverse().map(function (x, i) { return '<li>' + (state.history.length - i) + '. ' + esc(x) + '</li>' }).join(''); $('bag').textContent = state.bag.length + ' tiles remain.'; enterWaitingMode(myRack, oppName, false);  
     } catch (e) { message(e.message); }  
   }  
   async function pass() {  
+    if (state.over) return message('The game is over.');
     let li = getLocalIdx(); if (state.moveCount !== 0 && state.turn !== li) return message('Not your turn'); if (pending.length) return message('Undo unplayed tiles before passing.');  
     let server = null; try { server = await loadGame(state.id); } catch (e) { }  
     if (server && server.moveCount !== state.moveCount) { state = cloneRacks(server); pending = []; anchor = null; pendingWord = null; selected = -1; render(); return message('Game updated elsewhere - reloaded. Try again. Turn: ' + (state.turn === getLocalIdx() ? 'yours' : state.players[state.turn].name)); }  
@@ -2705,7 +2765,7 @@ body {
         state.turn = oppIdx;  
         let gameToSavePass0 = JSON.parse(JSON.stringify(state));  
         saveGameToCF(gameToSavePass0).then(() => { broadcastGame(gameToSavePass0); let gsUrl = makeGameStateUrl(gameToSavePass0); try { navigator.clipboard.writeText(gsUrl) } catch (e) { } showShare(gsUrl, true); }).catch(() => { });  
-        $('scores').innerHTML = state.players.map(function (x, i) { return '<div class="score ' + (i === state.turn ? 'active' : '') + '"><span>' + esc(x.name) + '</span><strong>' + x.score + '</strong></div>' }).join('');  
+        $('scores').innerHTML = state.players.map(function (x, i) { return '<div class="score ' + (i === state.turn && !state.over ? 'active' : '') + '"><span>' + esc(x.name) + '</span><strong>' + x.score + '</strong></div>' }).join('');  
         $('history').innerHTML = state.history.slice().reverse().map(function (x, i) { return '<li>' + (state.history.length - i) + '. ' + esc(x) + '</li>' }).join('');  
         $('bag').textContent = state.bag.length + ' tiles remain.';  
         enterWaitingMode(myRackPass, oppName, true);  
@@ -2715,7 +2775,7 @@ body {
     state.history.push(p.name + ' passed'); draw(state, p); state.moveCount = (state.moveCount || 0) + 1; state.turn = 1 - state.turn; anchor = null;  
     let gameToSavePass = JSON.parse(JSON.stringify(state));  
     saveGameToCF(gameToSavePass).then(() => { broadcastGame(gameToSavePass); let gsUrl = makeGameStateUrl(gameToSavePass); try { navigator.clipboard.writeText(gsUrl) } catch (e) { } showShare(gsUrl, true); }).catch(() => { });  
-    $('scores').innerHTML = state.players.map(function (x, i) { return '<div class="score ' + (i === state.turn ? 'active' : '') + '"><span>' + esc(x.name) + '</span><strong>' + x.score + '</strong></div>' }).join('');  
+    $('scores').innerHTML = state.players.map(function (x, i) { return '<div class="score ' + (i === state.turn && !state.over ? 'active' : '') + '"><span>' + esc(x.name) + '</span><strong>' + x.score + '</strong></div>' }).join('');  
     $('history').innerHTML = state.history.slice().reverse().map(function (x, i) { return '<li>' + (state.history.length - i) + '. ' + esc(x) + '</li>' }).join('');  
     $('bag').textContent = state.bag.length + ' tiles remain.'; enterWaitingMode(myRackPass, oppName, true);  
   }  
@@ -3440,12 +3500,12 @@ body {
     for (let mask = 1; mask < (1 << n); mask++) { let sum = 0, cnt = 0; for (let i = 0; i < n; i++) if (mask & (1 << i)) { sum += cribVal(all[i].r); cnt++; } if (cnt >= 2 && sum === 15) n15++; }
     for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) if (all[i].r === all[j].r) pairs++;
     const counts = {}; all.forEach(c => { const k = cribRankIdx(c.r); counts[k] = (counts[k] || 0) + 1; });
-    const u = Object.keys(counts).map(Number).sort((a, b) => a - b); let run = 0;
-    for (let i = 0; i < u.length;) { let j = i; while (j + 1 < u.length && u[j + 1] === u[j] + 1) j++; if (j - i + 1 >= 3 && j - i + 1 > run) run = j - i + 1; i = j + 1; }
+    const u = Object.keys(counts).map(Number).sort((a, b) => a - b); let run = 0, runPts = 0;
+    for (let i = 0; i < u.length;) { let j = i; while (j + 1 < u.length && u[j + 1] === u[j] + 1) j++; if (j - i + 1 >= 3) { if (j - i + 1 > run) run = j - i + 1; let mul = 1; for (let k = i; k <= j; k++) mul *= counts[u[k]]; runPts += (j - i + 1) * mul; } i = j + 1; }
     const suits = cards.map(c => c.s); let flush = 0;
     if (suits.every(x => x === suits[0])) { if (starter.s === suits[0]) flush = 5; else if (!isCrib) flush = 4; }
     const nobs = cards.some(c => c.r === 'J' && c.s === starter.s) ? 1 : 0;
-    return { n15, pairs, run, flush, nobs, total: cribScoreHand(cards, starter, isCrib).total };
+    return { n15, pairs, run, runPts, flush, nobs, total: cribScoreHand(cards, starter, isCrib).total };
   }
   // The counter claims the count (the hand-count field, the table picks that feed it, a hole or a dragged paw). More than the hand is worth is refused.
   // The counter claims the count (the hand-count field, the table picks that feed it, a hole or a dragged paw). More than the hand is worth is refused.
@@ -3648,7 +3708,7 @@ body {
       const b = backCard(x, y, sw, sh); b.setAttribute('class', 'crib-slot-card'); b.style.display = 'none'; crib.appendChild(b);
     }
     g.appendChild(crib);
-    g.appendChild(lab('crib', CX + sw + gx / 2, CY + 2 * sh + gy + 16));
+    { const cw2 = lab('crib', CX + sw + gx / 2, CY + 2 * sh + gy + 16); cw2.setAttribute('id', 'crib-deck-word'); g.appendChild(cw2); }
     svg.appendChild(g);
     return true;
   }
@@ -3763,6 +3823,31 @@ body {
     const n = Math.min(4, (cribState.crib && cribState.crib.length) || 0);
     Array.from(document.querySelectorAll('#crib-slots .crib-slot-card')).forEach((c, i) => { c.style.display = i < n ? '' : 'none'; });
     cribRenderStaged();
+    try { cribRenderShowCards(); } catch (e) { }
+  }
+  // During the show: the opponent's hand lies face-up in the crib arrangement under holes 1-4, and the crib itself turns face-up when it is counted.
+  function cribRenderShowCards() {
+    const NS = 'http://www.w3.org/2000/svg', svg = document.getElementById('crib-board-svg'); if (!svg || !cribState) return;
+    let g = document.getElementById('crib-show-cards');
+    if (!g) { g = document.createElementNS(NS, 'g'); g.setAttribute('id', 'crib-show-cards'); g.setAttribute('pointer-events', 'none'); svg.appendChild(g); }
+    g.innerHTML = '';
+    const slotCards = Array.from(document.querySelectorAll('#crib-slots .crib-slot-card'));
+    const sh = cribState.phase === 'counting' ? cribState.show : null;
+    if (!sh) return;
+    const S = CRIB_SLOT, d = cribState.dealer, li = cribGetLocalIdx(), opp = 1 - li;
+    const face = (c, x, y) => { const w = document.createElementNS(NS, 'g'); w.setAttribute('transform', 'translate(' + x + ',' + y + ') scale(' + (S.sw / CRIB_CARD_W) + ',' + (S.sh / CRIB_CARD_H) + ')'); w.appendChild(cribBuildCardFace(c.r, c.s, CRIB_CARD_W, CRIB_CARD_H)); g.appendChild(w); };
+    if (sh.step === 2 && cribState.crib && cribState.crib.length) {
+      cribState.crib.slice(0, 4).forEach((c, i) => face(c, S.CX + (i % 2) * (S.sw + S.gx), S.CY + Math.floor(i / 2) * (S.sh + S.gy)));
+      slotCards.forEach(c => { c.style.display = 'none'; });
+    }
+    const oppStep = opp === 1 - d ? 0 : 1, oh = cribState.hands && cribState.hands[opp];
+    if (sh.step >= oppStep && oh && oh.length) {
+      const lowY = 524 + 5.5, cx = 850, top = lowY + 4;
+      const t = document.createElementNS(NS, 'text'); t.setAttribute('x', cx); t.setAttribute('y', top + 10); t.setAttribute('text-anchor', 'middle'); t.setAttribute('font-family', 'sans-serif'); t.setAttribute('font-size', 12); t.setAttribute('font-weight', '700'); t.setAttribute('fill', '#000');
+      t.textContent = cribState.players[opp].name + "'s hand"; g.appendChild(t);
+      const x0 = cx - (2 * S.sw + S.gx) / 2, y0 = top + 16;
+      oh.slice(0, 4).forEach((c, i) => face(c, x0 + (i % 2) * (S.sw + S.gx), y0 + Math.floor(i / 2) * (S.sh + S.gy)));
+    }
   }
   function cribRender() {
     if (!cribState) return;
