@@ -2400,7 +2400,7 @@ body {
     R.runTexts.forEach((t, i) => gray(t, cribSel.runs === i || cribFeasible(Object.assign({}, cribSel, { runs: i, rmult: 1 }))));
     R.runSups.forEach(o => {
       const t = R.runTexts[o.row], on = cribSel.runs === o.row && (cribSel.rmult || 1) === o.m;
-      try { const b = t.getBBox(), k = o.m - (o.row === 0 ? 2 : 2); o.el.setAttribute('x', b.x + b.width + 2 + k * 12); o.el.setAttribute('y', b.y + 7); } catch (e) { }
+      try { const b = t.getBBox(), k = o.m - (o.row === 0 ? 2 : 2); o.el.setAttribute('x', b.x + b.width + 5 + k * 12); o.el.setAttribute('y', b.y + 7); } catch (e) { }
       gray(o.el, on || cribFeasible(Object.assign({}, cribSel, { runs: o.row, rmult: o.m })));
       o.el.setAttribute('font-weight', on ? '700' : '400'); o.el.setAttribute('text-decoration', on ? 'underline' : 'none');
     });
@@ -3835,7 +3835,7 @@ body {
     const sh = cribState.phase === 'counting' ? cribState.show : null;
     if (!sh) return;
     const S = CRIB_SLOT, d = cribState.dealer, li = cribGetLocalIdx(), opp = 1 - li;
-    const face = (c, x, y) => { const w = document.createElementNS(NS, 'g'); w.setAttribute('transform', 'translate(' + x + ',' + y + ') scale(' + (S.sw / CRIB_CARD_W) + ',' + (S.sh / CRIB_CARD_H) + ')'); w.appendChild(cribBuildCardFace(c.r, c.s, CRIB_CARD_W, CRIB_CARD_H)); g.appendChild(w); };
+    const face = (c, x, y, z) => { z = z || 1; const w = document.createElementNS(NS, 'g'); w.setAttribute('transform', 'translate(' + x + ',' + y + ') scale(' + (z * S.sw / CRIB_CARD_W) + ',' + (z * S.sh / CRIB_CARD_H) + ')'); w.appendChild(cribBuildCardFace(c.r, c.s, CRIB_CARD_W, CRIB_CARD_H)); g.appendChild(w); };
     if (sh.step === 2 && cribState.crib && cribState.crib.length) {
       cribState.crib.slice(0, 4).forEach((c, i) => face(c, S.CX + (i % 2) * (S.sw + S.gx), S.CY + Math.floor(i / 2) * (S.sh + S.gy)));
       slotCards.forEach(c => { c.style.display = 'none'; });
@@ -3845,8 +3845,8 @@ body {
       const lowY = 524 + 5.5, cx = 850, top = lowY + 4;
       const t = document.createElementNS(NS, 'text'); t.setAttribute('x', cx); t.setAttribute('y', top + 10); t.setAttribute('text-anchor', 'middle'); t.setAttribute('font-family', 'sans-serif'); t.setAttribute('font-size', 12); t.setAttribute('font-weight', '700'); t.setAttribute('fill', '#000');
       t.textContent = cribState.players[opp].name + "'s hand"; g.appendChild(t);
-      const x0 = cx - (2 * S.sw + S.gx) / 2, y0 = top + 16;
-      oh.slice(0, 4).forEach((c, i) => face(c, x0 + (i % 2) * (S.sw + S.gx), y0 + Math.floor(i / 2) * (S.sh + S.gy)));
+      const z = 1.25, x0 = cx - z * (2 * S.sw + S.gx) / 2, y0 = top + 16;   // a quarter larger than the crib's cards
+      oh.slice(0, 4).forEach((c, i) => face(c, x0 + (i % 2) * z * (S.sw + S.gx), y0 + Math.floor(i / 2) * z * (S.sh + S.gy), z));
     }
   }
   function cribRender() {
