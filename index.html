@@ -759,6 +759,9 @@ body {
         </div>
       </section>     </div>     <div       id="bt-headsup"       hidden     >       <div id="bt-headsup-box">         <div id="bt-headsup-left">           <div id="bt-headsup-help">Join me in a scrabble-like game on BearTracks:</div><textarea             id="bt-headsup-input"             readonly           ></textarea>         </div>         <div id="bt-headsup-right"><button             id="bt-headsup-copy-msg"             disabled           >Message copied</button><button id="bt-headsup-copy-link">Copy link instead</button><button             id="bt-headsup-continue"           >Continue to game</button></div>       </div>     </div>     <script       id="game-state"       type="application/json"     >null</script>     <script>       (function () {         'use strict';         var N = 15, C = 7, V = { A: 1, B: 3, C: 3, D: 2, E: 1, F: 4, G: 2, H: 4, I: 1, J: 8, K: 5, L: 1, M: 3, N: 1, O: 1, P: 3, Q: 10, R: 1, S: 1, T: 1, U: 1, V: 4, W: 4, X: 8, Y: 4, Z: 10, "?": 0 };         var D = { A: 9, B: 2, C: 2, D: 4, E: 12, F: 2, G: 3, H: 2, I: 9, J: 1, K: 1, L: 4, M: 2, N: 6, O: 8, P: 2, Q: 1, R: 6, S: 4, T: 6, U: 4, V: 2, W: 2, X: 1, Y: 2, Z: 1, "?": 2 };         var TW = [[0, 0], [0, 7], [0, 14], [7, 0], [7, 14], [14, 0], [14, 7], [14, 14]], DW = [[1, 1], [2, 2], [3, 3], [4, 4], [10, 10], [11, 11], [12, 12], [13, 13], [1, 13], [2, 12], [3, 11], [4, 10], [10, 4], [11, 3], [12, 2], [13, 1], [7, 7]], TL = [[1, 5], [1, 9], [5, 1], [5, 5], [5, 9], [5, 13], [9, 1], [9, 5], [9, 9], [9, 13], [13, 5], [13, 9]], DL = [[0, 3], [0, 11], [2, 6], [2, 8], [3, 0], [3, 7], [3, 14], [6, 2], [6, 6], [6, 8], [6, 12], [7, 3], [7, 11], [8, 2], [8, 6], [8, 8], [8, 12], [11, 0], [11, 7], [11, 14], [12, 6], [12, 8], [14, 3], [14, 11]];         var state = null, pending = [], selected = -1, anchor = null, dragItem = null, gesture = null, suppressClick = false, waiting = false, waitingRack = null, waitingOpp = null, pendingWord = null;         var rackGap = 5, exchangeMode = false, exchSet = new Set();         const API = "https://beartracks-cfdurable-tt.beartracksgames.workers.dev"; const LIVE_SITE = "https://rljhaines.github.io/beartracks/";         let currentInvite = null; let btChannel = null; 
 
+  // ===== COMMS UNIT =====
+  // Communication only: connections for a game id, send, receive, de-duplication, status. It has no screen elements and never
+  // touches a game's state; each game supplies commHost (below the unit) and decides how, or whether, to show anything.
   let commChannel = null;  
   let commGameId = null;  
   let commPollTimer = null;  
@@ -766,8 +769,6 @@ body {
   let pc = null;  
   let localStream = null;  
   const TALK_WS = "wss://beartracks-cfdurable-tt.beartracksgames.workers.dev/ws"; const WS_URL = TALK_WS;  
-  function addCommLine(t) { let l = document.getElementById("comm-log") || document.querySelector(".bt-tt-log"); if (!l) return; let d = document.createElement("div"); d.textContent = t; d.style.margin = "3px 0"; l.appendChild(d); l.scrollTop = l.scrollHeight; }  
-  function setCommStatus(t) { let s = document.getElementById("comm-status"); if (s) s.textContent = t; }
 
   async function getIceServers() {  
     try {  
@@ -781,19 +782,32 @@ body {
   }
 
   function initComm(gid) {  
-    if (!gid) gid = state?.id || pendingGameForHeadsUp?.id || currentInvite?.gameId; if (!gid) return;  
+    if (!gid) gid = commHost.gameId(); if (!gid) return;  
     if (commGameId === gid && ws && (ws.readyState === 0 || ws.readyState === 1)) return;  
     commGameId = gid;  
-    try { if (commChannel) commChannel.close(); commChannel = new BroadcastChannel("bt_comm_" + gid); commChannel.onmessage = (e) => { let m = e.data; if (!m) return; if (m.type === "chat") showChat(m); if (m.type === "rtc-offer") handleOffer(m); if (m.type === "rtc-answer" && pc) pc.setRemoteDescription(new RTCSessionDescription(m.sdp)).catch(() => { }); if (m.type === "rtc-ice" && pc) pc.addIceCandidate(m.candidate).catch(() => { }); if (m.game) applyExternalState(m.game); }; } catch (e) { }  
+    try { if (commChannel) commChannel.close(); commChannel = new BroadcastChannel("bt_comm_" + gid); commChannel.onmessage = (e) => { let m = e.data; if (!m) return; if (m.type === "chat") showChat(m); if (m.type === "rtc-offer") handleOffer(m); if (m.type === "rtc-answer" && pc) pc.setRemoteDescription(new RTCSessionDescription(m.sdp)).catch(() => { }); if (m.type === "rtc-ice" && pc) pc.addIceCandidate(m.candidate).catch(() => { }); if (m.game) commHost.onGameState(m.game); }; } catch (e) { }  
     if (location.protocol === "file:") return;  
-    try { if (ws) try { ws.close(); } catch (_) { } let wsTok = getSeatToken(gid, getLocalIdx()); let sl = $('seatLink'); if (sl) sl.hidden = false; ws = wsTok ? new WebSocket(WS_URL + "?game=" + encodeURIComponent(gid) + "&user=" + encodeURIComponent(getOwner() || "anon"), ["bt." + wsTok]) : new WebSocket(WS_URL + "?game=" + encodeURIComponent(gid) + "&user=" + encodeURIComponent(getOwner() || "anon")); ws.onopen = () => { setCommStatus("Connected"); let li = getLocalIdx(); let myName = state?.players?.[li]?.name || localStorage.getItem('username') || ('P' + li); try { ws.send(JSON.stringify({ t: 'presence', p: li, name: myName, game: gid })); } catch (_) { } }; ws.onmessage = async (e) => { try { let m = JSON.parse(e.data); if (m.type === "chat") showChat(m); if (m.type === "rtc-offer") handleOffer(m); if (m.type === "rtc-answer" && pc) await pc.setRemoteDescription(m.sdp); if (m.type === "rtc-ice" && pc) try { await pc.addIceCandidate(m.candidate); } catch (_) { } if (m.game) applyExternalState(m.game); } catch (_) { } }; ws.onclose = () => setCommStatus("Offline (same-tab works)"); } catch (e) { }  
+    try { if (ws) try { ws.close(); } catch (_) { } let wsTok = getSeatToken(gid, commHost.seat()); commHost.connecting(); ws = wsTok ? new WebSocket(WS_URL + "?game=" + encodeURIComponent(gid) + "&user=" + encodeURIComponent(getOwner() || "anon"), ["bt." + wsTok]) : new WebSocket(WS_URL + "?game=" + encodeURIComponent(gid) + "&user=" + encodeURIComponent(getOwner() || "anon")); ws.onopen = () => { commHost.status("Connected"); let li = commHost.seat(); let myName = commHost.myName(li); try { ws.send(JSON.stringify({ t: 'presence', p: li, name: myName, game: gid })); } catch (_) { } }; ws.onmessage = async (e) => { try { let m = JSON.parse(e.data); if (m.type === "chat") showChat(m); if (m.type === "rtc-offer") handleOffer(m); if (m.type === "rtc-answer" && pc) await pc.setRemoteDescription(m.sdp); if (m.type === "rtc-ice" && pc) try { await pc.addIceCandidate(m.candidate); } catch (_) { } if (m.game) commHost.onGameState(m.game); } catch (_) { } }; ws.onclose = () => commHost.status("Offline (same-tab works)"); } catch (e) { }  
   }  
   // A message reaches a tab by two routes (the same-browser channel and the server), so each chat message carries an id and is shown once.
   // The name on a message is this tab's player, not the browser's stored owner (two players can share a browser).
-  function chatName() { let n = ''; try { n = gateName(); } catch (e) { } return n || getOwner() || 'You'; }
   let seenChat = new Set();
-  function showChat(m) { if (m.id) { if (seenChat.has(m.id)) return; seenChat.add(m.id); if (seenChat.size > 200) seenChat.delete(seenChat.values().next().value); } addCommLine((m.from || "opp") + ": " + m.text); }
+  function showChat(m) { if (m.id) { if (seenChat.has(m.id)) return; seenChat.add(m.id); if (seenChat.size > 200) seenChat.delete(seenChat.values().next().value); } commHost.onChat(m); }
   function sendComm(o) { if (o && o.type === "chat" && !o.id) o.id = randomId(); if (commChannel) try { commChannel.postMessage(o); } catch (_) { } if (ws && ws.readyState === 1) try { ws.send(JSON.stringify(o)); } catch (_) { } }  
+  // async function tryCallOpponent(id) { let gid = pendingGameForHeadsUp?.id || state?.id || currentInvite?.gameId; initComm(gid); let who = id || currentInvite?.invitedBy || TableTalk.opponent || "opponent"; let btn = document.getElementById("comm-call"); if (pc) { try { pc.close(); } catch (_) { } pc = null; if (localStream) localStream.getTracks().forEach(tr => tr.stop()); localStream = null; if (btn) btn.textContent = "Call"; addCommLine("Call ended"); return; } try { localStream = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch (e) { alert("Mic needed: " + e.message); return; } pc = new RTCPeerConnection({ iceServers: await getIceServers() }); localStream.getTracks().forEach(tr => pc.addTrack(tr, localStream)); pc.onicecandidate = (e) => { if (e.candidate) sendComm({ type: "rtc-ice", candidate: e.candidate, from: getOwner(), to: who }); }; pc.ontrack = (e) => { let a = document.getElementById("remote-audio"); if (a) a.srcObject = e.streams[0]; if (btn) btn.textContent = "Hang up"; addCommLine("In call with " + who); }; let off = await pc.createOffer(); await pc.setLocalDescription(off); sendComm({ type: "rtc-offer", sdp: off, from: chatName(), to: who }); addCommLine("Calling " + who + "..."); }  
+  // async function handleOffer(m) { let gid = pendingGameForHeadsUp?.id || state?.id || currentInvite?.gameId; initComm(gid); try { if (!localStream) localStream = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch (e) { addCommLine("Incoming call but mic blocked"); return; } if (pc) try { pc.close(); } catch (_) { } pc = new RTCPeerConnection({ iceServers: await getIceServers() }); localStream.getTracks().forEach(tr => pc.addTrack(tr, localStream)); pc.onicecandidate = (e) => { if (e.candidate) sendComm({ type: "rtc-ice", candidate: e.candidate, from: getOwner(), to: m.from }); }; pc.ontrack = (e) => { let a = document.getElementById("remote-audio"); if (a) a.srcObject = e.streams[0]; let b = document.getElementById("comm-call"); if (b) b.textContent = "Hang up"; addCommLine("Joined call with " + m.from); }; await pc.setRemoteDescription(new RTCSessionDescription(m.sdp)); let ans = await pc.createAnswer(); await pc.setLocalDescription(ans); sendComm({ type: "rtc-answer", sdp: ans, from: chatName(), to: m.from }); }  
+  // Close this game's connections and forget it (the Wordage module will call this on leave).
+  function commClose() {
+    try { if (commChannel) commChannel.close(); } catch (e) { } commChannel = null;
+    try { if (ws) { let o = ws; ws = null; o.onclose = null; o.close(); } } catch (e) { }
+    commGameId = null;
+  }
+  // ===== END COMMS UNIT =====
+
+  // ===== WORDAGE CHAT PANEL (Wordage's own presentation of the comms unit) =====
+  function addCommLine(t) { let l = document.getElementById("comm-log") || document.querySelector(".bt-tt-log"); if (!l) return; let d = document.createElement("div"); d.textContent = t; d.style.margin = "3px 0"; l.appendChild(d); l.scrollTop = l.scrollHeight; }  
+  function setCommStatus(t) { let s = document.getElementById("comm-status"); if (s) s.textContent = t; }
+  function chatName() { let n = ''; try { n = gateName(); } catch (e) { } return n || getOwner() || 'You'; }
   const TableTalk = {  
     element: null, opponent: null,  
     create(by) {  
@@ -820,15 +834,36 @@ body {
       return el;  
     },  
     activate(kind) {  
-      const holder = document.getElementById('bt-comm-holder'); if (holder) { holder.hidden = false; if (!holder.contains(this.element)) { holder.innerHTML = ''; holder.appendChild(this.element); } }  
+      const holder = commHost.holder(); if (holder) { holder.hidden = false; if (!holder.contains(this.element)) { holder.innerHTML = ''; holder.appendChild(this.element); } }  
       if (kind === 'message') tryMessageOpponent(this.opponent);  
       // if (kind === 'call') tryCallOpponent(this.opponent);  
     }  
   };  
-  function tryMessageOpponent(id) { let gid = pendingGameForHeadsUp?.id || state?.id || currentInvite?.gameId; initComm(gid); let who = id || currentInvite?.invitedBy || TableTalk.opponent || "opponent"; let t = prompt("Message " + who + ":"); if (!t || !t.trim()) { setCommStatus("Table Talk ready"); return; } let p = { type: "chat", from: chatName(), text: t.trim() }; sendComm(p); addCommLine(chatName() + ": " + t.trim()); }  
-  // async function tryCallOpponent(id) { let gid = pendingGameForHeadsUp?.id || state?.id || currentInvite?.gameId; initComm(gid); let who = id || currentInvite?.invitedBy || TableTalk.opponent || "opponent"; let btn = document.getElementById("comm-call"); if (pc) { try { pc.close(); } catch (_) { } pc = null; if (localStream) localStream.getTracks().forEach(tr => tr.stop()); localStream = null; if (btn) btn.textContent = "Call"; addCommLine("Call ended"); return; } try { localStream = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch (e) { alert("Mic needed: " + e.message); return; } pc = new RTCPeerConnection({ iceServers: await getIceServers() }); localStream.getTracks().forEach(tr => pc.addTrack(tr, localStream)); pc.onicecandidate = (e) => { if (e.candidate) sendComm({ type: "rtc-ice", candidate: e.candidate, from: getOwner(), to: who }); }; pc.ontrack = (e) => { let a = document.getElementById("remote-audio"); if (a) a.srcObject = e.streams[0]; if (btn) btn.textContent = "Hang up"; addCommLine("In call with " + who); }; let off = await pc.createOffer(); await pc.setLocalDescription(off); sendComm({ type: "rtc-offer", sdp: off, from: chatName(), to: who }); addCommLine("Calling " + who + "..."); }  
-  // async function handleOffer(m) { let gid = pendingGameForHeadsUp?.id || state?.id || currentInvite?.gameId; initComm(gid); try { if (!localStream) localStream = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch (e) { addCommLine("Incoming call but mic blocked"); return; } if (pc) try { pc.close(); } catch (_) { } pc = new RTCPeerConnection({ iceServers: await getIceServers() }); localStream.getTracks().forEach(tr => pc.addTrack(tr, localStream)); pc.onicecandidate = (e) => { if (e.candidate) sendComm({ type: "rtc-ice", candidate: e.candidate, from: getOwner(), to: m.from }); }; pc.ontrack = (e) => { let a = document.getElementById("remote-audio"); if (a) a.srcObject = e.streams[0]; let b = document.getElementById("comm-call"); if (b) b.textContent = "Hang up"; addCommLine("Joined call with " + m.from); }; await pc.setRemoteDescription(new RTCSessionDescription(m.sdp)); let ans = await pc.createAnswer(); await pc.setLocalDescription(ans); sendComm({ type: "rtc-answer", sdp: ans, from: chatName(), to: m.from }); }  
-  function ensureCommPanel() { if (!state || !state.id) return; let host = document.getElementById('talkBody'); if (!host) return; let existing = document.getElementById('bt-comm-panel'); if (existing) { if (existing.parentElement !== host) host.appendChild(existing); existing.hidden = false; return; } let li = typeof getLocalIdx === 'function' ? getLocalIdx() : 0; let opp = state.players?.[1 - li]?.name || TableTalk.opponent || 'Opponent'; if (!TableTalk.element) TableTalk.create(opp); else TableTalk.opponent = opp; if (TableTalk.element) { host.appendChild(TableTalk.element); TableTalk.element.hidden = false; } }  
+  function tryMessageOpponent(id) { let gid = commHost.gameId(true); initComm(gid); let who = id || commHost.inviter() || TableTalk.opponent || "opponent"; let t = prompt("Message " + who + ":"); if (!t || !t.trim()) { setCommStatus("Table Talk ready"); return; } let p = { type: "chat", from: chatName(), text: t.trim() }; sendComm(p); addCommLine(chatName() + ": " + t.trim()); }  
+  // Put the panel in a container (built the first time).
+  function chatPanelMount(host, oppName) {
+    if (!host) return;
+    let existing = document.getElementById('bt-comm-panel');
+    if (existing) { if (existing.parentElement !== host) host.appendChild(existing); existing.hidden = false; return; }
+    let opp = oppName || TableTalk.opponent || 'Opponent';
+    if (!TableTalk.element) TableTalk.create(opp); else TableTalk.opponent = opp;
+    if (TableTalk.element) { host.appendChild(TableTalk.element); TableTalk.element.hidden = false; }
+  }
+  function chatPanelRemove() { try { let p = document.getElementById('bt-comm-panel'); if (p) p.remove(); } catch (e) { } TableTalk.element = null; }
+  function ensureCommPanel() { if (!state || !state.id) return; let host = document.getElementById('talkBody'); if (!host) return; let li = typeof getLocalIdx === 'function' ? getLocalIdx() : 0; chatPanelMount(host, state.players?.[1 - li]?.name); }
+  // ---- what the comms unit asks of Wordage ----
+  const commHost = {
+    gameId: function (pendingFirst) { return pendingFirst ? (pendingGameForHeadsUp?.id || state?.id || currentInvite?.gameId) : (state?.id || pendingGameForHeadsUp?.id || currentInvite?.gameId); },
+    seat: function () { return getLocalIdx(); },
+    myName: function (li) { return state?.players?.[li]?.name || localStorage.getItem('username') || ('P' + li); },
+    inviter: function () { return currentInvite?.invitedBy; },
+    holder: function () { return document.getElementById('bt-comm-holder'); },
+    connecting: function () { let sl = $('seatLink'); if (sl) sl.hidden = false; },
+    onGameState: function (g) { applyExternalState(g); },
+    onChat: function (m) { addCommLine((m.from || "opp") + ": " + m.text); },
+    status: function (t) { setCommStatus(t); }
+  };
+  // ===== END WORDAGE CHAT PANEL =====
   // BEGIN FIX opponent-name  
   function applyExternalState(g) {  
     if (!g || !g.id || !state || g.id !== state.id) return;  
