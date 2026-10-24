@@ -592,110 +592,7 @@ body {
 #gw-notice { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 30; background: #f6f0e4; border: 1px solid #cfc4ad; border-radius: 10px; padding: 18px 22px; text-align: center; box-shadow: 0 6px 24px rgba(0,0,0,.3); color: #2b2620; max-width: 86vw; }
 #gw-notice p { margin: 0 0 12px; }
 #gw-notice button { margin: 0 4px; }
-</style>   </head> <body>     <main       class="wrap"       id="game"     >       <span id="turnPill" hidden></span>       <div class="stage">         <div class="left-col">           <div class="panel status-panel">             <h3>Play Status</h3>             <div               class="panel-body gameplay-box"               id="gameplayBox"             >               <div                 class="placement"                 id="placement"               ></div>               <div                 class="status"                 id="status"               ></div><a href="#" id="seatLink" hidden style="display:inline-block;margin-top:6px;font-size:.8em;color:inherit;text-decoration:underline">Copy my seat link</a>             </div>           </div>           <div             class="panel instr-panel"             id="instrPanel"           >             <h3               id="instrHead"               role="button"               tabindex="0"               aria-expanded="true"             >Gameplay Instructions</h3>             <div class="panel-body">               <p>Type word or <em>word 8,8,0</em> format.<br><br>&bull; Drag rack letters to rearrange them. When all seven letters are together at an end, you can also drop a letter outside the group to bring the gap back into it. Drag a staged letter from the board back to the rack to unstage it.<br>&bull; Undo: last move<br>&bull; Shuffle: rack<br>&bull; Exchg: exchange tiles<br>&bull; Play: preview<br>&bull; Submit: lock in<br>&bull; Pass: skip turn</p>             </div>
-            <div class="two-letter" id="twoLetter" aria-label="Two-letter words"><span>aa</span><span>ab</span><span>ad</span><span>ae</span><span>ag</span><span>ah</span><span>ai</span><span>al</span><span>am</span><span>an</span><span>ar</span><span>as</span><span>at</span><span>aw</span><span>ax</span><span>ay</span><span>ba</span><span>be</span><span>bi</span><span>bo</span><span>by</span><span>da</span><span>de</span><span>do</span><span>ed</span><span>ef</span><span>eh</span><span>el</span><span>em</span><span>en</span><span>er</span><span>es</span><span>et</span><span>ew</span><span>ex</span><span>fa</span><span>fe</span><span>gi</span><span>go</span><span>ha</span><span>he</span><span>hi</span><span>hm</span><span>ho</span><span>id</span><span>if</span><span>in</span><span>is</span><span>it</span><span>jo</span><span>ka</span><span>ki</span><span>la</span><span>li</span><span>lo</span><span>ma</span><span>me</span><span>mi</span><span>mm</span><span>mo</span><span>mu</span><span>my</span><span>na</span><span>ne</span><span>no</span><span>nu</span><span>od</span><span>oe</span><span>of</span><span>oh</span><span>oi</span><span>ok</span><span>om</span><span>on</span><span>op</span><span>or</span><span>os</span><span>ow</span><span>ox</span><span>oy</span><span>pa</span><span>pe</span><span>pi</span><span>po</span><span>qi</span><span>re</span><span>sh</span><span>si</span><span>so</span><span>ta</span><span>te</span><span>ti</span><span>to</span><span>uh</span><span>um</span><span>un</span><span>up</span><span>us</span><span>ut</span><span>we</span><span>wo</span><span>xi</span><span>xu</span><span>ya</span><span>ye</span><span>yo</span><span>za</span></div>           </div>         </div> 
-
-  <div  
-    class="combo"  
-    id="combo"  
-  >  
-    <div  
-      class="upper"  
-      id="upper"  
-    >  
-      <div  
-        class="rack"  
-        id="rack"  
-      ></div>  
-      <div class="entry-wrap"><input  
-          id="wordInput"  
-          tabindex="1"  
-          maxlength="30"  
-          placeholder="Type word or word 8,8,0"  
-          autocomplete="off"  
-          spellcheck="false"  
-        ></div>  
-      <div class="side-stack left"><button  
-          class="btn-pill"  
-          id="undo" tabindex="4"  
-        ><i>&#8617;</i> Undo</button><button  
-          class="btn-pill"  
-          id="shuffle" tabindex="5"  
-        ><i>&#8644;</i> Shuffle</button><button  
-          class="btn-pill"  
-          id="exchg" tabindex="7"  
-        ><i>&#8646;</i> Exchg</button></div>  
-      <div class="side-stack right"><button  
-          class="btn-pill"  
-          id="playWord" tabindex="2"  
-        ><i>&#9654;</i> Play</button><button  
-          class="btn-pill"  
-          id="submitWord" tabindex="3"  
-        ><i>&#10003;</i> Submit</button><button  
-          class="btn-pill"  
-          id="pass" tabindex="6"  
-        ><i>&#9197;</i> Pass</button></div>  
-    </div>  
-    <div  
-      class="board"  
-      id="board"  
-    ></div>  
-  </div>
-
-  <div class="right-col">  
-    <section  
-      class="card"  
-      id="share-panel"  
-      hidden  
-    >  
-      <h2>Share</h2>  
-      <div  
-        class="help"  
-        id="share-help"  
-      ></div>  
-      <div style="display:flex;gap:6px;margin-top:6px"><input  
-          id="share-url"  
-          readonly  
-          style="flex:1;border:1px solid #b7bcad;border-radius:8px;padding:8px"  
-        ><button  
-          id="share-copy"  
-          class="action alt"  
-        >Copy</button></div>  
-    </section>  
-    <div class="panel score-panel">  
-      <h3>Scoring</h3>  
-      <div class="panel-body">  
-        <div  
-          class="scores"  
-          id="scores"  
-        ></div>  
-        <p  
-          class="help"  
-          id="bag"  
-        ></p>  
-        <ul  
-          class="history"  
-          id="history"  
-        ></ul>  
-      </div>  
-    </div>  
-    <div class="panel talk-panel">  
-      <h3>Convo-Ursidae</h3>  
-      <div  
-        class="panel-body talk-body"  
-        id="talkBody"  
-      >  
-        <div  
-          id="bt-comm-holder"  
-          hidden  
-        ></div>  
-      </div>  
-    </div>  
-  </div>  
-</div>  
-
-
-   </main>     <iframe       id="screenSplash"       title="Background"       aria-hidden="true"       tabindex="-1"     ></iframe>
+</style>   </head> <body>          <iframe       id="screenSplash"       title="Background"       aria-hidden="true"       tabindex="-1"     ></iframe>
 
     <div id="entry-home" hidden>
       <canvas id="entry-paws" aria-hidden="true"></canvas>
@@ -858,7 +755,8 @@ body {
     myName: function (li) { return state?.players?.[li]?.name || localStorage.getItem('username') || ('P' + li); },
     inviter: function () { return currentInvite?.invitedBy; },
     holder: function () { return document.getElementById('bt-comm-holder'); },
-    connecting: function () { let sl = $('seatLink'); if (sl) sl.hidden = false; },
+    wantSeatLink: false,
+    connecting: function () { commHost.wantSeatLink = true; let sl = $('seatLink'); if (sl) sl.hidden = false; },
     onGameState: function (g) { applyExternalState(g); },
     onChat: function (m) { addCommLine((m.from || "opp") + ": " + m.text); },
     status: function (t) { setCommStatus(t); }
@@ -2531,8 +2429,8 @@ body {
   function forgetPendingInvite(id) { if (!id) return; try { localStorage.setItem("bt_pending_invite_ids", JSON.stringify(getPendingInviteIds().filter(x => x !== id))); } catch (e) { } }
   // Backup and restore are offered only while a registered player is in the Foyer.
   function updateBackupVisibility() { try { let b = $('entry-backup'); if (b) b.hidden = !getOwner(); } catch (e) { } }
-  function showEntryPage() { let el = $('entry-home'); if (!el) return; updateBackupVisibility(); try { $('bt-headsup').classList.remove('gw-pick'); $('setup').classList.remove('gw-nodlg'); } catch (e) { } el.hidden = false; $('setup').hidden = true; $('bt-headsup').hidden = true; let owner = getOwner(); $('entry-welcome').textContent = owner ? 'Welcome, ' + owner : 'Welcome'; }
-  function hideEntryPage() { let el = $('entry-home'); if (el) el.hidden = true; try { $('game').style.display = ''; } catch (e) { } }
+  function showEntryPage() { wordageRemove(); let el = $('entry-home'); if (!el) return; updateBackupVisibility(); try { $('bt-headsup').classList.remove('gw-pick'); $('setup').classList.remove('gw-nodlg'); } catch (e) { } el.hidden = false; $('setup').hidden = true; $('bt-headsup').hidden = true; let owner = getOwner(); $('entry-welcome').textContent = owner ? 'Welcome, ' + owner : 'Welcome'; }
+  function hideEntryPage() { let el = $('entry-home'); if (el) el.hidden = true; }
   function entryWordage() { postRegisterTarget = 'wordage'; hideEntryPage(); let owner = getOwner(); if (owner) handleBegin(); else { $('setup').hidden = false; renderBoxes(); } }
   function entryCribbage() { postRegisterTarget = 'cribbage'; hideEntryPage(); $('setup').hidden = false; renderBoxes(); }
   async function enterGameDirect(gameObj, playerIndex) { if (!gameObj) return false; let g = cloneRacks(gameObj); let li = (playerIndex === 0 || playerIndex === 1) ? playerIndex : null; if (li === null) { li = 0; let owner = (getOwner() || '').toLowerCase(); for (let i = 0; i < g.players.length; i++) if ((g.players[i].name || '').toLowerCase() === owner) li = i; } $('bt-headsup').hidden = true; state = g; setTabSeat(g.id, li); mirrorPassword(gateName()); initBroadcastChannel(g.id); initComm(g.id); $('setup').hidden = true; hideEntryPage(); render(); ensureCommPanel(); pendingGameForHeadsUp = null; scheduleFit(); try { let url = new URL(location.href); url.searchParams.set('game', g.id); url.searchParams.delete('p'); url.searchParams.delete('invite'); history.replaceState(null, '', url.pathname + url.search + url.hash); } catch (e) { } return true; }
@@ -2550,8 +2448,8 @@ body {
   function draw(s, p) { while (p.rack.length < 7 && s.bag.length) p.rack.push(tile(s.bag.pop())) }  
   function fresh(a, b) { var bag = [], k, i; for (k in D) for (i = 0; i < D[k]; i++)bag.push(k); shuffle(bag); var s = { version: 4, id: randomId(), players: [{ name: a, score: 0, rack: [] }, { name: b, score: 0, rack: [] }], board: [], bag: bag, turn: 0, history: [], moveCount: 0, undoStack: [] }; for (i = 0; i < N; i++)s.board.push(Array(N).fill(null)); draw(s, s.players[0]); draw(s, s.players[1]); s.players[0].rack = s.players[0].rack.map(function (t) { return { l: t.l, blank: !!t.blank } }); s.players[1].rack = s.players[1].rack.map(function (t) { return { l: t.l, blank: !!t.blank } }); return s; }  
   function cloneRacks(g) { if (!g || !g.players) return g; g.players = g.players.map(function (pl) { return { name: pl.name, score: pl.score, rack: pl.rack.map(function (t) { return { l: t.l, blank: !!t.blank } }) } }); return g; }  
-  function message(t, isPrompt) { var el = $('status'); el.textContent = t; el.classList.remove('prompt'); void el.offsetWidth; if (isPrompt) el.classList.add('prompt') }  
-  function clearPrompt() { var el = $('status'); el.classList.remove('prompt'); }  
+  function message(t, isPrompt) { var el = $('status'); if (!el) return; el.textContent = t; el.classList.remove('prompt'); void el.offsetWidth; if (isPrompt) el.classList.add('prompt') }  
+  function clearPrompt() { var el = $('status'); if (!el) return; el.classList.remove('prompt'); }  
   function getLocalIdx() {  
     let q; try { q = new URLSearchParams(location.search) } catch (e) { q = { get: () => null } }  
     if (!state) return 0  
@@ -2578,6 +2476,7 @@ body {
   }  
   function render() {  
     if (!state) return;  
+    wordageBuild();  
     let li = getLocalIdx(); let isMyTurn = (state.moveCount === 0) ? true : (state.turn === li); waiting = !isMyTurn; if (!waiting) { waitingRack = null; waitingOpp = null; }  
     var b = $('board'); b.innerHTML = ''; for (var r = 0; r < N; r++)for (var c = 0; c < N; c++) { var btn = document.createElement('button'); btn.className = 'cell ' + premium(r, c).toLowerCase() + (anchor && anchor.r === r && anchor.c === c ? ' anchor' : ''); btn.dataset.r = r; btn.dataset.c = c; if (state.board[r][c] && isNew(r, c)) btn.draggable = true; var t2 = state.board[r][c]; var pr = premium(r, c); if (t2) { var sp = document.createElement('span'); sp.className = 'tile ' + (t2.blank ? 'blank' : ''); sp.textContent = t2.l; var b2 = document.createElement('b'); b2.textContent = t2.blank ? 0 : V[t2.l]; sp.appendChild(b2); btn.appendChild(sp); } else if (pr) { var paw = document.createElement('div'); paw.className = 'paw'; btn.appendChild(paw); var prs = document.createElement('span'); prs.className = 'label'; prs.textContent = pr; btn.appendChild(prs); } b.appendChild(btn); } var cells = b.getElementsByTagName('button'); for (var i = 0; i < cells.length; i++) { cells[i].onclick = place; cells[i].ondblclick = vertical; cells[i].ondragover = allowDrop; cells[i].ondrop = dropCell; cells[i].ondragstart = dragBoard; cells[i].onmousedown = startGesture; cells[i].onmouseup = endGesture } renderRack(); if (state.moveCount === 0) { $('scores').innerHTML = state.players.map(function (x) { return '<div class="score"><span>' + esc(x.name) + '</span><strong>' + x.score + '</strong></div>' }).join(''); } else { $('scores').innerHTML = state.players.map(function (x, i) { return '<div class="score ' + (i === state.turn && !state.over ? 'active' : '') + '"><span>' + esc(x.name) + (i === state.turn && !state.over ? ' - turn' : '') + '</span><strong>' + x.score + '</strong></div>' }).join(''); } $('history').innerHTML = state.history.slice().reverse().map(function (x, i) { return '<li>' + (state.history.length - i) + '. ' + esc(x) + '</li>' }).join(''); $('bag').textContent = state.bag.length + ' tiles remain.'; $('turnPill').textContent = state.over ? 'Game over' : isMyTurn ? 'Your turn (' + state.players[li].name + ')' : state.players[state.turn].name + "'s turn"; var previewPts = previewScore();  
     var placementBase = anchor ? 'Starts at ' + String.fromCharCode(65 + anchor.c) + (anchor.r + 1) + ' ' + (anchor.d === 'H' ? 'across' : 'down') : '';  
@@ -2796,7 +2695,7 @@ body {
     enterWaitingMode(myRackX, oppName, true);  
     $('status').textContent = 'You exchanged ' + out.length + (out.length === 1 ? ' tile.' : ' tiles.') + ' Waiting for ' + oppName + '.';  
   }  
-  function showShare(url, isGameState) { let sp = $('share-panel'), su = $('share-url'), sh = $('share-help'); if (sp && su) { su.value = url; sp.hidden = false; if (sh) sh.textContent = isGameState ? 'Game-state backup (for testing):' : 'Join me in a scrabble-like game on BearTracks:'; } }  
+  function showShare(url, isGameState) { wordageShare = { url: url, isGameState: isGameState }; let sp = $('share-panel'), su = $('share-url'), sh = $('share-help'); if (sp && su) { su.value = url; sp.hidden = false; if (sh) sh.textContent = isGameState ? 'Game-state backup (for testing):' : 'Join me in a scrabble-like game on BearTracks:'; } }  
   function b64DecodeUnicode(b64) { try { b64 = b64.replace(/-/g, '+').replace(/_/g, '/').replace(/\s/g, ''); while (b64.length % 4) b64 += '='; const bin = atob(b64); const bytes = Uint8Array.from(bin, c => c.charCodeAt(0)); return new TextDecoder().decode(bytes); } catch (e) { return null; } }  
   function tryLoadFromHash() { var h = location.hash || ''; if (h.indexOf('#s=') === 0) { try { var b64 = decodeURIComponent(h.slice(3).split('&')[0]); var txt = b64DecodeUnicode(b64); if (!txt) return null; var gs = JSON.parse(txt); if (gs) return cloneRacks(gs); } catch (e) { } } try { var q = new URLSearchParams(location.search); var qs = q.get('s'); if (qs) { var txt2 = b64DecodeUnicode(decodeURIComponent(qs)); if (!txt2) return null; var gs2 = JSON.parse(txt2); if (gs2) return cloneRacks(gs2); } } catch (e) { } return null; }
 
@@ -2964,23 +2863,9 @@ body {
   async function handleRegister() { let uEl = $('reg-user'), pEl = $('reg-pass'), p2El = $('reg-pass2'), errEl = $('reg-error'); let u = uEl ? uEl.value.trim() : '', p = pEl ? pEl.value : '', p2 = p2El ? p2El.value : ''; if (errEl) errEl.textContent = ''; if (!u || !p) { if (errEl) errEl.textContent = 'Fill username and password'; return; } if (p !== p2) { if (errEl) errEl.textContent = 'Passwords do not match'; return; } let users = []; try { users = JSON.parse(localStorage.getItem("bt_users") || "[]") } catch (e) { users = [] } if (users.some(x => x.toLowerCase() === u.toLowerCase())) { if (errEl) errEl.textContent = 'Username taken'; return; } localStorage.setItem("bt_owner", u); try { localStorage.removeItem("bt_pass_" + u.toLowerCase()); } catch (e) { } try { await storePassword(u, p); mirrorPassword(u); } catch (e) { } users.push(u); localStorage.setItem("bt_users", JSON.stringify(users)); let inviteParam = null; try { inviteParam = new URLSearchParams(location.search).get("invite"); } catch (e) { } if (inviteParam) { if (postRegisterTarget === 'cribbage') { try { let inv = await cribLoadInvite(inviteParam); if (inv) { forgetPendingInvite(inviteParam); currentInvite = inv; if (await cribJoinViaInvite(inv, u)) return; } } catch (e) { } } else { try { let res = await linkGameViaInvite(inviteParam, u); if (res && res.game) { forgetPendingInvite(inviteParam); currentInvite = res.invite || currentInvite; await enterGameDirect(res.game, 1); return; } } catch (e) { } } } if (postRegisterTarget === 'groupwords') { gwAfterRegister(); return; } if (postRegisterTarget === 'cribbage') { showCribbageLanding(); } else { renderBoxes(); } }
   async function handleBegin() { let owner = getOwner(); if (!owner) { renderBoxes(); return; } let opp = ($('nameB') ? $('nameB').value.trim() : ''); let g = fresh(owner, opp || "Opponent"); await saveGameToCF(g, { withSeat1: !!opp }); initBroadcastChannel(g.id); if (!opp) { let iid = randomId(); currentInvite = { id: iid, invitedBy: owner, invitedByOpponents: getOpponents(), gameId: g.id, mode: "game-invite", created: Date.now() }; try { await saveInviteToCF(currentInvite); } catch (e) { } addOpponent(opp); await showHeadsUp(iid, g, true); } else { currentInvite = null; if (opp) addOpponent(opp); await showHeadsUp(null, g, false); } }  
   async function handleCreateInvitation() { let owner = getOwner(); if (!owner) { renderBoxes(); return; } let id = randomId(); let placeholder = fresh(owner, "Opponent"); await saveGameToCF(placeholder); initBroadcastChannel(placeholder.id); let inv = { id: id, invitedBy: owner, invitedByOpponents: getOpponents(), gameId: placeholder.id, mode: "unregistered-invite", created: Date.now() }; await saveInviteToCF(inv); currentInvite = inv; await showHeadsUp(id, placeholder, true); }  
-  function equalizePills() { const pills = document.querySelectorAll('.btn-pill'); pills.forEach(p => p.style.width = 'max-content'); let max = 0; pills.forEach(p => { max = Math.max(max, p.offsetWidth); }); pills.forEach(p => p.style.width = max + 'px'); }  
-  const REAL_ESTATE = { marginV: 0.04, marginH: 0.05, maxBoard: 900, minBoard: 280, rackGap: 50 };  
-  function fit() {  
-    const vw = window.innerWidth, vh = window.innerHeight, availW = vw * (1 - REAL_ESTATE.marginH * 2), availH = vh * (1 - REAL_ESTATE.marginV * 2), comboFactor = 1 + 1 / 15;  
-    let boardFromH = (availH - REAL_ESTATE.rackGap) / comboFactor, boardFromW = availW;  
-    let board = Math.min(boardFromH, boardFromW); board = Math.max(REAL_ESTATE.minBoard, Math.min(board, REAL_ESTATE.maxBoard));  
-    document.documentElement.style.setProperty('--board-size', board + 'px');  
-    const combo = document.getElementById('combo'), tileH = board / 15, comboH = board + tileH + REAL_ESTATE.rackGap, free = vh - comboH;  
-    combo.style.transform = `translateY(${-free / 6}px)`;  
-    equalizePills();  
-    const inputH = board / 15 * 0.55; const offset = (50 - inputH) / 2;  
-    document.querySelectorAll('.side-stack').forEach(s => s.style.bottom = offset + 'px');  
-  }
-
-  function scheduleFit() { requestAnimationFrame(() => requestAnimationFrame(() => { fit(); setTimeout(fit, 80); setTimeout(fit, 300); })); }  
-  window.addEventListener('resize', scheduleFit);  
-  if (window.visualViewport) { window.visualViewport.addEventListener('resize', scheduleFit); window.visualViewport.addEventListener('scroll', scheduleFit); }  
+  // ===== WORDAGE MODULE: the screen exists only while a Wordage game is open =====
+  // Everything here used to be wired once at page load, onto elements that were always in the page.
+  function wordageWire() {
   // Shuffling, rearranging and clicking rack tiles must not pull the cursor out of the word-entry field.
   (function () {
     var inp = $('wordInput'), keep = false, selS = 0, selE = 0;
@@ -3000,6 +2885,70 @@ body {
       }, 0);
     });
   })();
+  // The seat link is this seat's secret key: it lets the same seat resume the game from any browser.
+  (function () {
+    var a = $('seatLink'); if (!a) return;
+    a.addEventListener('click', function (ev) {
+      ev.preventDefault();
+      var url = (state && state.id) ? makeSeatUrl(state.id, getLocalIdx()) : null;
+      if (!url) { message('No seat key for this game is stored in this browser.'); return; }
+      var done = function () { message('Seat link copied. Keep it private - it lets you resume this game as yourself on any device.'); };
+      try { navigator.clipboard.writeText(url).then(done, function () { window.prompt('Copy your seat link:', url); }); } catch (e) { window.prompt('Copy your seat link:', url); }
+    });
+  })();
+  $('submitWord').onclick = commit; $('undo').onclick = undo; $('pass').onclick = pass; $('playWord').onclick = playTyped; $('shuffle').onclick = shuffleRack; $('exchg').onclick = exchange;  
+  $('wordInput').onkeydown = function (e) { if (e.key === 'Enter') { if (waiting) return; e.preventDefault(); playTyped(); } };  
+  $('wordInput').addEventListener('input', function () { if (waiting) return; if (!anchor) return; let raw = this.value; if (!raw) { if (pending.length) { let lr = getLocalRack(); for (let i = pending.length - 1; i >= 0; i--) { let x = pending[i]; state.board[x.r][x.c] = null; lr.push(x.tile.blank ? tile('?') : x.tile); } pending = []; render(); } return; } let parsed = parseEntry(raw); let word = parsed.word; if (!word) return; if (word.length >= 1) placeWordAtAnchor(word); });  
+  (function () {  
+    var p = $('instrPanel'), h = $('instrHead'); if (!p || !h) return;  
+    function tg() { var c = p.classList.toggle('collapsed'); h.setAttribute('aria-expanded', c ? 'false' : 'true'); }  
+    h.onclick = tg; h.onkeydown = function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tg(); } };  
+  })();  
+  let _sc = document.getElementById('share-copy'); if (_sc) { _sc.onclick = function () { let u = document.getElementById('share-url').value; try { navigator.clipboard.writeText(u).catch(() => { }) } catch (e) { prompt("Copy:", u) } }; }  
+  }
+  const WORDAGE_HTML = "<main       class=\"wrap\"       id=\"game\"     >       <span id=\"turnPill\" hidden><\/span>       <div class=\"stage\">         <div class=\"left-col\">           <div class=\"panel status-panel\">             <h3>Play Status<\/h3>             <div               class=\"panel-body gameplay-box\"               id=\"gameplayBox\"             >               <div                 class=\"placement\"                 id=\"placement\"               ><\/div>               <div                 class=\"status\"                 id=\"status\"               ><\/div><a href=\"#\" id=\"seatLink\" hidden style=\"display:inline-block;margin-top:6px;font-size:.8em;color:inherit;text-decoration:underline\">Copy my seat link<\/a>             <\/div>           <\/div>           <div             class=\"panel instr-panel\"             id=\"instrPanel\"           >             <h3               id=\"instrHead\"               role=\"button\"               tabindex=\"0\"               aria-expanded=\"true\"             >Gameplay Instructions<\/h3>             <div class=\"panel-body\">               <p>Type word or <em>word 8,8,0<\/em> format.<br><br>&bull; Drag rack letters to rearrange them. When all seven letters are together at an end, you can also drop a letter outside the group to bring the gap back into it. Drag a staged letter from the board back to the rack to unstage it.<br>&bull; Undo: last move<br>&bull; Shuffle: rack<br>&bull; Exchg: exchange tiles<br>&bull; Play: preview<br>&bull; Submit: lock in<br>&bull; Pass: skip turn<\/p>             <\/div>\n            <div class=\"two-letter\" id=\"twoLetter\" aria-label=\"Two-letter words\"><span>aa<\/span><span>ab<\/span><span>ad<\/span><span>ae<\/span><span>ag<\/span><span>ah<\/span><span>ai<\/span><span>al<\/span><span>am<\/span><span>an<\/span><span>ar<\/span><span>as<\/span><span>at<\/span><span>aw<\/span><span>ax<\/span><span>ay<\/span><span>ba<\/span><span>be<\/span><span>bi<\/span><span>bo<\/span><span>by<\/span><span>da<\/span><span>de<\/span><span>do<\/span><span>ed<\/span><span>ef<\/span><span>eh<\/span><span>el<\/span><span>em<\/span><span>en<\/span><span>er<\/span><span>es<\/span><span>et<\/span><span>ew<\/span><span>ex<\/span><span>fa<\/span><span>fe<\/span><span>gi<\/span><span>go<\/span><span>ha<\/span><span>he<\/span><span>hi<\/span><span>hm<\/span><span>ho<\/span><span>id<\/span><span>if<\/span><span>in<\/span><span>is<\/span><span>it<\/span><span>jo<\/span><span>ka<\/span><span>ki<\/span><span>la<\/span><span>li<\/span><span>lo<\/span><span>ma<\/span><span>me<\/span><span>mi<\/span><span>mm<\/span><span>mo<\/span><span>mu<\/span><span>my<\/span><span>na<\/span><span>ne<\/span><span>no<\/span><span>nu<\/span><span>od<\/span><span>oe<\/span><span>of<\/span><span>oh<\/span><span>oi<\/span><span>ok<\/span><span>om<\/span><span>on<\/span><span>op<\/span><span>or<\/span><span>os<\/span><span>ow<\/span><span>ox<\/span><span>oy<\/span><span>pa<\/span><span>pe<\/span><span>pi<\/span><span>po<\/span><span>qi<\/span><span>re<\/span><span>sh<\/span><span>si<\/span><span>so<\/span><span>ta<\/span><span>te<\/span><span>ti<\/span><span>to<\/span><span>uh<\/span><span>um<\/span><span>un<\/span><span>up<\/span><span>us<\/span><span>ut<\/span><span>we<\/span><span>wo<\/span><span>xi<\/span><span>xu<\/span><span>ya<\/span><span>ye<\/span><span>yo<\/span><span>za<\/span><\/div>           <\/div>         <\/div> \n\n  <div  \n    class=\"combo\"  \n    id=\"combo\"  \n  >  \n    <div  \n      class=\"upper\"  \n      id=\"upper\"  \n    >  \n      <div  \n        class=\"rack\"  \n        id=\"rack\"  \n      ><\/div>  \n      <div class=\"entry-wrap\"><input  \n          id=\"wordInput\"  \n          tabindex=\"1\"  \n          maxlength=\"30\"  \n          placeholder=\"Type word or word 8,8,0\"  \n          autocomplete=\"off\"  \n          spellcheck=\"false\"  \n        ><\/div>  \n      <div class=\"side-stack left\"><button  \n          class=\"btn-pill\"  \n          id=\"undo\" tabindex=\"4\"  \n        ><i>&#8617;<\/i> Undo<\/button><button  \n          class=\"btn-pill\"  \n          id=\"shuffle\" tabindex=\"5\"  \n        ><i>&#8644;<\/i> Shuffle<\/button><button  \n          class=\"btn-pill\"  \n          id=\"exchg\" tabindex=\"7\"  \n        ><i>&#8646;<\/i> Exchg<\/button><\/div>  \n      <div class=\"side-stack right\"><button  \n          class=\"btn-pill\"  \n          id=\"playWord\" tabindex=\"2\"  \n        ><i>&#9654;<\/i> Play<\/button><button  \n          class=\"btn-pill\"  \n          id=\"submitWord\" tabindex=\"3\"  \n        ><i>&#10003;<\/i> Submit<\/button><button  \n          class=\"btn-pill\"  \n          id=\"pass\" tabindex=\"6\"  \n        ><i>&#9197;<\/i> Pass<\/button><\/div>  \n    <\/div>  \n    <div  \n      class=\"board\"  \n      id=\"board\"  \n    ><\/div>  \n  <\/div>\n\n  <div class=\"right-col\">  \n    <section  \n      class=\"card\"  \n      id=\"share-panel\"  \n      hidden  \n    >  \n      <h2>Share<\/h2>  \n      <div  \n        class=\"help\"  \n        id=\"share-help\"  \n      ><\/div>  \n      <div style=\"display:flex;gap:6px;margin-top:6px\"><input  \n          id=\"share-url\"  \n          readonly  \n          style=\"flex:1;border:1px solid #b7bcad;border-radius:8px;padding:8px\"  \n        ><button  \n          id=\"share-copy\"  \n          class=\"action alt\"  \n        >Copy<\/button><\/div>  \n    <\/section>  \n    <div class=\"panel score-panel\">  \n      <h3>Scoring<\/h3>  \n      <div class=\"panel-body\">  \n        <div  \n          class=\"scores\"  \n          id=\"scores\"  \n        ><\/div>  \n        <p  \n          class=\"help\"  \n          id=\"bag\"  \n        ><\/p>  \n        <ul  \n          class=\"history\"  \n          id=\"history\"  \n        ><\/ul>  \n      <\/div>  \n    <\/div>  \n    <div class=\"panel talk-panel\">  \n      <h3>Convo-Ursidae<\/h3>  \n      <div  \n        class=\"panel-body talk-body\"  \n        id=\"talkBody\"  \n      >  \n        <div  \n          id=\"bt-comm-holder\"  \n          hidden  \n        ><\/div>  \n      <\/div>  \n    <\/div>  \n  <\/div>  \n<\/div>  \n\n\n   <\/main>";
+  let wordageRO = null;
+  let wordageShare = null;   // the invite/backup link shown in the Share panel; the HeadsUp dialog sets it before the screen exists
+  // Build the Wordage screen (once per open). Called by render(), which only runs while a Wordage game (state) is open.
+  function wordageBuild() {
+    if ($('game')) return $('game');
+    document.body.insertAdjacentHTML('afterbegin', WORDAGE_HTML);
+    wordageWire();
+    if (commHost.wantSeatLink) { let sl = $('seatLink'); if (sl) sl.hidden = false; }
+    if (wordageShare) showShare(wordageShare.url, wordageShare.isGameState);
+    try { wordageRO = new ResizeObserver(scheduleFit); wordageRO.observe($('game')); } catch (e) { }
+    scheduleFit();
+    return $('game');
+  }
+  // Leave Wordage: close its connections and timers' targets, take the screen out of the page, forget the open game.
+  function wordageRemove() {
+    if (!state && !$('game')) return;
+    try { commClose(); } catch (e) { } commHost.wantSeatLink = false;
+    try { chatPanelRemove(); } catch (e) { }
+    try { if (btChannel) { btChannel.close(); btChannel = null; } } catch (e) { }
+    try { if (wordageRO) { wordageRO.disconnect(); wordageRO = null; } } catch (e) { }
+    let g = $('game'); if (g) g.remove(); wordageShare = null;
+    state = null; pending = []; selected = -1; anchor = null; dragItem = null; gesture = null; suppressClick = false;
+    waiting = false; waitingRack = null; waitingOpp = null; pendingWord = null; exchangeMode = false; exchSet = new Set();
+  }
+  // ===== END WORDAGE MODULE =====
+  function equalizePills() { const pills = document.querySelectorAll('.btn-pill'); pills.forEach(p => p.style.width = 'max-content'); let max = 0; pills.forEach(p => { max = Math.max(max, p.offsetWidth); }); pills.forEach(p => p.style.width = max + 'px'); }  
+  const REAL_ESTATE = { marginV: 0.04, marginH: 0.05, maxBoard: 900, minBoard: 280, rackGap: 50 };  
+  function fit() {  
+    const vw = window.innerWidth, vh = window.innerHeight, availW = vw * (1 - REAL_ESTATE.marginH * 2), availH = vh * (1 - REAL_ESTATE.marginV * 2), comboFactor = 1 + 1 / 15;  
+    let boardFromH = (availH - REAL_ESTATE.rackGap) / comboFactor, boardFromW = availW;  
+    let board = Math.min(boardFromH, boardFromW); board = Math.max(REAL_ESTATE.minBoard, Math.min(board, REAL_ESTATE.maxBoard));  
+    document.documentElement.style.setProperty('--board-size', board + 'px');  
+    const combo = document.getElementById('combo'), tileH = board / 15, comboH = board + tileH + REAL_ESTATE.rackGap, free = vh - comboH;  
+    if (!combo) return; combo.style.transform = `translateY(${-free / 6}px)`;  
+    equalizePills();  
+    const inputH = board / 15 * 0.55; const offset = (50 - inputH) / 2;  
+    document.querySelectorAll('.side-stack').forEach(s => s.style.bottom = offset + 'px');  
+  }
+
+  function scheduleFit() { requestAnimationFrame(() => requestAnimationFrame(() => { fit(); setTimeout(fit, 80); setTimeout(fit, 300); })); }  
+  window.addEventListener('resize', scheduleFit);  
+  if (window.visualViewport) { window.visualViewport.addEventListener('resize', scheduleFit); window.visualViewport.addEventListener('scroll', scheduleFit); }  
   // Shared-browser lock: leaving the tab or the window locks it; returning asks for the password.
   // A tab that was open before the second player joined was never locked when it was left.  It learns about the
   // second player the moment the shared flag is written (storage events reach background tabs), and checks again on return.
@@ -3046,28 +2995,8 @@ body {
     });
   })();
   requestPersistence();
-  // The seat link is this seat's secret key: it lets the same seat resume the game from any browser.
-  (function () {
-    var a = $('seatLink'); if (!a) return;
-    a.addEventListener('click', function (ev) {
-      ev.preventDefault();
-      var url = (state && state.id) ? makeSeatUrl(state.id, getLocalIdx()) : null;
-      if (!url) { message('No seat key for this game is stored in this browser.'); return; }
-      var done = function () { message('Seat link copied. Keep it private - it lets you resume this game as yourself on any device.'); };
-      try { navigator.clipboard.writeText(url).then(done, function () { window.prompt('Copy your seat link:', url); }); } catch (e) { window.prompt('Copy your seat link:', url); }
-    });
-  })();
-  $('submitWord').onclick = commit; $('undo').onclick = undo; $('pass').onclick = pass; $('playWord').onclick = playTyped; $('shuffle').onclick = shuffleRack; $('exchg').onclick = exchange;  
-  $('wordInput').onkeydown = function (e) { if (e.key === 'Enter') { if (waiting) return; e.preventDefault(); playTyped(); } };  
-  $('wordInput').addEventListener('input', function () { if (waiting) return; if (!anchor) return; let raw = this.value; if (!raw) { if (pending.length) { let lr = getLocalRack(); for (let i = pending.length - 1; i >= 0; i--) { let x = pending[i]; state.board[x.r][x.c] = null; lr.push(x.tile.blank ? tile('?') : x.tile); } pending = []; render(); } return; } let parsed = parseEntry(raw); let word = parsed.word; if (!word) return; if (word.length >= 1) placeWordAtAnchor(word); });  
-  (function () {  
-    var p = $('instrPanel'), h = $('instrHead'); if (!p || !h) return;  
-    function tg() { var c = p.classList.toggle('collapsed'); h.setAttribute('aria-expanded', c ? 'false' : 'true'); }  
-    h.onclick = tg; h.onkeydown = function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tg(); } };  
-  })();  
   $('btn-register').onclick = handleRegister; $('btn-begin').onclick = function () { if (postRegisterTarget === 'cribbage') cribHandleBegin(); else handleBegin(); }; $('btn-invite').onclick = function () { if (postRegisterTarget === 'cribbage') cribHandleCreateInvitation(); else handleCreateInvitation(); }; $('entry-wordage').onclick = entryWordage; $('entry-cribbage').onclick = entryCribbage; $('entry-groupwords').onclick = entryGroupWords;
   $('crib-discard-btn').onclick = cribConfirmDiscard; $('crib-go-btn').onclick = cribSayGo; $('crib-game-back-btn').onclick = cribBackToFoyer;
-  let _sc = document.getElementById('share-copy'); if (_sc) { _sc.onclick = function () { let u = document.getElementById('share-url').value; try { navigator.clipboard.writeText(u).catch(() => { }) } catch (e) { prompt("Copy:", u) } }; }  
   $('btn-logout').onclick = function () { localStorage.removeItem("bt_owner"); $('setup').hidden = true; $('reg-user').value = ''; $('reg-pass').value = ''; $('reg-pass2').value = ''; $('nameB').value = ''; let sp = $('share-panel'); if (sp) sp.hidden = true; currentInvite = null; $('bt-headsup').hidden = true; pendingGameForHeadsUp = null; showEntryPage(); initEntryPaws(); populateEntryGames(); };  
   $('reg-user').onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); handleRegister(); } };  
   $('reg-pass').onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); handleRegister(); } };  
@@ -3248,7 +3177,8 @@ body {
   function cribBroadcastGame(g) { cribPing(); if (location.protocol === 'file:') return; try { if (cribGameChannel) cribGameChannel.postMessage({ game: g }); } catch (e) { } }
   // A silent "look again" nudge over the game's existing socket: after every save (and on arrival) each player's page fetches the state at once,
   // instead of waiting for the next poll. No game state travels over the socket.
-  let cribWs = null, cribWsGid = null, cribPulling = false;
+  let cribWs = null, cribWsGid = null, cribPulling = false, cribLastPoll = 0;
+  const cribClientId = randomId();   // tells a page its own nudge when the room echoes it back
   function cribConnectWs(id) {
     if (location.protocol === 'file:' || !id) return;
     let tok = null; try { tok = getSeatToken(id, cribGetLocalIdx()); } catch (e) { }
@@ -3258,13 +3188,13 @@ body {
     cribWsGid = id;
     try {
       const ws = new WebSocket(WS_URL + '?game=' + encodeURIComponent(id) + '&user=' + encodeURIComponent(getOwner() || 'anon'), ['bt.' + tok]);
-      ws.onopen = () => { try { ws.send(JSON.stringify({ t: 'crib-refresh', id: id })); } catch (e) { } };   // announce arrival: the other page learns of a new opponent's name at once
-      ws.onmessage = (ev) => { try { const m = JSON.parse(ev.data); if (m && m.t === 'crib-refresh' && cribState && cribState.id === id) cribPullNow(); } catch (e) { } };
+      ws.onopen = () => { try { ws.send(JSON.stringify({ t: 'crib-refresh', id: id, c: cribClientId })); } catch (e) { } };   // announce arrival: the other page learns of a new opponent's name at once
+      ws.onmessage = (ev) => { try { const m = JSON.parse(ev.data); if (m && m.t === 'crib-refresh' && m.c !== cribClientId && cribState && cribState.id === id) cribPullNow(); } catch (e) { } };
       ws.onclose = () => { if (cribWs === ws) { cribWs = null; setTimeout(() => { if (cribState && cribState.id === id) cribConnectWs(id); }, 3000); } };
       cribWs = ws;
     } catch (e) { }
   }
-  function cribPing() { try { if (cribWs && cribWs.readyState === 1 && cribState) cribWs.send(JSON.stringify({ t: 'crib-refresh', id: cribState.id })); } catch (e) { } }
+  function cribPing() { try { if (cribWs && cribWs.readyState === 1 && cribState) cribWs.send(JSON.stringify({ t: 'crib-refresh', id: cribState.id, c: cribClientId })); } catch (e) { } }
   async function cribPullNow() {
     if (cribPulling || !cribState || !cribState.id) return; cribPulling = true;
     try { let g = await cribLoadGame(cribState.id); if (g) cribApplyExternalState(g); } catch (e) { } finally { cribPulling = false; }
@@ -3274,12 +3204,23 @@ body {
     if (typeof g.moveCount === 'number' && typeof cribState.moveCount === 'number' && g.moveCount < cribState.moveCount) return;
     cribState = g; cribRender();
   }
-  // Light poll while waiting for the opponent's move, same pattern as Wordage.
+  // Backup poll. The socket nudge delivers moves at once; this only catches a nudge that never arrived.
+  //  - hidden tab: nothing (coming back to the tab pulls at once, see below)
+  //  - socket healthy: nothing on your own move once the opponent has joined; while waiting, at most one fetch every 15 s
+  //  - no socket: every 1.5 s, as before
   setInterval(async () => {
     try {
       if (!cribState || !cribState.id || cribState.phase === 'done') return;
+      if (document.hidden) return;
       let li = cribGetLocalIdx();
       let myTurn = cribIsMyTurn(li);
+      if (cribWs && cribWs.readyState === 1) {
+        let p1 = ((cribState.players[1] && cribState.players[1].name) || '').toLowerCase();
+        let noOpponent = p1 === '' || p1.indexOf('opponent') === 0;
+        if (myTurn && !noOpponent) return;
+        if (Date.now() - cribLastPoll < 15000) return;
+      }
+      cribLastPoll = Date.now();
       let g = await cribLoadGame(cribState.id);
       if (!g) return;
       // On your own move the page is left alone unless something actually changed (a new move, or the opponent's name arriving).
@@ -3287,6 +3228,11 @@ body {
       cribApplyExternalState(g);
     } catch (e) { }
   }, 1500);
+
+  // Back in the tab: catch up at once (and reconnect the socket if it dropped while the tab was hidden).
+  document.addEventListener('visibilitychange', function () {
+    try { if (!document.hidden && cribState && cribState.id) { if (!(cribWs && cribWs.readyState <= 1)) cribConnectWs(cribState.id); cribPullNow(); } } catch (e) { }
+  });
 
   function cribIsMyTurn(li) {
     if (!cribState) return false;
@@ -3310,7 +3256,7 @@ body {
   async function cribEnterGame(g, seat) {
     cribState = g; setTabSeat(g.id, seat); cribInitBroadcast(g.id);
     hideCribbageLanding(); hideEntryPage(); $('setup').hidden = true;
-    let cg = $('cribbage-game'); if (cg) cg.hidden = false; try { $('game').style.display = 'none'; } catch (e) { } cribLayoutBoard();
+    let cg = $('cribbage-game'); if (cg) cg.hidden = false; wordageRemove(); cribLayoutBoard();
     try { mirrorPassword(gateName()); } catch (e) { }
     cribRender();
     try { let url = new URL(location.href); url.searchParams.set('game', g.id); url.searchParams.set('kind', 'cribbage'); url.searchParams.delete('p'); url.searchParams.delete('invite'); history.replaceState(null, '', url.pathname + url.search + url.hash); } catch (e) { }
@@ -4010,8 +3956,15 @@ body {
   }
 
   // ---- wiring ----
+  function cribLeaveGame() {
+    try { if (cribWs) { let o = cribWs; cribWs = null; o.close(); } } catch (e) { }
+    cribWsGid = null;
+    try { if (cribGameChannel) { cribGameChannel.close(); cribGameChannel = null; } } catch (e) { }
+    cribState = null;
+  }
   function cribBackToFoyer() {
-    let cg = $('cribbage-game'); if (cg) cg.hidden = true; try { $('game').style.display = ''; } catch (e) { }
+    let cg = $('cribbage-game'); if (cg) cg.hidden = true;
+    cribLeaveGame();
     hideCribbageLanding();
     try { let url = new URL(location.href); url.searchParams.delete('game'); url.searchParams.delete('kind'); url.searchParams.delete('p'); history.replaceState(null, '', url.pathname + url.search + url.hash); } catch (e) { }
     showEntryPage(); initEntryPaws(); populateEntryGames();
@@ -4283,7 +4236,6 @@ body {
     let iid = params.get("invite"); let gid = params.get("game"); let pParam = params.get("p"); let kindParam = params.get("kind");
     let owner = getOwner(); let hasState = false;
     if (kindParam === 'cribbage') {
-      try { $('game').style.display = 'none'; } catch (e) { }
       if (gid) {
         absorbSeatKey(gid, pParam);
         let cg = await cribLoadGame(gid);
@@ -4348,7 +4300,7 @@ body {
         } catch (e) { }  
       } else { $('setup').hidden = false; renderBoxes(); }  
     } else if (!iid && !gid && !hasState) { showEntryPage(); initEntryPaws(); await populateEntryGames(); scheduleFit(); }  
-    scheduleFit(); try { new ResizeObserver(scheduleFit).observe(document.getElementById('game')); } catch (e) { }
+    scheduleFit();
     if (gateFresh) gateFresh = false; else lockGate();  
   })();  
 }());  
