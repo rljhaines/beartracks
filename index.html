@@ -2466,7 +2466,7 @@ body {
   function hideEntryPage() { let el = $('entry-home'); if (el) el.hidden = true; }
   function entryWordage() { postRegisterTarget = 'wordage'; hideEntryPage(); let owner = getOwner(); if (owner) handleBegin(); else { $('setup').hidden = false; renderBoxes(); } }
   function entryCribbage() { postRegisterTarget = 'cribbage'; hideEntryPage(); $('setup').hidden = false; renderBoxes(); }
-  async function enterGameDirect(gameObj, playerIndex) { if (!gameObj) return false; let g = cloneRacks(gameObj); let li = (playerIndex === 0 || playerIndex === 1) ? playerIndex : null; if (li === null) { li = 0; let owner = (getOwner() || '').toLowerCase(); for (let i = 0; i < g.players.length; i++) if ((g.players[i].name || '').toLowerCase() === owner) li = i; } $('bt-headsup').hidden = true; state = g; setTabSeat(g.id, li); mirrorPassword(gateName()); initBroadcastChannel(g.id); initComm(g.id); $('setup').hidden = true; hideEntryPage(); render(); ensureCommPanel(); pendingGameForHeadsUp = null; scheduleFit(); try { let url = new URL(location.href); url.searchParams.set('game', g.id); url.searchParams.delete('p'); url.searchParams.delete('invite'); history.replaceState(null, '', url.pathname + url.search + url.hash); } catch (e) { } return true; }
+  async function enterGameDirect(gameObj, playerIndex) { if (!gameObj) return false; let g = cloneRacks(gameObj); try { addGameId(g.id); } catch (e) { } let li = (playerIndex === 0 || playerIndex === 1) ? playerIndex : null; if (li === null) { li = 0; let owner = (getOwner() || '').toLowerCase(); for (let i = 0; i < g.players.length; i++) if ((g.players[i].name || '').toLowerCase() === owner) li = i; } $('bt-headsup').hidden = true; state = g; setTabSeat(g.id, li); mirrorPassword(gateName()); initBroadcastChannel(g.id); initComm(g.id); $('setup').hidden = true; hideEntryPage(); render(); ensureCommPanel(); pendingGameForHeadsUp = null; scheduleFit(); try { let url = new URL(location.href); url.searchParams.set('game', g.id); url.searchParams.delete('p'); url.searchParams.delete('invite'); history.replaceState(null, '', url.pathname + url.search + url.hash); } catch (e) { } return true; }
   async function openPendingInvite(inv) { if (!inv || !inv.id) return; rememberPendingInvite(inv); try { let owner = getOwner(); if (!owner) { let url = new URL(location.href); url.searchParams.set('invite', inv.id); history.replaceState(null, '', url.pathname + url.search + url.hash); hideEntryPage(); $('setup').hidden = false; renderBoxes(); return; } currentInvite = inv; hideEntryPage(); if (!(await joinViaInvite(inv, owner))) showEntryPage(); } catch (e) { } }
   // Underway list: one line with the other player's name, then each game with that player on its own indented line, pointed to by an arrow.
   // Several of the same game with the same player are numbered.
@@ -2907,6 +2907,7 @@ body {
         for (let i = 0; i < g.players.length; i++) if ((g.players[i].name || "").toLowerCase() === owner) li = i;  
       }  
       $('bt-headsup').hidden = true;  
+      try { addGameId(g.id); } catch (e) { }
       state = g; setTabSeat(g.id, li); mirrorPassword(gateName()); initBroadcastChannel(g.id); initComm(g.id);  
       $('setup').hidden = true; render(); ensureCommPanel(); pendingGameForHeadsUp = null; scheduleFit();  
       try {  
@@ -3339,7 +3340,7 @@ body {
   }
   function hideCribbageLanding() { /* no-op: retained for legacy call sites — there is no separate landing screen anymore. */ }
   async function cribEnterGame(g, seat) {
-    cribState = g; setTabSeat(g.id, seat); cribInitBroadcast(g.id);
+    try { addGameId(g.id); } catch (e) { } cribState = g; setTabSeat(g.id, seat); cribInitBroadcast(g.id);
     hideCribbageLanding(); hideEntryPage(); $('setup').hidden = true;
     let cg = $('cribbage-game'); if (cg) cg.hidden = false; wordageRemove(); cribLayoutBoard();
     try { mirrorPassword(gateName()); } catch (e) { }
@@ -4389,7 +4390,7 @@ body {
     if (state && hasState) {  
       try { if (!owner) owner = localStorage.getItem("bt_owner"); } catch (e) { }  
       if (owner) {  
-        $('setup').hidden = true; $('bt-headsup').hidden = true; initBroadcastChannel(state.id); render(); scheduleFit();  
+        $('setup').hidden = true; $('bt-headsup').hidden = true; try { addGameId(state.id); } catch (e) { } initBroadcastChannel(state.id); render(); scheduleFit();  
         try {  
           let url = new URL(location.href);  
           if (pParam === '0' || pParam === '1') setTabSeat(state.id, Number(pParam));  
