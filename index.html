@@ -3158,113 +3158,26 @@ body {
   // getTabSeat/setTabSeat, addGameId/getAllGameIds, getSeatToken-free: cribbage saves are unprotected
   // in this first version, unlike Wordage's seat-token locks) =================
   let cribState = null, cribPending = null /* reserved */, cribBroadcast = null, cribGameChannel = null;
-  // ===== hand-off: move one seat to another browser with a short one-time code =====
-  // A service the games plug into.  It owns the code, the panel, the claim and registering the player; it knows no game.
-  // Each game registers an adapter beside its own code:  btHand.register(kind, { current, adopt })
-  //   current() -> { gid, seat, name, token } for the game this tab is showing, or null
-  //   adopt(b)  -> store the seat key from the claimed bundle b and enter the game; returns '' or a sentence to show
-  // (btHand itself is declared with the early helpers.)
-  function hoClean(c) { return String(c || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); }
-  function hoPretty(c) { c = hoClean(c); return c.length > 4 ? c.slice(0, 4) + '-' + c.slice(4) : c; }
+  // ===== Safari: a game open in a Safari tab is not played there; the tab says how to add BearTracks to the Dock =====
+  // (The registered player is carried into the Dock app by Safari itself, so nothing is passed between the two.)
   function hoStandalone() { try { return navigator.standalone === true || (window.matchMedia && matchMedia('(display-mode: standalone)').matches); } catch (e) { return false; } }
-  async function hoCreate(h) {
-    let r = await fetch(API + '/handoff', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Seat-Token': h.token }, body: JSON.stringify({ kind: h.kind, gameId: h.gid, pw: (h.name && pwRecord(h.name)) || '' }) });
-    if (!r.ok) throw new Error(String(r.status));
-    return (await r.json()).code;
-  }
-  async function hoStatus(code) { try { let r = await fetch(API + '/handoff/' + encodeURIComponent(hoClean(code))); if (r.ok) return (await r.json()).state; } catch (e) { } return null; }
-  async function hoClaim(code) { let c = hoClean(code); if (!c) return null; let r = await fetch(API + '/handoff/' + encodeURIComponent(c) + '/claim', { method: 'POST' }); return r.ok ? await r.json() : null; }
-  // The player, not the game: register this browser as the seat's player if no one is registered.  False when it already belongs to someone else.
-  function hoPerson(b) {
-    if (!b || !b.token || !b.gameId || !b.name) return false;
-    let owner = getOwner();
-    if (owner && String(owner).toLowerCase() !== String(b.name).toLowerCase()) return false;
-    if (!owner) {
-      localStorage.setItem('bt_owner', b.name);
-      try { let us = JSON.parse(localStorage.getItem('bt_users') || '[]'); if (!us.some(function (x) { return String(x).toLowerCase() === b.name.toLowerCase(); })) { us.push(b.name); localStorage.setItem('bt_users', JSON.stringify(us)); } } catch (e) { }
-      if (b.pw && /^[0-9a-f]+:[0-9a-f]+$/.test(b.pw) && !localStorage.getItem(pwKey(b.name))) localStorage.setItem(pwKey(b.name), b.pw);
-    }
-    return true;
-  }
-  // Claim a code and go into its game.  Returns '' on success, otherwise the sentence to show.
-  async function hoEnter(code) {
-    let b = await hoClaim(code);
-    if (!b) return 'That code has expired or was already used.';
-    let ad = btHand.kinds[b.kind || 'wordage'];
-    if (!ad) return 'This app does not know that kind of game.';
-    if (!hoPerson(b)) return 'This browser is registered as ' + getOwner() + '; that game belongs to ' + b.name + '.';
-    try { let url = new URL(location.href); url.searchParams.delete('handoff'); history.replaceState(null, '', url.pathname + url.search + url.hash); } catch (e) { }
-    return await ad.adopt(b);
-  }
-  // ---- Safari side: a "Use in the app" panel for whatever game is open, shown only in a Safari tab (not in the installed app) ----
   (function () {
     function isSafari() { let ua = navigator.userAgent; return navigator.vendor === 'Apple Computer, Inc.' && !/CriOS|FxiOS|EdgiOS|OPiOS|Chrome|Chromium|Android/.test(ua); }
-    let link = null, ov = null, poll = null, cur = null;
-    function urlParam() { try { return new URLSearchParams(location.search).get('handoff'); } catch (e) { return null; } }
-    function setUrl(code) { try { let url = new URL(location.href); if (code) url.searchParams.set('handoff', code); else url.searchParams.delete('handoff'); history.replaceState(null, '', url.pathname + url.search + url.hash); } catch (e) { } }
-    function stop() { if (poll) { clearInterval(poll); poll = null; } }
-    function close() { stop(); if (ov) { ov.remove(); ov = null; } setUrl(null); cur = null; }
     function mk(tag, text, css) { let e = document.createElement(tag); if (text) e.textContent = text; if (css) e.style.cssText = css; return e; }
-    function show(h, code, note, canRetry) {
-      if (!ov) { ov = mk('div', '', 'position:fixed;inset:0;z-index:99990;background:#f6f0e4;color:#1f3b32;overflow:auto;display:flex;justify-content:center;padding:24px'); document.body.appendChild(ov); }
-      ov.textContent = '';
-      let box = mk('div', '', 'max-width:520px;width:100%;margin-top:6vh'); ov.appendChild(box);
-      box.appendChild(mk('h1', 'Use this game in the BearTracks app', 'font-size:1.5em;margin:0 0 12px'));
-      if (code) box.appendChild(mk('div', hoPretty(code), 'font:700 2.2em/1.2 monospace;letter-spacing:.12em;background:#fff;border:1px solid #c9b98f;border-radius:10px;padding:10px 14px;text-align:center;margin-bottom:14px'));
-      let ol = mk('ol', '', 'line-height:1.55;padding-left:1.3em;margin:0 0 12px');
-      let li1 = mk('li', 'In the top-right of Safari’s toolbar, click Share '); li1.appendChild(btIcon('share')); li1.appendChild(document.createTextNode(', then choose Add to Dock.')); ol.appendChild(li1);
-      ['If the blue Open button does not appear beside the address, refresh this tab (⌘R).', 'Click Open. The app registers you as ' + ((h && h.name) || 'this player') + ' and opens the game.'].forEach(function (t) { ol.appendChild(mk('li', t)); });
-      box.appendChild(ol);
-      if (code) box.appendChild(mk('p', 'If you open the app from the Dock instead, choose “Have a code from another browser?” on its registration screen and type the code above.', 'font-size:.9em;margin:0 0 12px'));
-      box.appendChild(mk('p', note || '', 'font-weight:600;min-height:1.4em;margin:0 0 12px'));
-      let row = mk('div', '', 'display:flex;gap:10px');
-      if (canRetry) { let b = mk('button', 'New code'); b.onclick = function () { open(null); }; row.appendChild(b); }
-      box.appendChild(row);
-    }
-    function watch(h, code) {
-      stop(); let t0 = Date.now();
-      poll = setInterval(async function () {
-        let st = await hoStatus(code);
-        if (st === 'claimed') { stop(); show(h, code, 'The app is connected. Open BearTracks from the Dock to play.', false); }
-        else if (st === 'expired' || Date.now() - t0 > 330000) { stop(); setUrl(null); show(h, null, 'That code has expired.', true); }
-      }, 2500);
-    }
-    async function open(resumeCode) {
-      let h = btHand.here(); if (!h) return;
-      if (resumeCode) { cur = resumeCode; show(h, cur, 'Waiting for the app…', false); watch(h, cur); return; }
-      show(h, null, 'Making a code…', false);
-      try { cur = await hoCreate(h); } catch (e) { show(h, null, 'A code could not be made (' + (e && e.message) + '). This browser may not hold the key for this seat.', true); return; }
-      setUrl(cur); show(h, cur, 'Waiting for the app… BearTracks is played in the app. Use a browser such as Firefox or Opera for a browser game.', false); watch(h, cur); 
-    }
+    let ov = null;
     setInterval(function () {
       try {
-        let h = btHand.here(), ok = !!(h && h.token && isSafari() && !hoStandalone());
-        if (!ok && ov) close();
-        let up = urlParam();
-        // In Safari a game is played only in the installed app: while a game is open here, the code panel stays up and cannot be closed.
-        if (ok && !ov && !cur) open(up || null);
+        let ok = !!(btHand.here() && isSafari() && !hoStandalone());
+        if (ok && !ov) {
+          ov = mk('div', '', 'position:fixed;inset:0;z-index:99990;background:#f6f0e4;color:#1f3b32;overflow:auto;display:flex;justify-content:center;padding:24px'); ov.id = 'bt-browser-lock';
+          let box = mk('div', '', 'max-width:540px;width:100%;margin-top:6vh'); ov.appendChild(box);
+          box.appendChild(mk('h1', 'BearTracks is played in the app', 'font-size:1.5em;margin:0 0 14px'));
+          let p = mk('p', 'Click Share ', 'line-height:2;margin:0'); p.appendChild(btIcon('share')); p.appendChild(document.createTextNode(', then Add to Dock.')); box.appendChild(p);
+          document.body.appendChild(ov); document.documentElement.style.overflow = 'hidden';
+        }
+        if (!ok && ov) { ov.remove(); ov = null; document.documentElement.style.overflow = ''; }
       } catch (e) { }
     }, 1500);
-    window.addEventListener('pagehide', function () { try { setUrl(null); } catch (e) { } });
-  })();
-  // ---- app side: "Have a code from another browser?" on the registration box, shown only in the installed app ----
-  (function () {
-    if (!hoStandalone()) return;   // a code is made in a Safari tab and used in the installed app, so the field has a purpose only there
-    let err = $('reg-error'); if (!err || !err.parentNode) return;
-    let a = document.createElement('a'); a.href = '#'; a.textContent = 'Have a code from another browser?'; a.style.cssText = 'display:inline-block;margin-top:10px;font-size:.85em;color:inherit;text-decoration:underline';
-    let w = document.createElement('div'); w.hidden = true; w.style.marginTop = '8px';
-    w.innerHTML = '<label>Code<input id="ho-code" placeholder="ABCD-EFGH" autocomplete="off" autocapitalize="characters" maxlength="9"></label><button id="ho-go" type="button">Use code</button><div id="ho-err" class="error"></div>';
-    err.parentNode.insertBefore(a, err.nextSibling); err.parentNode.insertBefore(w, a.nextSibling);
-    // the dialog has a fixed height: showing the code field swaps out the registration fields instead of adding to them
-    let box = $('box-register'), others = Array.prototype.filter.call(box.children, function (el) { return el !== a && el !== w && el.tagName !== 'H1' && el.id !== 'reg-error'; });
-    a.onclick = function (ev) {
-      ev.preventDefault(); w.hidden = !w.hidden;
-      others.forEach(function (el) { el.style.display = w.hidden ? '' : 'none'; });
-      a.textContent = w.hidden ? 'Have a code from another browser?' : 'Back to registration';
-      if (!w.hidden) { try { $('ho-code').focus(); } catch (e) { } }
-    };
-    async function go() { $('ho-err').textContent = ''; let m = ''; try { m = await hoEnter($('ho-code').value); } catch (e) { m = 'The hand-off failed.'; } if (m) $('ho-err').textContent = m; }
-    $('ho-go').onclick = go; $('ho-code').onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); go(); } };
   })();
   let postRegisterTarget = 'wordage';
   // A Wordage game that a link loaded before anyone was registered; registering then goes to that game, not to Start a game.
@@ -4485,8 +4398,6 @@ body {
     let iid = params.get("invite"); let gid = params.get("game"); let pParam = params.get("p"); let kindParam = params.get("kind");
     let owner = getOwner(); let hasState = false;
     
-    let hoParam = params.get('handoff');
-    if (hoParam && hoStandalone()) { let hoErr = ''; try { hoErr = await hoEnter(hoParam); } catch (e) { hoErr = 'The hand-off failed.'; } if (!hoErr) return; try { message(hoErr); } catch (e) { } }
     if (kindParam === 'cribbage') {
       if (gid) {
         absorbSeatKey(gid, pParam);
