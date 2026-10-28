@@ -4602,14 +4602,9 @@ body {
       var ov = mk('div', '', 'position:fixed;inset:0;z-index:99990;background:#f6f0e4;color:#1f3b32;overflow:auto;display:flex;justify-content:center;padding:24px'); ov.id = 'bt-browser-lock';
       var box = mk('div', '', 'max-width:540px;width:100%;margin-top:6vh'); ov.appendChild(box);
       box.appendChild(mk('h1', 'BearTracks is played in the app', 'font-size:1.5em;margin:0 0 12px'));
-      var ol = mk('ol', '', 'line-height:2;padding-left:1.3em;margin:0 0 14px'); box.appendChild(ol);
-      var a = mk('li', 'In the upper-right corner of this window, click the Install icon '); a.appendChild(btIcon('install')); a.appendChild(document.createTextNode(' at the end of the address bar, or open the menu ')); a.appendChild(btIcon('menu')); a.appendChild(document.createTextNode(' and choose Install BearTracks… (Chrome: Cast, save, and share › Install page as app).')); ol.appendChild(a);
-      var b = mk('li', 'Already installed? Click Open in BearTracks '); b.appendChild(btIcon('open')); b.appendChild(document.createTextNode(' at the end of the address bar. If you came from an invite link, this carries the invite into the app.')); ol.appendChild(b);
-      var btn = mk('button', 'Install BearTracks', 'font-size:1.05em;padding:8px 16px;display:none;margin-bottom:10px'); box.appendChild(btn);
-      btn.onclick = function () { if (window.btInstall) window.btInstall.prompt(); };
-      box.appendChild(mk('p', 'For a browser game, use Firefox.', 'font-size:.9em;margin:10px 0 0'));
+      var btn = mk('button', 'Install BearTracks', 'font-size:1.1em;padding:10px 20px'); box.appendChild(btn);
+      btn.onclick = function () { if (window.btInstall && window.btInstall.can()) window.btInstall.prompt(); };
       document.body.appendChild(ov); document.documentElement.style.overflow = 'hidden';
-      setInterval(function () { btn.style.display = (window.btInstall && window.btInstall.can()) ? 'inline-block' : 'none'; }, 700);
     };
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', build); else build();
   }
