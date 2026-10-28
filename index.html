@@ -3206,14 +3206,13 @@ body {
       box.appendChild(mk('p', note || '', 'font-weight:600;min-height:1.4em;margin:0 0 12px'));
       let row = mk('div', '', 'display:flex;gap:10px');
       if (canRetry) { let b = mk('button', 'New code'); b.onclick = function () { open(null); }; row.appendChild(b); }
-      let c = mk('button', 'Close'); c.onclick = close; row.appendChild(c);
       box.appendChild(row);
     }
     function watch(h, code) {
       stop(); let t0 = Date.now();
       poll = setInterval(async function () {
         let st = await hoStatus(code);
-        if (st === 'claimed') { stop(); show(h, code, 'The app is connected. You can close this tab, or keep playing here.', false); }
+        if (st === 'claimed') { stop(); show(h, code, 'The app is connected. Open BearTracks from the Dock to play.', false); }
         else if (st === 'expired' || Date.now() - t0 > 330000) { stop(); setUrl(null); show(h, null, 'That code has expired.', true); }
       }, 2500);
     }
@@ -3221,19 +3220,16 @@ body {
       let h = btHand.here(); if (!h) return;
       if (resumeCode) { cur = resumeCode; show(h, cur, 'Waiting for the app…', false); watch(h, cur); return; }
       show(h, null, 'Making a code…', false);
-      try { cur = await hoCreate(h); } catch (e) { show(h, null, 'A code could not be made (' + (e && e.message) + '). This browser may not hold the key for this seat.', false); return; }
-      setUrl(cur); show(h, cur, 'Waiting for the app… (Close this to play here; reopen it any time from “Use in the app” at the top right.)', false); watch(h, cur); try { btTrace('HANDOFF code made for ' + h.kind + ' ' + h.gid); } catch (e) { }
+      try { cur = await hoCreate(h); } catch (e) { show(h, null, 'A code could not be made (' + (e && e.message) + '). This browser may not hold the key for this seat.', true); return; }
+      setUrl(cur); show(h, cur, 'Waiting for the app… BearTracks is played in the app. Use a browser such as Firefox or Opera for a browser game.', false); watch(h, cur); try { btTrace('HANDOFF code made for ' + h.kind + ' ' + h.gid); } catch (e) { }
     }
     setInterval(function () {
       try {
         let h = btHand.here(), ok = !!(h && h.token && isSafari() && !hoStandalone());
-        if (ok && !link) { link = mk('a', 'Use in the app', 'position:fixed;top:8px;right:12px;z-index:9;font-size:.85em;color:inherit;text-decoration:underline;cursor:pointer'); link.href = '#'; link.onclick = function (e) { e.preventDefault(); open(null); }; document.body.appendChild(link); }
-        if (!ok && link) { link.remove(); link = null; }
+        if (!ok && ov) close();
         let up = urlParam();
-        if (ok && up && !ov && !cur) open(up);       // the tab was refreshed while a code was showing: pick it up again
-        if (!up && cur && !ov) cur = null;
-        // The first time a game is open in a Safari tab, offer the app once without being asked (the link stays for later).
-        if (ok && !up && !ov && !cur) { let seen = true; try { seen = !!localStorage.getItem('bt_app_offered'); } catch (e) { } if (!seen) { try { localStorage.setItem('bt_app_offered', '1'); } catch (e) { } open(null); } }
+        // In Safari a game is played only in the installed app: while a game is open here, the code panel stays up and cannot be closed.
+        if (ok && !ov && !cur) open(up || null);
       } catch (e) { }
     }, 1500);
     window.addEventListener('pagehide', function () { try { setUrl(null); } catch (e) { } });
