@@ -216,6 +216,12 @@ body {
 .entry-games { display: flex; flex-direction: column; gap: 8px; max-height: 230px; overflow: auto; }
 .entry-game { width: 100%; border: 1px solid #c7baa4; border-radius: 8px; background: #fffef6; color: var(--ink); padding: 10px 12px; text-align: left; font: inherit; cursor: pointer; }
 .entry-game:hover { background: #f8e5af; }
+#pending-box .entry-games { flex: 1 1 auto; min-height: 0 }
+.join-link { margin-top: auto; padding-top: 10px; text-align: center; font-size: 13px; font-weight: 600; color: var(--green); text-decoration: underline; cursor: pointer; flex: none }
+#bt-nolink { position: fixed; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center; background: rgba(35,57,47,.35) }
+#bt-nolink[hidden] { display: none }
+#bt-nolink-box { position: relative; width: min(360px, 86vw); box-sizing: border-box; padding: 38px 20px 28px; border-radius: 12px; background: #fffdf8; box-shadow: 0 10px 30px rgba(0,0,0,.25); text-align: center; font-weight: 700; color: var(--ink) }
+#bt-nolink-close { top: 10px; right: 14px }
 .entry-empty { color: var(--muted); text-align: center; line-height: 1.4; }
 .entry-who { margin: 6px 0 0; font-weight: 800; }
 .entry-who:first-child { margin-top: 0; }
@@ -626,7 +632,7 @@ body {
         <div id="entry-welcome">Welcome</div>
         <div id="entry-boxes">
           <section class="entry-box"><h2>Underway-Games</h2><div id="underway-games" class="entry-games"><div class="entry-empty">Loading games...</div></div></section>
-          <section class="entry-box"><h2>Pending-Games</h2><div id="pending-games" class="entry-games"><div class="entry-empty">Loading games...</div></div></section>
+          <section class="entry-box" id="pending-box"><h2>Pending-Games</h2><div id="pending-games" class="entry-games"><div class="entry-empty">Loading games...</div></div><a href="#" id="join-link" class="join-link">Join with link</a></section>
           <section class="entry-box"><h2>Start-a-Game</h2><div class="entry-list"><button class="entry-choice" id="entry-wordage">Wordage</button><button class="entry-choice" id="entry-cribbage">Cribbage</button><button class="entry-choice" id="entry-groupwords">groupWords</button></div></section>
         </div>
         <div id="entry-backup"><a href="#" id="backup-export">Back up my games</a> &middot; <a href="#" id="backup-import">Restore from backup</a><input type="file" id="backup-file" accept="application/json,.json" hidden><div id="backup-note"></div></div>
@@ -692,7 +698,8 @@ body {
           <div id="unlock-error" class="error"></div>
           <a href="#" id="unlock-forgot" style="display:inline-block;margin-top:10px;font-size:.85em;color:inherit;text-decoration:underline">Forgot password</a>
         </div>
-      </section>     </div>     <div       id="bt-headsup"       hidden     >       <div id="bt-headsup-box"><button id="btn-cancel-headsup" class="bt-cancel" type="button">Cancel</button>         <div id="bt-headsup-left">           <div id="bt-headsup-help">Join me in a word-building game on BearTracks:</div><textarea             id="bt-headsup-input"             readonly tabindex="-1"           ></textarea>         </div>         <div id="bt-headsup-right"><button             id="bt-headsup-copy-msg"             disabled           >Message copied</button><button id="bt-headsup-copy-link">Copy link instead</button><button             id="bt-headsup-continue"           >Continue to game</button></div>       </div>     </div>     <script       id="game-state"       type="application/json"     >null</script>     <script>       (function () {         'use strict';         var N = 15, C = 7, V = { A: 1, B: 3, C: 3, D: 2, E: 1, F: 4, G: 2, H: 4, I: 1, J: 8, K: 5, L: 1, M: 3, N: 1, O: 1, P: 3, Q: 10, R: 1, S: 1, T: 1, U: 1, V: 4, W: 4, X: 8, Y: 4, Z: 10, "?": 0 };         var D = { A: 9, B: 2, C: 2, D: 4, E: 12, F: 2, G: 3, H: 2, I: 9, J: 1, K: 1, L: 4, M: 2, N: 6, O: 8, P: 2, Q: 1, R: 6, S: 4, T: 6, U: 4, V: 2, W: 2, X: 1, Y: 2, Z: 1, "?": 2 };         var TW = [[0, 0], [0, 7], [0, 14], [7, 0], [7, 14], [14, 0], [14, 7], [14, 14]], DW = [[1, 1], [2, 2], [3, 3], [4, 4], [10, 10], [11, 11], [12, 12], [13, 13], [1, 13], [2, 12], [3, 11], [4, 10], [10, 4], [11, 3], [12, 2], [13, 1], [7, 7]], TL = [[1, 5], [1, 9], [5, 1], [5, 5], [5, 9], [5, 13], [9, 1], [9, 5], [9, 9], [9, 13], [13, 5], [13, 9]], DL = [[0, 3], [0, 11], [2, 6], [2, 8], [3, 0], [3, 7], [3, 14], [6, 2], [6, 6], [6, 8], [6, 12], [7, 3], [7, 11], [8, 2], [8, 6], [8, 8], [8, 12], [11, 0], [11, 7], [11, 14], [12, 6], [12, 8], [14, 3], [14, 11]];         var state = null, pending = [], selected = -1, anchor = null, dragItem = null, gesture = null, suppressClick = false, waiting = false, waitingRack = null, waitingOpp = null, pendingWord = null;         var rackGap = 5, exchangeMode = false, exchSet = new Set();         const API = "https://beartracks-cfdurable-tt.beartracksgames.workers.dev"; const LIVE_SITE = "https://rljhaines.github.io/beartracks/";         let currentInvite = null; let btChannel = null; 
+      </section>     </div>     <div id="bt-nolink" hidden><div id="bt-nolink-box">No valid game link found<button id="bt-nolink-close" class="bt-cancel" type="button">Close</button></div></div>
+    <div       id="bt-headsup"       hidden     >       <div id="bt-headsup-box"><button id="btn-cancel-headsup" class="bt-cancel" type="button">Cancel</button>         <div id="bt-headsup-left">           <div id="bt-headsup-help">Join me in a word-building game on BearTracks:</div><textarea             id="bt-headsup-input"             readonly tabindex="-1"           ></textarea>         </div>         <div id="bt-headsup-right"><button             id="bt-headsup-copy-msg"             disabled           >Message copied</button><button id="bt-headsup-copy-link">Copy link instead</button><button             id="bt-headsup-continue"           >Continue to game</button></div>       </div>     </div>     <script       id="game-state"       type="application/json"     >null</script>     <script>       (function () {         'use strict';         var N = 15, C = 7, V = { A: 1, B: 3, C: 3, D: 2, E: 1, F: 4, G: 2, H: 4, I: 1, J: 8, K: 5, L: 1, M: 3, N: 1, O: 1, P: 3, Q: 10, R: 1, S: 1, T: 1, U: 1, V: 4, W: 4, X: 8, Y: 4, Z: 10, "?": 0 };         var D = { A: 9, B: 2, C: 2, D: 4, E: 12, F: 2, G: 3, H: 2, I: 9, J: 1, K: 1, L: 4, M: 2, N: 6, O: 8, P: 2, Q: 1, R: 6, S: 4, T: 6, U: 4, V: 2, W: 2, X: 1, Y: 2, Z: 1, "?": 2 };         var TW = [[0, 0], [0, 7], [0, 14], [7, 0], [7, 14], [14, 0], [14, 7], [14, 14]], DW = [[1, 1], [2, 2], [3, 3], [4, 4], [10, 10], [11, 11], [12, 12], [13, 13], [1, 13], [2, 12], [3, 11], [4, 10], [10, 4], [11, 3], [12, 2], [13, 1], [7, 7]], TL = [[1, 5], [1, 9], [5, 1], [5, 5], [5, 9], [5, 13], [9, 1], [9, 5], [9, 9], [9, 13], [13, 5], [13, 9]], DL = [[0, 3], [0, 11], [2, 6], [2, 8], [3, 0], [3, 7], [3, 14], [6, 2], [6, 6], [6, 8], [6, 12], [7, 3], [7, 11], [8, 2], [8, 6], [8, 8], [8, 12], [11, 0], [11, 7], [11, 14], [12, 6], [12, 8], [14, 3], [14, 11]];         var state = null, pending = [], selected = -1, anchor = null, dragItem = null, gesture = null, suppressClick = false, waiting = false, waitingRack = null, waitingOpp = null, pendingWord = null;         var rackGap = 5, exchangeMode = false, exchSet = new Set();         const API = "https://beartracks-cfdurable-tt.beartracksgames.workers.dev"; const LIVE_SITE = "https://rljhaines.github.io/beartracks/";         let currentInvite = null; let btChannel = null; 
 
   // ===== LINK UNIT: how every game keeps its live connection =====
   // One place that opens a connection, retries it if the game asks, closes it, and says what state it is in.  It knows no game:
@@ -4221,10 +4228,31 @@ body {
   // ---- wiring ----
   // Leaving to the Foyer: the game's address goes too, so a reload lands in the Foyer.
   function foyerUrl() { try { let url = new URL(location.href); ['game', 'kind', 'p', 'gw', 'invite', 'handoff'].forEach(function (k) { url.searchParams.delete(k); }); history.replaceState(null, '', url.pathname + url.search + url.hash); } catch (e) { } }
+  function nolinkShow(on) { $('bt-nolink').hidden = !on; }
+  function joinLinkUrl(text) {
+    let m = String(text || '').match(/https?:\/\/[^\s<>"']+/g); if (!m) return null;
+    for (let raw of m) {
+      let u; try { u = new URL(raw); } catch (e) { continue; }
+      let okHost = u.origin === location.origin || u.origin === new URL(LIVE_SITE).origin;
+      let q = u.searchParams, h = u.hash || '';
+      let okKey = q.get('invite') || q.get('game') || q.get('gw') || /^#s=/.test(h);
+      if (okHost && okKey) return u.href;
+    }
+    return null;
+  }
+  async function handleJoinWithLink(e) {
+    if (e) e.preventDefault();
+    let text = ''; try { text = await navigator.clipboard.readText(); } catch (err) { text = ''; }
+    let url = joinLinkUrl(text); if (!url) { nolinkShow(true); return; }
+    let same = url.split('#')[0] === location.href.split('#')[0];
+    location.href = url; if (same) location.reload();
+  }
+  $('join-link').onclick = handleJoinWithLink; $('bt-nolink-close').onclick = function () { nolinkShow(false); };
   function backToFoyer() { try { $('bt-headsup').hidden = true; pendingGameForHeadsUp = null; cribPendingHeadsUp = null; $('nameB').value = ''; } catch (e) { } wordageToFoyer(); }
   $('btn-cancel-start').onclick = backToFoyer; $('btn-cancel-headsup').onclick = backToFoyer;
   document.addEventListener('keydown', function (e) {
     if (e.key !== 'Escape') return;
+    if (!$('bt-nolink').hidden) { e.preventDefault(); nolinkShow(false); return; }
     let hu = $('bt-headsup'), st = $('box-start'), su = $('setup');
     if (hu && !hu.hidden) { e.preventDefault(); backToFoyer(); return; }
     if (su && !su.hidden && st && !st.hidden) { e.preventDefault(); backToFoyer(); }
