@@ -346,6 +346,8 @@ body {
 }
 
 #bt-headsup-box {  
+  position: relative;  
+  padding-top: 26px;  
   display: grid;  
   grid-template-columns: 1fr 200px;  
   gap: 12px;  
@@ -424,6 +426,10 @@ body {
   margin-top: 4px  
 }
 
+.bt-cancel {
+  position: absolute; top: 8px; left: 12px; background: none; border: none; box-shadow: none; min-height: 0; width: auto;
+  color: var(--green); text-decoration: underline; font-size: 12px; font-weight: 700; padding: 0; cursor: pointer
+}
 #box-start {  
   position: relative;  
   margin: 12px 0  
@@ -662,7 +668,7 @@ body {
     </div>
 
     <div       class="modal"       id="setup"       hidden     >       <section class="dialog">         <div           id="box-register"           class="start-game-box"         >           <h1>BearTracks Registration</h1>           <p>Register to play.</p><label>Username<input               id="reg-user"               placeholder="Username"               autofocus               autocomplete="username"             ></label><label>Password<input               id="reg-pass"               type="password"             ></label><label>Confirm password<input               id="reg-pass2"               type="password"             ></label><button id="btn-register">Register</button>           <div             id="reg-error"             class="error"           ></div>
-                   </div>         <div           id="box-start"           class="start-game-box"           hidden         ><button             id="btn-logout"             class="logout-link"           >Log out</button>           <h1>Start a game</h1>           <div><strong id="owner-name"></strong></div><label>Opponent's name (optional)<input               id="nameB"               maxlength="28"               placeholder="Opponent username"             ></label>           <div style="display:flex;gap:8px;margin-top:10px"><button id="btn-begin">Begin Game</button><button               id="btn-invite"               class="action alt"             >Create Invitation</button></div>         </div>
+                   </div>         <div           id="box-start"           class="start-game-box"           hidden         ><button             id="btn-logout"             class="logout-link"           >Log out</button><button id="btn-cancel-start" class="bt-cancel" type="button">Cancel</button>           <h1>Start a game</h1>           <div><strong id="owner-name"></strong></div><label>Opponent's name (optional)<input               id="nameB"               maxlength="28"               placeholder="Opponent username"             ></label>           <div style="display:flex;gap:8px;margin-top:10px"><button id="btn-begin">Begin Game</button><button               id="btn-invite"               class="action alt"             >Create Invitation</button></div>         </div>
         <div id="box-login" class="start-game-box" hidden>
           <h1>Log in</h1>
           <label>Username<input id="login-user" autocomplete="username"></label>
@@ -684,7 +690,7 @@ body {
           <div id="unlock-error" class="error"></div>
           <a href="#" id="unlock-forgot" style="display:inline-block;margin-top:10px;font-size:.85em;color:inherit;text-decoration:underline">Forgot password</a>
         </div>
-      </section>     </div>     <div       id="bt-headsup"       hidden     >       <div id="bt-headsup-box">         <div id="bt-headsup-left">           <div id="bt-headsup-help">Join me in a scrabble-like game on BearTracks:</div><textarea             id="bt-headsup-input"             readonly tabindex="-1"           ></textarea>         </div>         <div id="bt-headsup-right"><button             id="bt-headsup-copy-msg"             disabled           >Message copied</button><button id="bt-headsup-copy-link">Copy link instead</button><button             id="bt-headsup-continue"           >Continue to game</button></div>       </div>     </div>     <script       id="game-state"       type="application/json"     >null</script>     <script>       (function () {         'use strict';         var N = 15, C = 7, V = { A: 1, B: 3, C: 3, D: 2, E: 1, F: 4, G: 2, H: 4, I: 1, J: 8, K: 5, L: 1, M: 3, N: 1, O: 1, P: 3, Q: 10, R: 1, S: 1, T: 1, U: 1, V: 4, W: 4, X: 8, Y: 4, Z: 10, "?": 0 };         var D = { A: 9, B: 2, C: 2, D: 4, E: 12, F: 2, G: 3, H: 2, I: 9, J: 1, K: 1, L: 4, M: 2, N: 6, O: 8, P: 2, Q: 1, R: 6, S: 4, T: 6, U: 4, V: 2, W: 2, X: 1, Y: 2, Z: 1, "?": 2 };         var TW = [[0, 0], [0, 7], [0, 14], [7, 0], [7, 14], [14, 0], [14, 7], [14, 14]], DW = [[1, 1], [2, 2], [3, 3], [4, 4], [10, 10], [11, 11], [12, 12], [13, 13], [1, 13], [2, 12], [3, 11], [4, 10], [10, 4], [11, 3], [12, 2], [13, 1], [7, 7]], TL = [[1, 5], [1, 9], [5, 1], [5, 5], [5, 9], [5, 13], [9, 1], [9, 5], [9, 9], [9, 13], [13, 5], [13, 9]], DL = [[0, 3], [0, 11], [2, 6], [2, 8], [3, 0], [3, 7], [3, 14], [6, 2], [6, 6], [6, 8], [6, 12], [7, 3], [7, 11], [8, 2], [8, 6], [8, 8], [8, 12], [11, 0], [11, 7], [11, 14], [12, 6], [12, 8], [14, 3], [14, 11]];         var state = null, pending = [], selected = -1, anchor = null, dragItem = null, gesture = null, suppressClick = false, waiting = false, waitingRack = null, waitingOpp = null, pendingWord = null;         var rackGap = 5, exchangeMode = false, exchSet = new Set();         const API = "https://beartracks-cfdurable-tt.beartracksgames.workers.dev"; const LIVE_SITE = "https://rljhaines.github.io/beartracks/";         let currentInvite = null; let btChannel = null; 
+      </section>     </div>     <div       id="bt-headsup"       hidden     >       <div id="bt-headsup-box"><button id="btn-cancel-headsup" class="bt-cancel" type="button">Cancel</button>         <div id="bt-headsup-left">           <div id="bt-headsup-help">Join me in a scrabble-like game on BearTracks:</div><textarea             id="bt-headsup-input"             readonly tabindex="-1"           ></textarea>         </div>         <div id="bt-headsup-right"><button             id="bt-headsup-copy-msg"             disabled           >Message copied</button><button id="bt-headsup-copy-link">Copy link instead</button><button             id="bt-headsup-continue"           >Continue to game</button></div>       </div>     </div>     <script       id="game-state"       type="application/json"     >null</script>     <script>       (function () {         'use strict';         var N = 15, C = 7, V = { A: 1, B: 3, C: 3, D: 2, E: 1, F: 4, G: 2, H: 4, I: 1, J: 8, K: 5, L: 1, M: 3, N: 1, O: 1, P: 3, Q: 10, R: 1, S: 1, T: 1, U: 1, V: 4, W: 4, X: 8, Y: 4, Z: 10, "?": 0 };         var D = { A: 9, B: 2, C: 2, D: 4, E: 12, F: 2, G: 3, H: 2, I: 9, J: 1, K: 1, L: 4, M: 2, N: 6, O: 8, P: 2, Q: 1, R: 6, S: 4, T: 6, U: 4, V: 2, W: 2, X: 1, Y: 2, Z: 1, "?": 2 };         var TW = [[0, 0], [0, 7], [0, 14], [7, 0], [7, 14], [14, 0], [14, 7], [14, 14]], DW = [[1, 1], [2, 2], [3, 3], [4, 4], [10, 10], [11, 11], [12, 12], [13, 13], [1, 13], [2, 12], [3, 11], [4, 10], [10, 4], [11, 3], [12, 2], [13, 1], [7, 7]], TL = [[1, 5], [1, 9], [5, 1], [5, 5], [5, 9], [5, 13], [9, 1], [9, 5], [9, 9], [9, 13], [13, 5], [13, 9]], DL = [[0, 3], [0, 11], [2, 6], [2, 8], [3, 0], [3, 7], [3, 14], [6, 2], [6, 6], [6, 8], [6, 12], [7, 3], [7, 11], [8, 2], [8, 6], [8, 8], [8, 12], [11, 0], [11, 7], [11, 14], [12, 6], [12, 8], [14, 3], [14, 11]];         var state = null, pending = [], selected = -1, anchor = null, dragItem = null, gesture = null, suppressClick = false, waiting = false, waitingRack = null, waitingOpp = null, pendingWord = null;         var rackGap = 5, exchangeMode = false, exchSet = new Set();         const API = "https://beartracks-cfdurable-tt.beartracksgames.workers.dev"; const LIVE_SITE = "https://rljhaines.github.io/beartracks/";         let currentInvite = null; let btChannel = null; 
 
   // ===== LINK UNIT: how every game keeps its live connection =====
   // One place that opens a connection, retries it if the game asks, closes it, and says what state it is in.  It knows no game:
@@ -2527,8 +2533,8 @@ body {
   function updateBackupVisibility() { try { let b = $('entry-backup'); if (b) b.hidden = !getOwner(); } catch (e) { } }
   function showEntryPage() { wordageRemove(); let el = $('entry-home'); if (!el) return; updateBackupVisibility(); try { $('bt-headsup').classList.remove('gw-pick'); $('setup').classList.remove('gw-nodlg'); } catch (e) { } el.hidden = false; $('setup').hidden = true; $('bt-headsup').hidden = true; let owner = getOwner(); $('entry-welcome').textContent = owner ? 'Welcome, ' + owner : 'Welcome'; }
   function hideEntryPage() { let el = $('entry-home'); if (el) el.hidden = true; }
-  function entryWordage() { postRegisterTarget = 'wordage'; hideEntryPage(); let owner = getOwner(); if (owner) handleBegin(); else { $('setup').hidden = false; renderBoxes(); } }
-  function entryCribbage() { postRegisterTarget = 'cribbage'; hideEntryPage(); $('setup').hidden = false; renderBoxes(); }
+  function entryWordage() { postRegisterTarget = 'wordage'; hideEntryPage(); try { $('nameB').value = ''; } catch (e) { } $('setup').hidden = false; renderBoxes(); }
+  function entryCribbage() { postRegisterTarget = 'cribbage'; hideEntryPage(); try { $('nameB').value = ''; } catch (e) { } $('setup').hidden = false; renderBoxes(); }
   async function enterGameDirect(gameObj, playerIndex) { if (!gameObj) return false; let g = cloneRacks(gameObj); try { addGameId(g.id); } catch (e) { } let li = (playerIndex === 0 || playerIndex === 1) ? playerIndex : null; if (li === null) { li = 0; let owner = (getOwner() || '').toLowerCase(); for (let i = 0; i < g.players.length; i++) if ((g.players[i].name || '').toLowerCase() === owner) li = i; } $('bt-headsup').hidden = true; state = g; setTabSeat(g.id, li); mirrorPassword(gateName()); initBroadcastChannel(g.id); initComm(g.id); $('setup').hidden = true; hideEntryPage(); render(); ensureCommPanel(); pendingGameForHeadsUp = null; scheduleFit(); try { let url = new URL(location.href); url.searchParams.set('game', g.id); url.searchParams.delete('p'); url.searchParams.delete('invite'); history.replaceState(null, '', url.pathname + url.search + url.hash); } catch (e) { } return true; }
   btHand.register('wordage', {
     current: function () { if (!(state && state.id && state.players && $('game') && $('setup').hidden && $('bt-headsup').hidden)) return null; let sw = getLocalIdx(); return { gid: state.id, seat: sw, name: (state.players[sw] || {}).name || '', token: getSeatToken(state.id, sw) || '' }; },
@@ -2950,7 +2956,7 @@ body {
     $('bt-headsup-input').value = fullMsg; $('bt-headsup-help').textContent = "Join me in a scrabble-like game on BearTracks:";  
     try { if (navigator.clipboard && navigator.clipboard.writeText) await navigator.clipboard.writeText(fullMsg); } catch (e) { }  
     $('bt-headsup-copy-msg').disabled = true; $('bt-headsup-copy-msg').textContent = "Message copied"; $('bt-headsup-copy-msg').onclick = handleHeadsUpCopyMsg;  
-    $('bt-headsup-copy-link').disabled = false; $('bt-headsup-copy-link').textContent = "Copy link instead"; $('bt-headsup-copy-link').onclick = handleHeadsUpCopyLink;  
+    $('bt-headsup-copy-link').disabled = false; $('bt-headsup-copy-link').textContent = "Copy link instead"; $('bt-headsup-copy-link').onclick = handleHeadsUpCopyLink; $('bt-headsup-continue').onclick = handleHeadsUpContinue; $('bt-headsup-continue').disabled = false;  
     $('setup').hidden = true;  
     $('bt-headsup').hidden = false; pendingGameForHeadsUp = gameObj; showShare(url, isInvite ? false : true); scheduleFit();  
   }  
@@ -4213,6 +4219,14 @@ body {
   // ---- wiring ----
   // Leaving to the Foyer: the game's address goes too, so a reload lands in the Foyer.
   function foyerUrl() { try { let url = new URL(location.href); ['game', 'kind', 'p', 'gw', 'invite', 'handoff'].forEach(function (k) { url.searchParams.delete(k); }); history.replaceState(null, '', url.pathname + url.search + url.hash); } catch (e) { } }
+  function backToFoyer() { try { $('bt-headsup').hidden = true; pendingGameForHeadsUp = null; cribPendingHeadsUp = null; $('nameB').value = ''; } catch (e) { } wordageToFoyer(); }
+  $('btn-cancel-start').onclick = backToFoyer; $('btn-cancel-headsup').onclick = backToFoyer;
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    let hu = $('bt-headsup'), st = $('box-start'), su = $('setup');
+    if (hu && !hu.hidden) { e.preventDefault(); backToFoyer(); return; }
+    if (su && !su.hidden && st && !st.hidden) { e.preventDefault(); backToFoyer(); }
+  });
   function wordageToFoyer() { foyerUrl(); showEntryPage(); try { initEntryPaws(); } catch (e) { } try { populateEntryGames(); } catch (e) { } }
   function cribLeaveGame() {
     btLink.close('crib');
