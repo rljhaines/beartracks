@@ -686,13 +686,55 @@ body {
         </div>
       </section>     </div>     <div       id="bt-headsup"       hidden     >       <div id="bt-headsup-box">         <div id="bt-headsup-left">           <div id="bt-headsup-help">Join me in a scrabble-like game on BearTracks:</div><textarea             id="bt-headsup-input"             readonly tabindex="-1"           ></textarea>         </div>         <div id="bt-headsup-right"><button             id="bt-headsup-copy-msg"             disabled           >Message copied</button><button id="bt-headsup-copy-link">Copy link instead</button><button             id="bt-headsup-continue"           >Continue to game</button></div>       </div>     </div>     <script       id="game-state"       type="application/json"     >null</script>     <script>       (function () {         'use strict';         var N = 15, C = 7, V = { A: 1, B: 3, C: 3, D: 2, E: 1, F: 4, G: 2, H: 4, I: 1, J: 8, K: 5, L: 1, M: 3, N: 1, O: 1, P: 3, Q: 10, R: 1, S: 1, T: 1, U: 1, V: 4, W: 4, X: 8, Y: 4, Z: 10, "?": 0 };         var D = { A: 9, B: 2, C: 2, D: 4, E: 12, F: 2, G: 3, H: 2, I: 9, J: 1, K: 1, L: 4, M: 2, N: 6, O: 8, P: 2, Q: 1, R: 6, S: 4, T: 6, U: 4, V: 2, W: 2, X: 1, Y: 2, Z: 1, "?": 2 };         var TW = [[0, 0], [0, 7], [0, 14], [7, 0], [7, 14], [14, 0], [14, 7], [14, 14]], DW = [[1, 1], [2, 2], [3, 3], [4, 4], [10, 10], [11, 11], [12, 12], [13, 13], [1, 13], [2, 12], [3, 11], [4, 10], [10, 4], [11, 3], [12, 2], [13, 1], [7, 7]], TL = [[1, 5], [1, 9], [5, 1], [5, 5], [5, 9], [5, 13], [9, 1], [9, 5], [9, 9], [9, 13], [13, 5], [13, 9]], DL = [[0, 3], [0, 11], [2, 6], [2, 8], [3, 0], [3, 7], [3, 14], [6, 2], [6, 6], [6, 8], [6, 12], [7, 3], [7, 11], [8, 2], [8, 6], [8, 8], [8, 12], [11, 0], [11, 7], [11, 14], [12, 6], [12, 8], [14, 3], [14, 11]];         var state = null, pending = [], selected = -1, anchor = null, dragItem = null, gesture = null, suppressClick = false, waiting = false, waitingRack = null, waitingOpp = null, pendingWord = null;         var rackGap = 5, exchangeMode = false, exchSet = new Set();         const API = "https://beartracks-cfdurable-tt.beartracksgames.workers.dev"; const LIVE_SITE = "https://rljhaines.github.io/beartracks/";         let currentInvite = null; let btChannel = null; 
 
+  // ===== LINK UNIT: how every game keeps its live connection =====
+  // One place that opens a connection, retries it if the game asks, closes it, and says what state it is in.  It knows no game:
+  // each game calls btLink.open(key, spec) with  { url, protocols, onopen(sock), onmessage(event, sock), retryMs, keep(), status(state, tried) }
+  // and uses btLink.send / isOpen / live / reconnect / close with the same key.  States: connecting, connected, offline.
+  const btLink = (function () {
+    const links = {};
+    function note(L, st) { L.state = st; try { if (L.spec.status) L.spec.status(st, L.tried); } catch (e) { } }
+    function connect(L) {
+      clearTimeout(L.timer); clearTimeout(L.ct); note(L, 'connecting');
+      let sock; try { sock = L.spec.protocols ? new WebSocket(L.spec.url, L.spec.protocols) : new WebSocket(L.spec.url); } catch (e) { L.ws = null; note(L, 'offline'); return; }
+      L.ws = sock;
+      L.ct = setTimeout(function () { if (L.ws === sock && sock.readyState === 0) { try { sock.close(); } catch (e) { } } }, 8000);   // a try that hangs counts as offline
+      sock.onopen = function () { if (L.ws !== sock) return; clearTimeout(L.ct); L.tried = false; note(L, 'connected'); try { if (L.spec.onopen) L.spec.onopen(sock); } catch (e) { } };
+      sock.onmessage = function (ev) { if (L.ws !== sock) return; try { if (L.spec.onmessage) L.spec.onmessage(ev, sock); } catch (e) { } };
+      sock.onclose = function () {
+        if (L.ws !== sock) return; clearTimeout(L.ct); L.ws = null; note(L, 'offline');
+        if (L.spec.retryMs) L.timer = setTimeout(function () { if (links[L.key] === L && !L.ws && (!L.spec.keep || L.spec.keep())) connect(L); }, L.spec.retryMs);
+      };
+    }
+    function close(key) { let L = links[key]; if (!L) return; delete links[key]; clearTimeout(L.timer); clearTimeout(L.ct); let o = L.ws; L.ws = null; try { if (o) o.close(); } catch (e) { } }
+    function open(key, spec) {
+      let L = links[key];
+      if (L && L.ws && L.ws.readyState <= 1 && L.spec.url === spec.url) { L.spec = spec; return L; }
+      if (L) close(key);
+      L = links[key] = { key: key, spec: spec, ws: null, state: '', tried: false, timer: null, ct: null };
+      connect(L); return L;
+    }
+    function reconnect(key) { let L = links[key]; if (!L) return false; if (L.ws && L.ws.readyState <= 1) return true; L.tried = true; connect(L); return true; }
+    function live(key) { let L = links[key]; return !!(L && L.ws && L.ws.readyState <= 1); }
+    function isOpen(key) { let L = links[key]; return !!(L && L.ws && L.ws.readyState === 1); }
+    function send(key, text) { let L = links[key]; if (!(L && L.ws && L.ws.readyState === 1)) return false; try { L.ws.send(text); return true; } catch (e) { return false; } }
+    // Puts a connection's state into an element: plain words, and "Click to connect" as a link when it is offline.
+    function paint(el, key, st, tried) {
+      if (!el) return; el.textContent = '';
+      if (st === 'connecting') { el.textContent = 'Connecting…'; return; }
+      if (st === 'connected') { el.textContent = 'Connected'; return; }
+      let a = document.createElement('a'); a.href = '#'; a.textContent = tried ? "Couldn't connect. Click to try again" : 'Click to connect';
+      a.style.cssText = 'cursor:pointer;text-decoration:underline;color:inherit';
+      a.onclick = function (e) { e.preventDefault(); reconnect(key); };
+      el.appendChild(a);
+    }
+    return { open: open, close: close, reconnect: reconnect, live: live, isOpen: isOpen, send: send, paint: paint };
+  })();
   // ===== COMMS UNIT =====
   // Communication only: connections for a game id, send, receive, de-duplication, status. It has no screen elements and never
   // touches a game's state; each game supplies commHost (below the unit) and decides how, or whether, to show anything.
   let commChannel = null;  
   let commGameId = null;  
   let commPollTimer = null;  
-  let ws = null;  
   let pc = null;  
   let localStream = null;  
   const TALK_WS = "wss://beartracks-cfdurable-tt.beartracksgames.workers.dev/ws"; const WS_URL = TALK_WS;  
@@ -710,30 +752,35 @@ body {
 
   function initComm(gid) {  
     if (!gid) gid = commHost.gameId(); if (!gid) return;  
-    if (commGameId === gid && ws && (ws.readyState === 0 || ws.readyState === 1)) return;  
+    if (commGameId === gid && btLink.live('comm')) return;  
     commGameId = gid;  
     try { if (commChannel) commChannel.close(); commChannel = new BroadcastChannel("bt_comm_" + gid); commChannel.onmessage = (e) => { let m = e.data; if (!m) return; if (m.type === "chat") showChat(m); if (m.type === "rtc-offer") handleOffer(m); if (m.type === "rtc-answer" && pc) pc.setRemoteDescription(new RTCSessionDescription(m.sdp)).catch(() => { }); if (m.type === "rtc-ice" && pc) pc.addIceCandidate(m.candidate).catch(() => { }); if (m.game) commHost.onGameState(m.game); }; } catch (e) { }  
     if (location.protocol === "file:") return;  
-    try { if (ws) try { ws.close(); } catch (_) { } let wsTok = getSeatToken(gid, commHost.seat()); commHost.connecting(); ws = wsTok ? new WebSocket(WS_URL + "?game=" + encodeURIComponent(gid) + "&user=" + encodeURIComponent(getOwner() || "anon"), ["bt." + wsTok]) : new WebSocket(WS_URL + "?game=" + encodeURIComponent(gid) + "&user=" + encodeURIComponent(getOwner() || "anon")); ws.onopen = () => { commHost.status("Connected"); let li = commHost.seat(); let myName = commHost.myName(li); try { ws.send(JSON.stringify({ t: 'presence', p: li, name: myName, game: gid })); } catch (_) { } }; ws.onmessage = async (e) => { try { let m = JSON.parse(e.data); if (m.type === "chat") showChat(m); if (m.type === "rtc-offer") handleOffer(m); if (m.type === "rtc-answer" && pc) await pc.setRemoteDescription(m.sdp); if (m.type === "rtc-ice" && pc) try { await pc.addIceCandidate(m.candidate); } catch (_) { } if (m.game) commHost.onGameState(m.game); } catch (_) { } }; ws.onclose = () => commHost.status("Offline (same-tab works)"); } catch (e) { }  
+    try { let wsTok = getSeatToken(gid, commHost.seat()); commHost.connecting(); let url = WS_URL + "?game=" + encodeURIComponent(gid) + "&user=" + encodeURIComponent(getOwner() || "anon");
+      btLink.open("comm", { url: url, protocols: wsTok ? ["bt." + wsTok] : null, status: function (st, tried) { commHost.status(st, tried); },
+        onopen: function (sock) { let li = commHost.seat(); let myName = commHost.myName(li); try { sock.send(JSON.stringify({ t: 'presence', p: li, name: myName, game: gid })); } catch (_) { } },
+        onmessage: async (e) => { try { let m = JSON.parse(e.data); if (m.type === "chat") showChat(m); if (m.type === "rtc-offer") handleOffer(m); if (m.type === "rtc-answer" && pc) await pc.setRemoteDescription(m.sdp); if (m.type === "rtc-ice" && pc) try { await pc.addIceCandidate(m.candidate); } catch (_) { } if (m.game) commHost.onGameState(m.game); } catch (_) { } } });
+    } catch (e) { }  
   }  
   // A message reaches a tab by two routes (the same-browser channel and the server), so each chat message carries an id and is shown once.
   // The name on a message is this tab's player, not the browser's stored owner (two players can share a browser).
   let seenChat = new Set();
   function showChat(m) { if (m.id) { if (seenChat.has(m.id)) return; seenChat.add(m.id); if (seenChat.size > 200) seenChat.delete(seenChat.values().next().value); } commHost.onChat(m); }
-  function sendComm(o) { if (o && o.type === "chat" && !o.id) o.id = randomId(); if (commChannel) try { commChannel.postMessage(o); } catch (_) { } if (ws && ws.readyState === 1) try { ws.send(JSON.stringify(o)); } catch (_) { } }  
+  function sendComm(o) { if (o && o.type === "chat" && !o.id) o.id = randomId(); if (commChannel) try { commChannel.postMessage(o); } catch (_) { } btLink.send('comm', JSON.stringify(o)); }  
   // async function tryCallOpponent(id) { let gid = pendingGameForHeadsUp?.id || state?.id || currentInvite?.gameId; initComm(gid); let who = id || currentInvite?.invitedBy || TableTalk.opponent || "opponent"; let btn = document.getElementById("comm-call"); if (pc) { try { pc.close(); } catch (_) { } pc = null; if (localStream) localStream.getTracks().forEach(tr => tr.stop()); localStream = null; if (btn) btn.textContent = "Call"; addCommLine("Call ended"); return; } try { localStream = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch (e) { alert("Mic needed: " + e.message); return; } pc = new RTCPeerConnection({ iceServers: await getIceServers() }); localStream.getTracks().forEach(tr => pc.addTrack(tr, localStream)); pc.onicecandidate = (e) => { if (e.candidate) sendComm({ type: "rtc-ice", candidate: e.candidate, from: getOwner(), to: who }); }; pc.ontrack = (e) => { let a = document.getElementById("remote-audio"); if (a) a.srcObject = e.streams[0]; if (btn) btn.textContent = "Hang up"; addCommLine("In call with " + who); }; let off = await pc.createOffer(); await pc.setLocalDescription(off); sendComm({ type: "rtc-offer", sdp: off, from: chatName(), to: who }); addCommLine("Calling " + who + "..."); }  
   // async function handleOffer(m) { let gid = pendingGameForHeadsUp?.id || state?.id || currentInvite?.gameId; initComm(gid); try { if (!localStream) localStream = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch (e) { addCommLine("Incoming call but mic blocked"); return; } if (pc) try { pc.close(); } catch (_) { } pc = new RTCPeerConnection({ iceServers: await getIceServers() }); localStream.getTracks().forEach(tr => pc.addTrack(tr, localStream)); pc.onicecandidate = (e) => { if (e.candidate) sendComm({ type: "rtc-ice", candidate: e.candidate, from: getOwner(), to: m.from }); }; pc.ontrack = (e) => { let a = document.getElementById("remote-audio"); if (a) a.srcObject = e.streams[0]; let b = document.getElementById("comm-call"); if (b) b.textContent = "Hang up"; addCommLine("Joined call with " + m.from); }; await pc.setRemoteDescription(new RTCSessionDescription(m.sdp)); let ans = await pc.createAnswer(); await pc.setLocalDescription(ans); sendComm({ type: "rtc-answer", sdp: ans, from: chatName(), to: m.from }); }  
   // Close this game's connections and forget it (the Wordage module will call this on leave).
   function commClose() {
     try { if (commChannel) commChannel.close(); } catch (e) { } commChannel = null;
-    try { if (ws) { let o = ws; ws = null; o.onclose = null; o.close(); } } catch (e) { }
+    btLink.close('comm');
     commGameId = null;
   }
   // ===== END COMMS UNIT =====
 
   // ===== WORDAGE CHAT PANEL (Wordage's own presentation of the comms unit) =====
   function addCommLine(t) { let l = document.getElementById("comm-log") || document.querySelector(".bt-tt-log"); if (!l) return; let d = document.createElement("div"); d.textContent = t; d.style.margin = "3px 0"; l.appendChild(d); l.scrollTop = l.scrollHeight; }  
-  function setCommStatus(t) { let s = document.getElementById("comm-status"); if (s) s.textContent = t; }
+  // The Wordage chat panel shows the connection's state; the words and the "Click to connect" link come from the link unit.
+  function setCommStatus(st, tried) { btLink.paint(document.getElementById("comm-status"), 'comm', st, tried); }
   function chatName() { let n = ''; try { n = gateName(); } catch (e) { } return n || getOwner() || 'You'; }
   const TableTalk = {  
     element: null, opponent: null,  
@@ -789,7 +836,7 @@ body {
     connecting: function () { commHost.wantSeatLink = true; let sl = $('seatLink'); if (sl) sl.hidden = false; },
     onGameState: function (g) { applyExternalState(g); },
     onChat: function (m) { addCommLine((m.from || "opp") + ": " + m.text); },
-    status: function (t) { setCommStatus(t); }
+    status: function (st, tried) { setCommStatus(st, tried); }
   };
   // ===== END WORDAGE CHAT PANEL =====
   // BEGIN FIX opponent-name  
@@ -3378,24 +3425,21 @@ body {
   function cribBroadcastGame(g) { cribPing(); if (location.protocol === 'file:') return; try { if (cribGameChannel) cribGameChannel.postMessage({ game: g }); } catch (e) { } }
   // A silent "look again" nudge over the game's existing socket: after every save (and on arrival) each player's page fetches the state at once,
   // instead of waiting for the next poll. No game state travels over the socket.
-  let cribWs = null, cribWsGid = null, cribPulling = false, cribLastPoll = 0;
+  let cribWsGid = null, cribPulling = false, cribLastPoll = 0;
   const cribClientId = randomId();   // tells a page its own nudge when the room echoes it back
   function cribConnectWs(id) {
     if (location.protocol === 'file:' || !id) return;
     let tok = null; try { tok = getSeatToken(id, cribGetLocalIdx()); } catch (e) { }
     if (!tok) return;
-    if (cribWs && cribWsGid === id && cribWs.readyState <= 1) return;
-    try { if (cribWs) { let old = cribWs; cribWs = null; old.close(); } } catch (e) { }
+    if (btLink.live('crib') && cribWsGid === id) return;
     cribWsGid = id;
     try {
-      const ws = new WebSocket(WS_URL + '?game=' + encodeURIComponent(id) + '&user=' + encodeURIComponent(getOwner() || 'anon'), ['bt.' + tok]);
-      ws.onopen = () => { try { ws.send(JSON.stringify({ t: 'crib-refresh', id: id, c: cribClientId })); } catch (e) { } };   // announce arrival: the other page learns of a new opponent's name at once
-      ws.onmessage = (ev) => { try { const m = JSON.parse(ev.data); if (m && m.t === 'crib-refresh' && m.c !== cribClientId && cribState && cribState.id === id) cribPullNow(); } catch (e) { } };
-      ws.onclose = () => { if (cribWs === ws) { cribWs = null; setTimeout(() => { if (cribState && cribState.id === id) cribConnectWs(id); }, 3000); } };
-      cribWs = ws;
+      btLink.open('crib', { url: WS_URL + '?game=' + encodeURIComponent(id) + '&user=' + encodeURIComponent(getOwner() || 'anon'), protocols: ['bt.' + tok], retryMs: 3000, keep: function () { return !!(cribState && cribState.id === id); },
+        onopen: function (sock) { try { sock.send(JSON.stringify({ t: 'crib-refresh', id: id, c: cribClientId })); } catch (e) { } },   // announce arrival: the other page learns of a new opponent's name at once
+        onmessage: (ev) => { try { const m = JSON.parse(ev.data); if (m && m.t === 'crib-refresh' && m.c !== cribClientId && cribState && cribState.id === id) cribPullNow(); } catch (e) { } } });
     } catch (e) { }
   }
-  function cribPing() { try { if (cribWs && cribWs.readyState === 1 && cribState) cribWs.send(JSON.stringify({ t: 'crib-refresh', id: cribState.id, c: cribClientId })); } catch (e) { } }
+  function cribPing() { try { if (cribState) btLink.send('crib', JSON.stringify({ t: 'crib-refresh', id: cribState.id, c: cribClientId })); } catch (e) { } }
   async function cribPullNow() {
     if (cribPulling || !cribState || !cribState.id) return; cribPulling = true;
     try { let g = await cribLoadGame(cribState.id); if (g) cribApplyExternalState(g); } catch (e) { } finally { cribPulling = false; }
@@ -3415,7 +3459,7 @@ body {
       if (document.hidden) return;
       let li = cribGetLocalIdx();
       let myTurn = cribIsMyTurn(li);
-      if (cribWs && cribWs.readyState === 1) {
+      if (btLink.isOpen('crib')) {
         let p1 = ((cribState.players[1] && cribState.players[1].name) || '').toLowerCase();
         let noOpponent = p1 === '' || p1.indexOf('opponent') === 0;
         if (myTurn && !noOpponent) return;
@@ -3432,7 +3476,7 @@ body {
 
   // Back in the tab: catch up at once (and reconnect the socket if it dropped while the tab was hidden).
   document.addEventListener('visibilitychange', function () {
-    try { if (!document.hidden && cribState && cribState.id) { if (!(cribWs && cribWs.readyState <= 1)) cribConnectWs(cribState.id); cribPullNow(); } } catch (e) { }
+    try { if (!document.hidden && cribState && cribState.id) { if (!btLink.live('crib')) cribConnectWs(cribState.id); cribPullNow(); } } catch (e) { }
   });
 
   function cribIsMyTurn(li) {
@@ -4171,7 +4215,7 @@ body {
   function foyerUrl() { try { let url = new URL(location.href); ['game', 'kind', 'p', 'gw', 'invite', 'handoff'].forEach(function (k) { url.searchParams.delete(k); }); history.replaceState(null, '', url.pathname + url.search + url.hash); } catch (e) { } }
   function wordageToFoyer() { foyerUrl(); showEntryPage(); try { initEntryPaws(); } catch (e) { } try { populateEntryGames(); } catch (e) { } }
   function cribLeaveGame() {
-    try { if (cribWs) { let o = cribWs; cribWs = null; o.close(); } } catch (e) { }
+    btLink.close('crib');
     cribWsGid = null;
     try { if (cribGameChannel) { cribGameChannel.close(); cribGameChannel = null; } } catch (e) { }
     cribState = null;
@@ -4184,7 +4228,7 @@ body {
     showEntryPage(); initEntryPaws(); populateEntryGames();
   }
   // ================= groupWords MODULE (additive) =================
-  let gw = { gid: null, token: null, seat: null, st: null, shown: {}, cur: '', items: [], ids: '', ws: null, poll: null };
+  let gw = { gid: null, token: null, seat: null, st: null, shown: {}, cur: '', items: [], ids: '', poll: null };
   let gwMsgTimer = null;
   function GW_TZ() { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; } catch (e) { return 'UTC'; } }
   function gwKeys() { try { return JSON.parse(localStorage.getItem('bt_gw') || '{}'); } catch (e) { return {}; } }
@@ -4312,7 +4356,7 @@ body {
   function gwNoticeClose() { let d = $('gw-notice'); if (d) d.remove(); }
   function gwClose() {
     clearInterval(gw.poll); gw.poll = null;
-    try { if (gw.ws) { let o = gw.ws; gw.ws = null; o.close(); } } catch (e) { }
+    btLink.close('gw');
     gw.gid = null; gw.token = null; gw.seat = null; gw.st = null; gw.shown = {}; gw.cur = ''; gw.items = []; gw.ids = '';
     let g = $('gw-game'); if (g) { g.hidden = true; let t = $('gw-table'); if (t) t.innerHTML = ''; let i = $('gw-inp'); if (i) i.value = ''; }
   }
@@ -4340,13 +4384,7 @@ body {
     $('gw-inp').focus({ preventScroll: true });
   }
   function gwConnect() {
-    try { if (gw.ws) { let o = gw.ws; gw.ws = null; o.close(); } } catch (e) { }
-    try {
-      let ws = new WebSocket(API.replace(/^http/, 'ws') + '/gw/' + encodeURIComponent(gw.gid) + '/ws', ['bt.' + gw.token]);
-      ws.onmessage = function () { gwRefresh(); };
-      ws.onclose = function () { if (gw.ws === ws && !$('gw-game').hidden) setTimeout(function () { if (gw.ws === ws) gwConnect(); }, 8000); };
-      gw.ws = ws;
-    } catch (e) { }
+    try { btLink.open('gw', { url: API.replace(/^http/, 'ws') + '/gw/' + encodeURIComponent(gw.gid) + '/ws', protocols: ['bt.' + gw.token], retryMs: 8000, keep: function () { return !$('gw-game').hidden; }, onmessage: function () { gwRefresh(); } }); } catch (e) { }
   }
   async function gwRefresh() {
     if (!gw.gid) return;
