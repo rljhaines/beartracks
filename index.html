@@ -213,7 +213,7 @@ body {
 .entry-list { display: flex; flex-direction: column; gap: 10px; }
 .entry-choice { width: 100%; min-height: 48px; border: 1px solid #b7bcad; border-radius: 9px; background: #fffef6; color: var(--ink); font: inherit; font-weight: 700; cursor: pointer; }
 .entry-choice:hover { background: #f8e5af; }
-.entry-games { display: flex; flex-direction: column; gap: 8px; max-height: 230px; overflow-y: auto; overflow-x: hidden; scrollbar-width: thin; scrollbar-color: #b9a98d transparent;
+.entry-games { display: flex; flex-direction: column; gap: 8px; max-height: 230px; overflow-y: auto; overflow-x: hidden; margin-right: -16px; padding-right: 16px; scrollbar-width: thin; scrollbar-color: #b9a98d transparent;
   background: linear-gradient(#fffdf8 30%, rgba(255,253,248,0)) 0 0 / 100% 18px no-repeat local, linear-gradient(rgba(255,253,248,0), #fffdf8 70%) 0 100% / 100% 18px no-repeat local, linear-gradient(rgba(64,48,28,.22), rgba(64,48,28,0)) 0 0 / 100% 8px no-repeat scroll, linear-gradient(rgba(64,48,28,0), rgba(64,48,28,.22)) 0 100% / 100% 8px no-repeat scroll; }
 .entry-games::-webkit-scrollbar { width: 7px }
 .entry-games::-webkit-scrollbar-thumb { background: #b9a98d; border-radius: 4px }
@@ -230,9 +230,12 @@ body {
 #bt-removed-undo { top: auto; bottom: 12px; left: 50%; transform: translateX(-50%); font-size: 13px }
 .entry-who { cursor: pointer; user-select: none }
 .entry-row { position: relative; margin-bottom: 8px; flex: none }
-.entry-row .entry-game { margin: 0 0 0 14px; width: calc(100% - 14px); padding: 7px 20px 7px 8px; box-sizing: border-box }
+.entry-row .entry-game { margin: 0 0 0 14px; width: calc(100% - 14px); padding: 7px 22px 7px 8px; box-sizing: border-box }
 .entry-arrow { display: inline-block; font-size: .78em; margin-right: 5px; letter-spacing: -.1em }
-.entry-x { position: absolute; right: 3px; top: 50%; transform: translateY(-50%); background: none; border: 0; padding: 2px 3px; font: inherit; font-size: 11px; line-height: 1; color: #8a7a62; cursor: pointer }
+.entry-x { position: absolute; right: 1px; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; padding: 0; margin: 0; background: none; border: 0; font-size: 0; line-height: 0; color: #8a7a62; cursor: pointer }
+.entry-x::before, .entry-x::after { content: ''; position: absolute; left: 50%; top: 50%; width: 9px; height: 1.5px; border-radius: 1px; background: currentColor }
+.entry-x::before { transform: translate(-50%, -50%) rotate(45deg) }
+.entry-x::after { transform: translate(-50%, -50%) rotate(-45deg) }
 .entry-x:hover { color: #c0392b }
 #bt-nolink { position: fixed; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center; background: rgba(35,57,47,.35) }
 #bt-nolink[hidden] { display: none }
@@ -2599,7 +2602,7 @@ body {
         arr.forEach(function (it, i) {
           let w = document.createElement('div'); w.className = 'entry-row';
           let b = document.createElement('button'); b.className = 'entry-game entry-sub'; let ar = document.createElement('span'); ar.className = 'entry-arrow'; ar.textContent = '\u21b3'; b.appendChild(ar); b.appendChild(document.createTextNode(gm + (arr.length > 1 ? ' ' + (i + 1) : ''))); b.onclick = it.open; w.appendChild(b);
-          if (it.id) { let x = document.createElement('button'); x.className = 'entry-x'; x.type = 'button'; x.setAttribute('aria-label', 'Remove game'); x.textContent = '\u2715'; x.onclick = function (e) { e.stopPropagation(); removeFoyerGame(L, it); }; w.appendChild(x); }
+          if (it.id) { let x = document.createElement('button'); x.className = 'entry-x'; x.type = 'button'; x.setAttribute('aria-label', 'Remove game'); x.onclick = function (e) { e.stopPropagation(); removeFoyerGame(L, it); }; w.appendChild(x); }
           el.appendChild(w);
         });
       });
