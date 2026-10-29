@@ -2857,8 +2857,9 @@ body {
       if (state.over) throw Error('The game is over.');  
       let server = null; try { server = await loadGame(state.id); } catch (e) { }  
       if (server && server.moveCount !== state.moveCount) {  
-        state = cloneRacks(server); pending = []; anchor = null; pendingWord = null; selected = -1; render();  
-        throw Error('Game updated elsewhere - reloaded bag/board. Try again.');  
+        // The opponent moved (for example passed) while this player was drafting: take the newer game, keep the draft, and carry on.
+        let hadDraft = pending.length > 0; applyExternalState(server);
+        if (!(hadDraft && pending.length && state.moveCount === server.moveCount)) throw Error('Game updated elsewhere - reloaded bag/board. Try again.');
       }  
       if (state.moveCount === 0) {  
         alert('First word cannot be submitted until opponent has passed.');  
@@ -4255,6 +4256,16 @@ body {
       setTimeout(function () { let c = $('bt-headsup-copy-link'); if (!hu.hidden && c && !c.disabled) c.focus(); }, 0);
     }).observe(hu, { attributes: true, attributeFilter: ['hidden'] });
   })();
+  // Coming back to the app (or the network returning): reconnect the chat link if it dropped, and fetch the latest game once.
+  function wordageResync() {
+    try {
+      if (!state || state.over || !$('entry-home').hidden) return;
+      btLink.reconnect('comm');
+      loadGame(state.id).then(function (g) { if (g) applyExternalState(g); }).catch(function () { });
+    } catch (e) { }
+  }
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') wordageResync(); });
+  window.addEventListener('online', wordageResync);
   function backToFoyer() { try { $('bt-headsup').hidden = true; pendingGameForHeadsUp = null; cribPendingHeadsUp = null; $('nameB').value = ''; } catch (e) { } wordageToFoyer(); }
   $('btn-cancel-start').onclick = backToFoyer; $('btn-cancel-headsup').onclick = backToFoyer;
   document.addEventListener('keydown', function (e) {
