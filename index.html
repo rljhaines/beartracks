@@ -213,11 +213,26 @@ body {
 .entry-list { display: flex; flex-direction: column; gap: 10px; }
 .entry-choice { width: 100%; min-height: 48px; border: 1px solid #b7bcad; border-radius: 9px; background: #fffef6; color: var(--ink); font: inherit; font-weight: 700; cursor: pointer; }
 .entry-choice:hover { background: #f8e5af; }
-.entry-games { display: flex; flex-direction: column; gap: 8px; max-height: 230px; overflow: auto; }
+.entry-games { display: flex; flex-direction: column; gap: 8px; max-height: 230px; overflow-y: auto; overflow-x: hidden; scrollbar-width: thin; scrollbar-color: #b9a98d transparent;
+  background: linear-gradient(#fffdf8 30%, rgba(255,253,248,0)) 0 0 / 100% 18px no-repeat local, linear-gradient(rgba(255,253,248,0), #fffdf8 70%) 0 100% / 100% 18px no-repeat local, linear-gradient(rgba(64,48,28,.22), rgba(64,48,28,0)) 0 0 / 100% 8px no-repeat scroll, linear-gradient(rgba(64,48,28,0), rgba(64,48,28,.22)) 0 100% / 100% 8px no-repeat scroll; }
+.entry-games::-webkit-scrollbar { width: 7px }
+.entry-games::-webkit-scrollbar-thumb { background: #b9a98d; border-radius: 4px }
+.entry-games::-webkit-scrollbar-track { background: transparent }
 .entry-game { width: 100%; border: 1px solid #c7baa4; border-radius: 8px; background: #fffef6; color: var(--ink); padding: 10px 12px; text-align: left; font: inherit; cursor: pointer; }
 .entry-game:hover { background: #f8e5af; }
 #pending-box .entry-games { flex: 1 1 auto; min-height: 0 }
 .join-link { margin-top: auto; padding-top: 10px; text-align: center; font-size: 13px; font-weight: 600; color: var(--green); text-decoration: underline; cursor: pointer; flex: none }
+#bt-removed { position: fixed; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center; background: rgba(35,57,47,.35) }
+#bt-removed[hidden] { display: none }
+#bt-removed .bt-pop-box { position: relative; width: min(300px, 86vw); box-sizing: border-box; padding: 38px 20px 40px; border-radius: 12px; background: #fffdf8; box-shadow: 0 10px 30px rgba(0,0,0,.25); text-align: center; font-weight: 700; color: var(--ink) }
+#bt-removed-close { top: 10px; right: 14px }
+#bt-removed-undo { top: auto; bottom: 12px; left: 50%; transform: translateX(-50%); font-size: 13px }
+.entry-who { cursor: pointer; user-select: none }
+.entry-row { position: relative; margin-bottom: 8px; flex: none }
+.entry-row .entry-game { margin: 0 0 0 14px; width: calc(100% - 14px); padding: 7px 20px 7px 8px; box-sizing: border-box }
+.entry-arrow { display: inline-block; font-size: .78em; margin-right: 5px; letter-spacing: -.1em }
+.entry-x { position: absolute; right: 3px; top: 50%; transform: translateY(-50%); background: none; border: 0; padding: 2px 3px; font: inherit; font-size: 11px; line-height: 1; color: #8a7a62; cursor: pointer }
+.entry-x:hover { color: #c0392b }
 #bt-nolink { position: fixed; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center; background: rgba(35,57,47,.35) }
 #bt-nolink[hidden] { display: none }
 #bt-nolink-box { position: relative; width: min(360px, 86vw); box-sizing: border-box; padding: 38px 20px 28px; border-radius: 12px; background: #fffdf8; box-shadow: 0 10px 30px rgba(0,0,0,.25); text-align: center; font-weight: 700; color: var(--ink) }
@@ -698,7 +713,8 @@ body {
           <div id="unlock-error" class="error"></div>
           <a href="#" id="unlock-forgot" style="display:inline-block;margin-top:10px;font-size:.85em;color:inherit;text-decoration:underline">Forgot password</a>
         </div>
-      </section>     </div>     <div id="bt-nolink" hidden><div id="bt-nolink-box">No valid game link found<button id="bt-nolink-close" class="bt-cancel" type="button">Close</button></div></div>
+      </section>     </div>     <div id="bt-removed" class="bt-pop" hidden><div class="bt-pop-box">Game removed<button id="bt-removed-close" class="bt-cancel" type="button">Close</button><button id="bt-removed-undo" class="bt-cancel" type="button">Undo</button></div></div>
+    <div id="bt-nolink" hidden><div id="bt-nolink-box">No valid game link found<button id="bt-nolink-close" class="bt-cancel" type="button">Close</button></div></div>
     <div       id="bt-headsup"       hidden     >       <div id="bt-headsup-box">         <div id="bt-headsup-left">           <div id="bt-headsup-help">Join me in a word-building game on BearTracks:</div><textarea             id="bt-headsup-input"             readonly tabindex="-1"           ></textarea>         </div>         <div id="bt-headsup-right"><button             id="bt-headsup-copy-msg"             disabled           >Message copied</button><button id="bt-headsup-copy-link">Copy link instead</button><button             id="bt-headsup-continue"           >Continue to game</button></div><button id="btn-cancel-headsup" class="bt-cancel" type="button">Cancel</button>       </div>     </div>     <script       id="game-state"       type="application/json"     >null</script>     <script>       (function () {         'use strict';         var N = 15, C = 7, V = { A: 1, B: 3, C: 3, D: 2, E: 1, F: 4, G: 2, H: 4, I: 1, J: 8, K: 5, L: 1, M: 3, N: 1, O: 1, P: 3, Q: 10, R: 1, S: 1, T: 1, U: 1, V: 4, W: 4, X: 8, Y: 4, Z: 10, "?": 0 };         var D = { A: 9, B: 2, C: 2, D: 4, E: 12, F: 2, G: 3, H: 2, I: 9, J: 1, K: 1, L: 4, M: 2, N: 6, O: 8, P: 2, Q: 1, R: 6, S: 4, T: 6, U: 4, V: 2, W: 2, X: 1, Y: 2, Z: 1, "?": 2 };         var TW = [[0, 0], [0, 7], [0, 14], [7, 0], [7, 14], [14, 0], [14, 7], [14, 14]], DW = [[1, 1], [2, 2], [3, 3], [4, 4], [10, 10], [11, 11], [12, 12], [13, 13], [1, 13], [2, 12], [3, 11], [4, 10], [10, 4], [11, 3], [12, 2], [13, 1], [7, 7]], TL = [[1, 5], [1, 9], [5, 1], [5, 5], [5, 9], [5, 13], [9, 1], [9, 5], [9, 9], [9, 13], [13, 5], [13, 9]], DL = [[0, 3], [0, 11], [2, 6], [2, 8], [3, 0], [3, 7], [3, 14], [6, 2], [6, 6], [6, 8], [6, 12], [7, 3], [7, 11], [8, 2], [8, 6], [8, 8], [8, 12], [11, 0], [11, 7], [11, 14], [12, 6], [12, 8], [14, 3], [14, 11]];         var state = null, pending = [], selected = -1, anchor = null, dragItem = null, gesture = null, suppressClick = false, waiting = false, waitingRack = null, waitingOpp = null, pendingWord = null;         var rackGap = 5, exchangeMode = false, exchSet = new Set();         const API = "https://beartracks-cfdurable-tt.beartracksgames.workers.dev"; const LIVE_SITE = "https://rljhaines.github.io/beartracks/";         let currentInvite = null; let btChannel = null; 
 
   // ===== LINK UNIT: how every game keeps its live connection =====
@@ -2557,24 +2573,47 @@ body {
   async function openPendingInvite(inv) { if (!inv || !inv.id) return; rememberPendingInvite(inv); try { let owner = getOwner(); if (!owner) { let url = new URL(location.href); url.searchParams.set('invite', inv.id); history.replaceState(null, '', url.pathname + url.search + url.hash); hideEntryPage(); $('setup').hidden = false; renderBoxes(); return; } currentInvite = inv; hideEntryPage(); if (!(await joinViaInvite(inv, owner))) showEntryPage(); } catch (e) { } }
   // Underway list: one line with the other player's name, then each game with that player on its own indented line, pointed to by an arrow.
   // Several of the same game with the same player are numbered.
-  function renderEntryGames(el, items) {
-    if (!items.length) { el.innerHTML = '<div class="entry-empty">No underway games.</div>'; return; }
+  // The Foyer lists: games grouped under an opponent (or group) row with an arrow; each game has an x that hides it from the list (Undo brings it back).
+  function hiddenGames() { try { return JSON.parse(localStorage.getItem('bt_hidden_games') || '{}') || {}; } catch (e) { return {}; } }
+  function setHiddenGame(id, on) { let h = hiddenGames(); if (on) h[id] = 1; else delete h[id]; try { localStorage.setItem('bt_hidden_games', JSON.stringify(h)); } catch (e) { } }
+  let foyerLists = {}, lastRemoved = null;
+  function renderEntryGames(el, items, opts) {
+    opts = opts || {}; let L = foyerLists[el.id] = foyerLists[el.id] || { open: {} };
+    L.el = el; L.items = items || []; L.empty = opts.empty || 'No underway games.'; L.expanded = !!opts.expanded; paintEntryGames(L);
+  }
+  function paintEntryGames(L) {
+    let el = L.el, top = el.scrollTop, hid = hiddenGames(), items = L.items.filter(function (it) { return !(it.id && hid[it.id]); });
+    el.innerHTML = ''; if (!items.length) { el.innerHTML = '<div class="entry-empty">' + L.empty + '</div>'; return; }
     let by = {}, order = [];
     items.forEach(function (it) { let k = it.who.toLowerCase(); if (!by[k]) { by[k] = { who: it.who, games: {} }; order.push(k); } (by[k].games[it.game] = by[k].games[it.game] || []).push(it); });
     order.forEach(function (k) {
-      let grp = by[k], h = document.createElement('div'); h.className = 'entry-who'; h.textContent = grp.who; el.appendChild(h);
+      let grp = by[k], isOpen = (k in L.open) ? L.open[k] : L.expanded, h = document.createElement('div');
+      h.className = 'entry-who'; h.setAttribute('role', 'button'); h.setAttribute('aria-expanded', isOpen ? 'true' : 'false'); h.tabIndex = 0;
+      h.textContent = (isOpen ? '\u25be ' : '\u25b8 ') + grp.who;
+      h.onclick = function () { L.open[k] = !isOpen; paintEntryGames(L); };
+      h.onkeydown = function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); h.onclick(); } };
+      el.appendChild(h); if (!isOpen) return;
       Object.keys(grp.games).forEach(function (gm) {
         let arr = grp.games[gm];
-        arr.forEach(function (it, i) { let b = document.createElement('button'); b.className = 'entry-game entry-sub'; b.textContent = '\u21b3 ' + gm + (arr.length > 1 ? ' ' + (i + 1) : ''); b.onclick = it.open; el.appendChild(b); });
+        arr.forEach(function (it, i) {
+          let w = document.createElement('div'); w.className = 'entry-row';
+          let b = document.createElement('button'); b.className = 'entry-game entry-sub'; let ar = document.createElement('span'); ar.className = 'entry-arrow'; ar.textContent = '\u21b3'; b.appendChild(ar); b.appendChild(document.createTextNode(gm + (arr.length > 1 ? ' ' + (i + 1) : ''))); b.onclick = it.open; w.appendChild(b);
+          if (it.id) { let x = document.createElement('button'); x.className = 'entry-x'; x.type = 'button'; x.setAttribute('aria-label', 'Remove game'); x.textContent = '\u2715'; x.onclick = function (e) { e.stopPropagation(); removeFoyerGame(L, it); }; w.appendChild(x); }
+          el.appendChild(w);
+        });
       });
     });
+    el.scrollTop = top;
   }
+  function removeFoyerGame(L, it) { setHiddenGame(it.id, true); lastRemoved = { L: L, it: it }; paintEntryGames(L); $('bt-removed').hidden = false; }
+  function closeRemoved() { $('bt-removed').hidden = true; }
+  function undoRemoved() { if (lastRemoved) { setHiddenGame(lastRemoved.it.id, false); paintEntryGames(lastRemoved.L); lastRemoved = null; } closeRemoved(); }
   function cribOpenFromFoyer(g, seat) { cribEnterGame(g, seat); try { lockGate(); } catch (e) { } }
   async function populateEntryGames() { updateBackupVisibility(); let owner = getOwner(), underwayEl = $('underway-games'), pendingEl = $('pending-games'); if (!underwayEl || !pendingEl) return; underwayEl.innerHTML = ''; pendingEl.innerHTML = ''; if (!owner) { underwayEl.innerHTML = '<div class="entry-empty">No underway games.</div>'; } else { let ids = getAllGameIds(), items = [];
-      for (let i = 0; i < ids.length; i++) { try { let g = await loadGame(ids[i]); if (!g || !g.players) continue; let my = g.players.findIndex(p => (p.name || '').toLowerCase() === owner.toLowerCase()); if (my < 0) continue; let crib = g.phase !== undefined; items.push({ who: g.players[1 - my]?.name || 'Opponent', game: crib ? 'Cribbage' : 'Wordage', open: crib ? (() => cribOpenFromFoyer(g, my)) : (() => enterGameDirect(g, my)) }); } catch (e) { } }
-      try { let gk = gwKeys(); for (const gid of Object.keys(gk)) { let seats = gwSeatsOf(gid), sk = Object.keys(seats); if (!sk.length) continue; let mine = sk.find(n => (seats[n].name || '').toLowerCase() === owner.toLowerCase()); if (mine == null) continue; let r = await gwApi('GET', 'status', null, gid, seats[mine].token); if (r.s !== 200 || !r.j || !r.j.seats) continue; let others = r.j.seats.filter(x => String(x.n) !== String(mine) && x.name).map(x => x.name); items.push({ who: r.j.title || 'Group', game: 'groupWords', open: (() => gwUse(gid, mine, seats[mine].token)) }); } } catch (e) { }
+      for (let i = 0; i < ids.length; i++) { try { let g = await loadGame(ids[i]); if (!g || !g.players) continue; let my = g.players.findIndex(p => (p.name || '').toLowerCase() === owner.toLowerCase()); if (my < 0) continue; let crib = g.phase !== undefined; items.push({ id: g.id, who: g.players[1 - my]?.name || 'Opponent', game: crib ? 'Cribbage' : 'Wordage', open: crib ? (() => cribOpenFromFoyer(g, my)) : (() => enterGameDirect(g, my)) }); } catch (e) { } }
+      try { let gk = gwKeys(); for (const gid of Object.keys(gk)) { let seats = gwSeatsOf(gid), sk = Object.keys(seats); if (!sk.length) continue; let mine = sk.find(n => (seats[n].name || '').toLowerCase() === owner.toLowerCase()); if (mine == null) continue; let r = await gwApi('GET', 'status', null, gid, seats[mine].token); if (r.s !== 200 || !r.j || !r.j.seats) continue; let others = r.j.seats.filter(x => String(x.n) !== String(mine) && x.name).map(x => x.name); items.push({ id: gid, who: r.j.title || 'Group', game: 'groupWords', open: (() => gwUse(gid, mine, seats[mine].token)) }); } } catch (e) { }
       renderEntryGames(underwayEl, items); }
-    let pids = getPendingInviteIds(); if (!pids.length) pendingEl.innerHTML = '<div class="entry-empty">No pending games.</div>'; else { let found = 0; for (let i = 0; i < pids.length; i++) { try { let inv = await loadInvite(pids[i]); if (!inv) { forgetPendingInvite(pids[i]); continue; } let b = document.createElement('button'); b.className = 'entry-game'; b.textContent = inv.invitedBy || 'Pending game'; b.onclick = () => openPendingInvite(inv); pendingEl.appendChild(b); found++; } catch (e) { } } if (!found) pendingEl.innerHTML = '<div class="entry-empty">No pending games.</div>'; }
+    let pids = getPendingInviteIds(); if (!pids.length) renderEntryGames(pendingEl, [], { empty: 'No pending games.', expanded: true }); else { let pitems = []; for (let i = 0; i < pids.length; i++) { try { let inv = await loadInvite(pids[i]); if (!inv) { forgetPendingInvite(pids[i]); continue; } pitems.push({ id: inv.id, who: inv.invitedBy || 'Opponent', game: inv.kind === 'cribbage' ? 'Cribbage' : 'Wordage', open: (function (v) { return function () { openPendingInvite(v); }; })(inv) }); } catch (e) { } } renderEntryGames(pendingEl, pitems, { empty: 'No pending games.', expanded: true }); }
   }
   function initEntryPaws() { let canvas = $('entry-paws'); if (!canvas) return; if (canvas.dataset.ready) { if (canvas._start) canvas._start(); return; } canvas.dataset.ready = '1'; let ctx = canvas.getContext('2d'); const colors = ['#c94a3c','#e68a82','#2e8aa8','#86c2cc']; const pad = new Path2D('M 20 56 C 20 46 35 42 50 42 C 65 42 80 46 80 56 C 84 70 78 86 50 92 C 22 86 16 70 20 56 Z'); const toes = [[23,28,14],[50,15,16],[77,28,14]]; let W=0,H=0; const walkers = Array.from({length:61}, () => ({nx:Math.random(),ny:Math.random(),ang:Math.random()*Math.PI*2,speed:.4+Math.random()*.9,color:colors[Math.floor(Math.random()*colors.length)]})); function resize(){let dpr=window.devicePixelRatio||1;if(!canvas.clientWidth||!canvas.clientHeight)return;W=canvas.clientWidth;H=canvas.clientHeight;canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);ctx.setTransform(dpr,0,0,dpr,0,0)} function drawPaw(w){let k=Math.min(W,H)/15*.6/100;ctx.save();ctx.translate(w.nx*W,w.ny*H);ctx.rotate(w.ang+Math.PI/2);ctx.scale(k,k);ctx.translate(-50,-50);ctx.fillStyle=w.color;toes.forEach(([x,y,r])=>{ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill()});ctx.fill(pad);ctx.restore()} let last=performance.now(); function tick(now){ctx.globalAlpha=.85;let dt=Math.min((now-last)/1000,.05);last=now;ctx.clearRect(0,0,W,H);walkers.forEach(w=>{w.ang+=(Math.random()-.5)*.15*(dt*60);let x=w.nx*W+Math.cos(w.ang)*w.speed*Math.min(W,H)/15*dt;let y=w.ny*H+Math.sin(w.ang)*w.speed*Math.min(W,H)/15*dt;let m=Math.min(W,H)*.01;if(x<m||x>W-m){w.ang=Math.PI-w.ang;x=Math.min(W-m,Math.max(m,x))}if(y<m||y>H-m){w.ang=-w.ang;y=Math.min(H-m,Math.max(m,y))}w.nx=x/W;w.ny=y/H;drawPaw(w)});ctx.globalAlpha=1;if($('entry-home').hidden){running=false;return}requestAnimationFrame(tick)} let running=true; canvas._start=function(){if(running)return;running=true;last=performance.now();requestAnimationFrame(tick)}; new ResizeObserver(resize).observe(canvas);resize();requestAnimationFrame(tick); }
   function $(id) { return document.getElementById(id) }  
@@ -4229,6 +4268,7 @@ body {
   // ---- wiring ----
   // Leaving to the Foyer: the game's address goes too, so a reload lands in the Foyer.
   function foyerUrl() { try { let url = new URL(location.href); ['game', 'kind', 'p', 'gw', 'invite', 'handoff'].forEach(function (k) { url.searchParams.delete(k); }); history.replaceState(null, '', url.pathname + url.search + url.hash); } catch (e) { } }
+  $('bt-removed-close').onclick = closeRemoved; $('bt-removed-undo').onclick = undoRemoved;
   function nolinkShow(on) { $('bt-nolink').hidden = !on; }
   function joinLinkUrl(text) {
     let m = String(text || '').match(/https?:\/\/[^\s<>"']+/g); if (!m) return null;
@@ -4271,6 +4311,7 @@ body {
   document.addEventListener('keydown', function (e) {
     if (e.key !== 'Escape') return;
     if (!$('bt-nolink').hidden) { e.preventDefault(); nolinkShow(false); return; }
+    if (!$('bt-removed').hidden) { e.preventDefault(); closeRemoved(); return; }
     let hu = $('bt-headsup'), st = $('box-start'), su = $('setup');
     if (hu && !hu.hidden) { e.preventDefault(); backToFoyer(); return; }
     if (su && !su.hidden && st && !st.hidden) { e.preventDefault(); backToFoyer(); }
