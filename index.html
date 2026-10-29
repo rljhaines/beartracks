@@ -84,7 +84,7 @@ body {
 .right-col > .card { flex: 0 0 auto; padding: 10px }  
 .combo { display: flex; flex-direction: column; align-items: center; gap: 0; justify-self: center }  
 :root { --cell: calc((var(--board-size) - 2 * var(--pad) - 14 * var(--gap)) / 15) }   /* one board square: a board tile is the rack tile scaled to this size */
-/* ===== rack: Qwen CSS verbatim ===== */ .rack { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; width: calc(var(--board-size) * 8 / 15 + 12px); justify-content: center }  
+/* ===== rack: Qwen CSS verbatim ===== */ .rack { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; width: calc(var(--board-size) * 8 / 15 + 12px); justify-content: center ; min-height: calc((var(--board-size) * 8 / 15 + 12px - 36px) / 7) }  
 .rack-tile { aspect-ratio: 1/1; background: var(--rack-bg); border: 1px solid var(--tile-edge); border-radius: 6px; box-shadow: 2px 2px 0 rgba(0, 0, 0, .08); display: grid; place-items: center; font-size: clamp(18px, 2.2vw, 32px); font-weight: 400; color: #1a2a1e; line-height: 1; text-transform: lowercase }  
 .rack-tile b { margin-left: 2px; font-size: .35em; font-weight: 400 }  
 .rack-tile { position: relative; cursor: pointer }  
