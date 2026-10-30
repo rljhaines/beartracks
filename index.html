@@ -1286,7 +1286,7 @@ body {
   // card's face-up/down state follows it when reordered.
   let cribBoardOrder = [0, 1, 2, 3, 4, 5];
   let cribHi = [], cribPegStaged = null;  // highlighted (border) hand cards, oldest first; the two most recently selected keep the border
-  const CRIB_SLOT = { CX: 788, CY: 226, sw: 39, sh: 55, gx: 5, gy: 5 };  // the four crib holding slots on the board
+  const CRIB_SLOT = { CX: 785.15, CY: 216.4, sw: 44.85, sh: 63.25, gx: 5.75, gy: 5.75 };  // the four crib holding slots on the board
   let cribFlippedSet = new Set();
   let cribFlipHandKey = null, cribHandStep = -1;
   let cribCardRowLeft = 0, cribCardW = 80, cribCardGap = 14, cribCardRowTop = 355, cribRowShift = 0;  // cribRowShift: sideways shift that centres a short hand in the row
@@ -4030,7 +4030,7 @@ body {
       const b = backCard(x, y, sw, sh); b.setAttribute('class', 'crib-slot-card'); b.style.display = 'none'; crib.appendChild(b);
     }
     g.appendChild(crib);
-    { const cw2 = lab('crib', CX + sw + gx / 2, CY + 2 * sh + gy + 16); cw2.setAttribute('id', 'crib-deck-word'); g.appendChild(cw2); }
+    { const cw2 = lab('crib', CX + 2 * sw + gx + 6, CY + 2 * sh + gy); cw2.setAttribute('id', 'crib-deck-word'); cw2.setAttribute('text-anchor', 'start'); g.appendChild(cw2); }
     svg.appendChild(g);
     return true;
   }
