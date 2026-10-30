@@ -1332,7 +1332,7 @@ body {
       let flipped = cribFlippedSet.has(handIndex) && !!c;
       face.style.display = flipped ? '' : 'none';
       back.style.display = flipped ? 'none' : '';
-      slot.style.display = (c && !cribSelectedDiscard.has(handIndex)) ? '' : 'none';
+      slot.style.display = (c && !cribSelectedDiscard.has(handIndex) && !pegNow) ? '' : 'none';   // during the play the hand sits in the crib space instead (cribRenderPegTable)
       { const ghost = !!c && handIndex === cribPegStaged, fl = slot.querySelector('.crib-card-flip'), tk = slot.querySelector('.crib-card-tick');
         if (fl) fl.style.opacity = ghost ? '0.25' : '1'; if (tk) tk.style.display = ghost ? '' : 'none'; }  // a card sent to the crib leaves its place in the hand
       slot.style.opacity = '1';
@@ -2044,6 +2044,7 @@ body {
     let p = cribState.pegging, hd = p && p.hold;
     if (cribState.phase !== 'pegging' || !hd || hd.seat !== li) { cribRender(); return; }
     if (!(p.pending && p.pending.claimedPts > 0)) { cribPegNote('Claim your last card (or 31) first.'); cribRender(); return; }
+    if (hd.kind === 'count' && p.pending && p.pending.seq && p.pending.seq.length) { p.done = p.done || []; p.done.push({ seq: p.pending.seq.slice(), count: p.pending.count }); }   // the finished count stays on the table
     p.hold = null; p.pending = null;
     if (hd.kind === 'show') cribFinishPegging();
     else { p.count = 0; p.played = []; p.lastToPlay = null; p.goBy = null; p.consecutiveGo = 0; p.turn = hd.lead; }
@@ -2112,7 +2113,8 @@ body {
     ['f31', 'last'].forEach(k => {
       const t = R.items[k], f = R.fin[k], live = finKey === k;
       t.setAttribute('opacity', live ? '1' : '0.3'); t.style.cursor = 'default'; t.setAttribute('text-decoration', 'none');
-      f.disabled = !live; f.parentNode.setAttribute('opacity', live ? '1' : '0.3');
+      const wasOff = f.disabled; f.disabled = !live; f.parentNode.setAttribute('opacity', live ? '1' : '0.3');
+      if (live && wasOff) setTimeout(function () { try { if (!f.disabled) f.focus({ preventScroll: true }); } catch (e) { } }, 0);   // the claim is waiting: put the cursor in its field
       if (!live && !inHold) f.value = f.value;   // untouched
     });
     R.items.run.setAttribute('opacity', mine && !cl.run ? '1' : '0.3'); R.inp.disabled = !(mine && !cl.run);
@@ -2171,24 +2173,64 @@ body {
       if (S && S.active === li) { link(S.step === 2 ? 'deal next hand' : 'next count', () => (S.step === 2 ? cribDealNext() : cribShowNext())); fade(cribMiniG.lastChild, S.sh.fin || S.sh.counted); }
     }
     if (ph !== 'pegging' || !p || (p.finished && !p.hold)) { try { svg.appendChild(cribNamesG); } catch (e) { } return; }
-    const place = (c, i, staged) => {
-      const g = document.createElementNS(NS, 'g'); g.setAttribute('transform', 'translate(' + (x0 + i * step) + ',' + y0 + ') scale(' + sx + ',' + sy + ')');
-      g.appendChild(cribBuildCardFace(c.r, c.s, CRIB_CARD_W, CRIB_CARD_H));
-      if (staged) { g.style.cursor = 'pointer'; g.addEventListener('click', () => { cribPegStaged = null; cribRender(); }); g.setAttribute('class', 'crib-peg-mini-staged'); }
-      cribMiniG.appendChild(g); return g;
-    };
-    // A series that has just ended (31, or nobody can play) stays on the table until the next card is played, so last card / 31 can still be claimed and muggins taken.
-    const pend = p.pending, stale = !(p.played && p.played.length) && cribPegStaged == null && pend && pend.ended && !pend.heels && pend.seq && pend.seq.length;
-    const shown = stale ? pend.seq : (p.played || []), shownCount = stale ? pend.count : p.count;
-    shown.forEach((c, i) => place(c, i, false));
-    if (cribPegStaged != null && p.inHand[li] && p.inHand[li][cribPegStaged]) place(p.inHand[li][cribPegStaged], shown.length, true);
-    // under each miniature its rank, and under them all (centred) the count
-    if (shown.length) {
-      const lab = (txt, x, y, fs, bold) => { const t = document.createElementNS(NS, 'text'); t.setAttribute('x', x); t.setAttribute('y', y); t.setAttribute('text-anchor', 'middle'); t.setAttribute('font-family', 'sans-serif'); t.setAttribute('font-size', fs); if (bold) t.setAttribute('font-weight', '700'); t.setAttribute('fill', '#000'); t.setAttribute('pointer-events', 'none'); t.textContent = txt; cribMiniG.appendChild(t); };
-      shown.forEach((c, i) => lab(c.r === 'T' ? '10' : c.r, x0 + i * step + w / 2, y0 + h + 10, 10, false));
-      lab(String(shownCount), x0 + (shown.length * step - 3) / 2, y0 + h + 24, 12, true);
-    }
     try { svg.appendChild(cribNamesG); } catch (e) { }   // keep the names on top if a long run of cards reaches them
+  }
+
+  // ---- the play, laid out on the board: your remaining cards sit in the crib space; the cards played fill eight places between 105 and 10 ----
+  const CRIB_PLAY = { left: 333.3, right: 850.04, gap: 7, cy: 416 };   // from the right edge of "105" (plus its margin) to the left edge of "10" (less the same margin)
+  function cribRenderPegTable() {
+    const NS = 'http://www.w3.org/2000/svg', svg = document.getElementById('crib-board-svg'); if (!svg || !cribState) return;
+    let g = document.getElementById('crib-peg-table');
+    if (!g) { g = document.createElementNS(NS, 'g'); g.setAttribute('id', 'crib-peg-table'); svg.appendChild(g); }
+    g.innerHTML = '';
+    const ph = cribState.phase, p = cribState.pegging, li = cribGetLocalIdx();
+    const dw = document.getElementById('crib-deck-word'); if (dw) dw.textContent = (ph === 'pegging' && p) ? 'hand' : 'crib';
+    if (ph !== 'pegging' || !p) return;
+    const S = CRIB_SLOT, sx = S.sw / CRIB_CARD_W, sy = S.sh / CRIB_CARD_H;
+    const mine = (p.inHand && p.inHand[li]) || [], orig = (cribState.hands && cribState.hands[li]) || [];
+    mine.forEach((c, hi) => {
+      let pos = orig.findIndex(o => o && o.r === c.r && o.s === c.s); if (pos < 0 || pos > 3) pos = hi;
+      const x = S.CX + (pos % 2) * (S.sw + S.gx), y = S.CY + Math.floor(pos / 2) * (S.sh + S.gy), staged = hi === cribPegStaged;
+      const w = document.createElementNS(NS, 'g'); w.setAttribute('transform', 'translate(' + x + ',' + y + ')'); w.style.cursor = 'pointer';
+      const f = document.createElementNS(NS, 'g'); f.setAttribute('transform', 'scale(' + sx + ',' + sy + ')'); f.setAttribute('opacity', staged ? '0.25' : '1');
+      f.appendChild(cribBuildCardFace(c.r, c.s, CRIB_CARD_W, CRIB_CARD_H)); w.appendChild(f);
+      w.addEventListener('click', () => { if (cribPegStaged === hi) { cribPegStaged = null; cribRender(); } else cribPegStageCard(hi); });
+      if (staged) {
+        const tk = document.createElementNS(NS, 'g'); tk.setAttribute('transform', 'translate(' + (S.sw / 2 - 9) + ',' + (S.sh / 2 - 7) + ') scale(1.3)');
+        tk.innerHTML = '<rect x="-4" y="-4" width="22" height="20" fill="transparent"/><path d="M0.5 6.5 Q2.5 7 4.5 10.5 Q8 3.5 13.5 -0.5" fill="none" stroke="#000" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>';
+        tk.addEventListener('click', (e) => { e.stopPropagation(); cribPegPlayStaged(); });
+        w.appendChild(tk);
+      }
+      g.appendChild(w);
+    });
+    // the eight places
+    const P = CRIB_PLAY, cw = (P.right - P.left - 7 * P.gap) / 8, ch = cw * CRIB_CARD_H / CRIB_CARD_W, top = P.cy - ch / 2, X = i => P.left + i * (cw + P.gap);
+    for (let i = 0; i < 8; i++) {
+      const r = document.createElementNS(NS, 'rect'); r.setAttribute('x', X(i)); r.setAttribute('y', top); r.setAttribute('width', cw); r.setAttribute('height', ch); r.setAttribute('rx', 4);
+      r.setAttribute('fill', 'rgba(0,0,0,0.08)'); r.setAttribute('stroke', '#000'); r.setAttribute('stroke-width', '1'); r.setAttribute('stroke-dasharray', '4 3'); r.setAttribute('opacity', '0.55'); g.appendChild(r);
+    }
+    // what is on the table: every count of this play, the finished ones with the total they reached
+    const pend = p.pending, stale = !(p.played && p.played.length) && cribPegStaged == null && pend && pend.ended && !pend.heels && pend.seq && pend.seq.length;
+    const segs = (p.done || []).map(d => ({ seq: d.seq, count: d.count }));
+    if (stale) segs.push({ seq: pend.seq, count: pend.count }); else if (p.played && p.played.length) segs.push({ seq: p.played, count: p.count });
+    const lab = (txt, x, y) => { const t = document.createElementNS(NS, 'text'); t.setAttribute('x', x); t.setAttribute('y', y); t.setAttribute('text-anchor', 'end'); t.setAttribute('font-family', 'sans-serif'); t.setAttribute('font-size', 12.5); t.setAttribute('font-weight', '700'); t.setAttribute('fill', '#fff'); t.setAttribute('stroke', '#2b1a0e'); t.setAttribute('stroke-width', '0.4'); t.setAttribute('pointer-events', 'none'); t.textContent = txt; g.appendChild(t); };
+    let n = 0;
+    segs.forEach((sg, k) => {
+      sg.seq.forEach(c => {
+        if (n > 7) return;
+        const w = document.createElementNS(NS, 'g'); w.setAttribute('transform', 'translate(' + X(n) + ',' + top + ') scale(' + (cw / CRIB_CARD_W) + ',' + (ch / CRIB_CARD_H) + ')');
+        w.appendChild(cribBuildCardFace(c.r, c.s, CRIB_CARD_W, CRIB_CARD_H)); g.appendChild(w); n++;
+      });
+      if (!sg.seq.length || n === 0) return;
+      const last = Math.min(n, 8) - 1, rx = X(last) + cw;
+      lab(String(sg.count), rx, top - 3);
+      if (k < segs.length - 1) { const l = document.createElementNS(NS, 'line'); l.setAttribute('x1', rx + 2.5); l.setAttribute('x2', rx + 2.5); l.setAttribute('y1', top - 4); l.setAttribute('y2', top - 8); l.setAttribute('stroke', '#fff'); l.setAttribute('stroke-width', '1.2'); g.appendChild(l); }
+    });
+    if (cribPegStaged != null && mine[cribPegStaged] && n < 8) {   // the card waiting for its tick shows in the next place; click it to take it back
+      const c = mine[cribPegStaged], w = document.createElementNS(NS, 'g'); w.setAttribute('transform', 'translate(' + X(n) + ',' + top + ') scale(' + (cw / CRIB_CARD_W) + ',' + (ch / CRIB_CARD_H) + ')'); w.setAttribute('opacity', '0.6'); w.style.cursor = 'pointer';
+      w.appendChild(cribBuildCardFace(c.r, c.s, CRIB_CARD_W, CRIB_CARD_H)); w.addEventListener('click', () => { cribPegStaged = null; cribRender(); }); g.appendChild(w);
+    }
+    try { svg.appendChild(cribNamesG); } catch (e) { }
   }
   // The most the latest play can be worth: 15, 31, last card, the best pair and the longest run on the table.
   function cribPegMax(pend) {
@@ -2391,9 +2433,12 @@ body {
     } catch (e) { }
   }
   function cribFlashCrib() {
-    const els = [cribCountRefs && cribCountRefs.word, document.getElementById('crib-deck-word')].filter(Boolean);
+    const fw = document.getElementById('crib-flash-word');
+    const els = [cribCountRefs && cribCountRefs.word, fw].filter(Boolean);
     els.forEach(e => e.classList.remove('crib-flash'));
+    if (fw) fw.removeAttribute('display');
     setTimeout(() => els.forEach(e => e.classList.add('crib-flash')), 30);
+    setTimeout(() => { if (fw) fw.setAttribute('display', 'none'); }, 1200);
   }
   function cribBoardPhaseView() {
     try { const sk = cribState && cribState.phase === 'counting' && cribState.show ? cribState.id + ':' + cribState.show.step : ''; if (sk !== cribShowStepKey) { cribShowStepKey = sk; if (sk) cribCountReset(); if (sk && cribState.show.step === 2) cribFlashCrib(); } } catch (e) { }
@@ -2404,7 +2449,7 @@ body {
     cribChartWasShown = chart;
     if (chart) { try { cribCountRefresh(); } catch (e) { } }
     try { cribRenderNames(); } catch (e) { }
-    try { cribRenderPegMinis(); cribRenderMuggins(); cribShowReport(); } catch (e) { }
+    try { cribRenderPegMinis(); cribRenderPegTable(); cribRenderMuggins(); cribShowReport(); } catch (e) { }
     cribMugPop();
     document.querySelectorAll('#crib-cards .crib-flipall-text').forEach(t => { t.style.display = (ph === 'pegging' || (ph === 'counting' && t.id === 'crib-send-link')) ? 'none' : ''; });
     try { cribUpdateLinks(); } catch (e) { }
@@ -4030,7 +4075,8 @@ body {
       const b = backCard(x, y, sw, sh); b.setAttribute('class', 'crib-slot-card'); b.style.display = 'none'; crib.appendChild(b);
     }
     g.appendChild(crib);
-    { const cw2 = lab('crib', CX + 2 * sw + gx + 6, CY + 2 * sh + gy); cw2.setAttribute('id', 'crib-deck-word'); cw2.setAttribute('text-anchor', 'start'); g.appendChild(cw2); }
+    { const cw2 = lab('crib', CX + 1.5 * sw + gx, CY + 2 * sh + gy + 14); cw2.setAttribute('id', 'crib-deck-word'); cw2.setAttribute('text-anchor', 'middle'); g.appendChild(cw2);   // centred under the bottom-right card; reads "hand" while the hand is there
+      const fw = lab('crib', 539.8, 480); fw.setAttribute('id', 'crib-flash-word'); fw.setAttribute('text-anchor', 'middle'); fw.setAttribute('fill', '#fff'); fw.setAttribute('stroke', '#2b1a0e'); fw.setAttribute('stroke-width', '0.4'); fw.setAttribute('display', 'none'); g.appendChild(fw); }
     svg.appendChild(g);
     return true;
   }
@@ -4143,7 +4189,7 @@ body {
     // crib holding area: one face-down card per card in the crib
     // face-down cards for what is already in the crib; this player's staged cards are drawn face-up on top (cribRenderStaged)
     const n = Math.min(4, (cribState.crib && cribState.crib.length) || 0);
-    Array.from(document.querySelectorAll('#crib-slots .crib-slot-card')).forEach((c, i) => { c.style.display = i < n ? '' : 'none'; });
+    Array.from(document.querySelectorAll('#crib-slots .crib-slot-card')).forEach((c, i) => { c.style.display = (i < n && cribState.phase !== 'pegging') ? '' : 'none'; });   // the crib is set aside while the play uses its space
     cribRenderStaged();
     try { cribRenderShowCards(); } catch (e) { }
   }
