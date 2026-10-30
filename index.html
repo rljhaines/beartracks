@@ -1286,10 +1286,10 @@ body {
   // card's face-up/down state follows it when reordered.
   let cribBoardOrder = [0, 1, 2, 3, 4, 5];
   let cribHi = [], cribPegStaged = null;  // highlighted (border) hand cards, oldest first; the two most recently selected keep the border
-  const CRIB_SLOT = { CX: 785.15, CY: 216.4, sw: 44.85, sh: 63.25, gx: 5.75, gy: 5.75 };  // the four crib holding slots on the board
+  const CRIB_SLOT = { CX: 785.15, CY: 219.8, sw: 44.85, sh: 63.25, gx: 5.75, gy: 5.75 };  // the four crib holding slots on the board
   let cribFlippedSet = new Set();
   let cribFlipHandKey = null, cribHandStep = -1;
-  let cribCardRowLeft = 0, cribCardW = 80, cribCardGap = 14, cribCardRowTop = 355, cribRowShift = 0;  // cribRowShift: sideways shift that centres a short hand in the row
+  let cribCardRowLeft = 0, cribCardW = 80, cribCardGap = 14, cribCardRowTop = 365, cribRowShift = 0;  // cribRowShift: sideways shift that centres a short hand in the row
   function cribRenderBoardHand(li) {
     if (!cribState) return;
     let svg = document.getElementById('crib-board-svg');
@@ -1579,7 +1579,7 @@ body {
     const mountainCenterX = 582.5, mountainBottomY = 345;
     const rowWidth = 6 * cardW + 5 * gap;
     const rowLeft = mountainCenterX - rowWidth / 2;
-    const rowTop = mountainBottomY + 10;
+    const rowTop = mountainBottomY + 10 + 10;   // the hand sits 10 units lower than the mountain-based default: half the old gap above the 115 label
     cribCardRowLeft = rowLeft; cribCardW = cardW; cribCardGap = gap; cribCardRowTop = rowTop;
     const cardsG = document.getElementById('crib-cards');
     cribEnsureCardBackDefsForGame(document.getElementById('crib-board-svg'), cribState);
