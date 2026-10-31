@@ -571,6 +571,18 @@ body {
 /* ===== Cribbage gameplay full-screen board ===== */
 #cribbage-game { position: fixed; inset: 0; z-index: 6; background: var(--paper); overflow: hidden; }
 #crib-board-wrap { position: absolute; inset: 0; z-index: 0; }
+#cribbage-game { --cs: max(100vw / 1264, 100dvh / 842); }   /* the board image's scale (it fills the screen, centred): one unit of the picture */
+#crib-talk { position: fixed; z-index: 3; box-sizing: border-box; display: flex; flex-direction: column; min-width: 0;
+  left: calc((100vw - 1264 * var(--cs)) / 2 + 1057 * var(--cs) + 2px);   /* two pixels right of the foremost paw */
+  top: calc((100dvh - 842 * var(--cs)) / 2 + 420 * var(--cs) + 2px);     /* two pixels below the throat */
+  right: 7px; bottom: 7px; padding: 8px; background: rgba(255, 254, 246, .92); border: 1px solid #8a7a52; border-radius: 8px; color: #000; overflow: hidden; }
+#crib-talk[hidden] { display: none; }
+#crib-talk h2 { margin: 0 0 6px; font-size: 14px; }
+#crib-talk-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+#crib-talk #bt-comm-panel { flex: 1; display: flex; flex-direction: column; min-height: 0; border: 0; box-shadow: none; padding: 0; background: transparent }
+#crib-talk #bt-comm-panel h2 { display: none }
+#crib-talk #comm-input { min-width: 0 }
+#crib-talk #comm-log { flex: 1; min-height: 40px; max-height: none !important }
 #crib-board-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: block; }
 /* The gameplay screen is the board and nothing else. The score/status/history
    markup still exists (game logic writes into it) but is never shown. */
@@ -674,6 +686,7 @@ body {
           <g id="crib-handcount" font-family="sans-serif" fill="black"></g>
         </svg>
       </div>
+      <div id="crib-talk" hidden><h2>Convo-Ursidae</h2><div id="crib-talk-body"></div></div>
       <div id="crib-game-inner">
         <div id="crib-scoreboard"><span id="crib-score-0"></span><span id="crib-score-1"></span></div>
         <div id="crib-dealer"></div>
@@ -801,7 +814,7 @@ body {
   // The name on a message is this tab's player, not the browser's stored owner (two players can share a browser).
   let seenChat = new Set();
   function showChat(m) { if (m.id) { if (seenChat.has(m.id)) return; seenChat.add(m.id); if (seenChat.size > 200) seenChat.delete(seenChat.values().next().value); } commHost.onChat(m); }
-  function sendComm(o) { if (o && o.type === "chat" && !o.id) o.id = randomId(); if (commChannel) try { commChannel.postMessage(o); } catch (_) { } btLink.send('comm', JSON.stringify(o)); }  
+  function sendComm(o) { if (o && o.type === "chat" && !o.id) o.id = randomId(); if (commChannel) try { commChannel.postMessage(o); } catch (_) { } btLink.send(cribChatOn() ? 'crib' : 'comm', JSON.stringify(o)); }   // in Cribbage the chat rides the game's own socket
   // async function tryCallOpponent(id) { let gid = pendingGameForHeadsUp?.id || state?.id || currentInvite?.gameId; initComm(gid); let who = id || currentInvite?.invitedBy || TableTalk.opponent || "opponent"; let btn = document.getElementById("comm-call"); if (pc) { try { pc.close(); } catch (_) { } pc = null; if (localStream) localStream.getTracks().forEach(tr => tr.stop()); localStream = null; if (btn) btn.textContent = "Call"; addCommLine("Call ended"); return; } try { localStream = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch (e) { alert("Mic needed: " + e.message); return; } pc = new RTCPeerConnection({ iceServers: await getIceServers() }); localStream.getTracks().forEach(tr => pc.addTrack(tr, localStream)); pc.onicecandidate = (e) => { if (e.candidate) sendComm({ type: "rtc-ice", candidate: e.candidate, from: getOwner(), to: who }); }; pc.ontrack = (e) => { let a = document.getElementById("remote-audio"); if (a) a.srcObject = e.streams[0]; if (btn) btn.textContent = "Hang up"; addCommLine("In call with " + who); }; let off = await pc.createOffer(); await pc.setLocalDescription(off); sendComm({ type: "rtc-offer", sdp: off, from: chatName(), to: who }); addCommLine("Calling " + who + "..."); }  
   // async function handleOffer(m) { let gid = pendingGameForHeadsUp?.id || state?.id || currentInvite?.gameId; initComm(gid); try { if (!localStream) localStream = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch (e) { addCommLine("Incoming call but mic blocked"); return; } if (pc) try { pc.close(); } catch (_) { } pc = new RTCPeerConnection({ iceServers: await getIceServers() }); localStream.getTracks().forEach(tr => pc.addTrack(tr, localStream)); pc.onicecandidate = (e) => { if (e.candidate) sendComm({ type: "rtc-ice", candidate: e.candidate, from: getOwner(), to: m.from }); }; pc.ontrack = (e) => { let a = document.getElementById("remote-audio"); if (a) a.srcObject = e.streams[0]; let b = document.getElementById("comm-call"); if (b) b.textContent = "Hang up"; addCommLine("Joined call with " + m.from); }; await pc.setRemoteDescription(new RTCSessionDescription(m.sdp)); let ans = await pc.createAnswer(); await pc.setLocalDescription(ans); sendComm({ type: "rtc-answer", sdp: ans, from: chatName(), to: m.from }); }  
   // Close this game's connections and forget it (the Wordage module will call this on leave).
@@ -861,14 +874,15 @@ body {
   function chatPanelRemove() { try { let p = document.getElementById('bt-comm-panel'); if (p) p.remove(); } catch (e) { } TableTalk.element = null; }
   function ensureCommPanel() { if (!state || !state.id) return; let host = document.getElementById('talkBody'); if (!host) return; let li = typeof getLocalIdx === 'function' ? getLocalIdx() : 0; chatPanelMount(host, state.players?.[1 - li]?.name); }
   // ---- what the comms unit asks of Wordage ----
+  function cribChatOn() { try { const g = document.getElementById('cribbage-game'); return !!g && !g.hidden && !!cribState; } catch (e) { return false; } }
   const commHost = {
-    gameId: function (pendingFirst) { return pendingFirst ? (pendingGameForHeadsUp?.id || state?.id || currentInvite?.gameId) : (state?.id || pendingGameForHeadsUp?.id || currentInvite?.gameId); },
-    seat: function () { return getLocalIdx(); },
-    myName: function (li) { return state?.players?.[li]?.name || localStorage.getItem('username') || ('P' + li); },
+    gameId: function (pendingFirst) { if (cribChatOn()) return cribState.id; return pendingFirst ? (pendingGameForHeadsUp?.id || state?.id || currentInvite?.gameId) : (state?.id || pendingGameForHeadsUp?.id || currentInvite?.gameId); },
+    seat: function () { return cribChatOn() ? cribGetLocalIdx() : getLocalIdx(); },
+    myName: function (li) { if (cribChatOn()) return (cribState.players[li] && cribState.players[li].name) || ('P' + li); return state?.players?.[li]?.name || localStorage.getItem('username') || ('P' + li); },
     inviter: function () { return currentInvite?.invitedBy; },
-    holder: function () { return document.getElementById('bt-comm-holder'); },
+    holder: function () { return document.getElementById(cribChatOn() ? 'crib-talk-body' : 'bt-comm-holder'); },
     wantSeatLink: false,
-    connecting: function () { commHost.wantSeatLink = true; let sl = $('seatLink'); if (sl) sl.hidden = false; },
+    connecting: function () { if (cribChatOn()) return; commHost.wantSeatLink = true; let sl = $('seatLink'); if (sl) sl.hidden = false; },
     onGameState: function (g) { applyExternalState(g); },
     onChat: function (m) { addCommLine((m.from || "opp") + ": " + m.text); },
     status: function (st, tried) { setCommStatus(st, tried); }
@@ -1298,7 +1312,9 @@ body {
     if (svg) cribEnsureCardBackDefsForGame(svg, cribState);
     let pegNow = cribState.phase === 'pegging' && cribState.pegging && cribState.pegging.inHand;
     let hand = pegNow ? (cribState.pegging.inHand[li] || []) : ((cribState.hands && cribState.hands[li]) || []);
-    let key = (pegNow ? 'p' : '') + li + ':' + hand.map(c => c.r + c.s).join(',');
+    const crib2 = cribState.phase === 'counting' && !!cribState.show && cribState.show.step === 2;
+    if (crib2) hand = (cribState.crib || []).slice(0, 4);   // when the crib is counted it takes the hand's place in the row
+    let key = (pegNow ? 'p' : '') + (crib2 ? 'c' : '') + li + ':' + hand.map(c => c.r + c.s).join(',');
     if (key !== cribFlipHandKey) {
       cribPegStaged = null;
       cribFlippedSet = new Set();
@@ -1310,7 +1326,7 @@ body {
       cribCountReset();
     }
     { const stp = cribState.phase === 'counting' && cribState.show ? cribState.show.step : -1;
-      if (stp !== cribHandStep) { cribHandStep = stp; if (stp === 2) cribFlippedSet = new Set(); else if (stp >= 0) cribFlippedSet = new Set(hand.map((c, i) => i)); } }   // the crib is counted with the hand face down
+      if (stp !== cribHandStep) { cribHandStep = stp; if (stp >= 0) cribFlippedSet = new Set(hand.map((c, i) => i)); } }
     if (pegNow) cribFlippedSet = new Set(hand.map((c, i) => i));   // during the play your own cards are all face-up
     let slots = Array.from(cardsG.querySelectorAll('.crib-card-slot'))
       .sort((a, b) => Number(a.dataset.cribCardSlot) - Number(b.dataset.cribCardSlot));
@@ -1360,6 +1376,7 @@ body {
     let i = cribHi.indexOf(hi);
     if (i >= 0) cribHi.splice(i, 1); else { cribHi.push(hi); if (cribHi.length > 2) cribHi.shift(); }
     cribSyncHighlights(); cribUpdateLinks();
+    if (cribHi.length) setTimeout(() => { try { const l = document.getElementById('crib-send-link'); if (l && cribHi.length) l.focus({ preventScroll: true }); } catch (e) { } }, 0);   // the next step is "send to crib": the cursor goes there, and Return sends
   }
   // Sending to the crib only stages the card(s) face-up in the crib slots; nothing is submitted until "submit crib".
   function cribStageCard(hi) {
@@ -1442,7 +1459,9 @@ body {
       t.setAttribute('x', S.CX + S.sw + S.gx / 2); t.setAttribute('y', S.CY + 2 * S.sh + S.gy + 34); t.setAttribute('text-anchor', 'middle');
       t.setAttribute('font-size', 12); t.setAttribute('font-weight', '700'); t.setAttribute('fill', '#2b4a63'); t.setAttribute('text-decoration', 'underline'); t.style.cursor = 'pointer';
       t.textContent = 'submit crib'; t.addEventListener('click', () => cribConfirmDiscard());
+      t.setAttribute('tabindex', '0'); t.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); cribConfirmDiscard(); } });
       g.appendChild(t);
+      setTimeout(() => { try { if (cribSelectedDiscard.size === 2 && (!document.activeElement || document.activeElement === document.body || document.activeElement.tagName === 'text')) t.focus({ preventScroll: true }); } catch (e) { } }, 0);
     }
   }
   // ---- right-click "Send to Crib" (cards go two at a time; the second one confirms the discard) ----
@@ -1456,6 +1475,7 @@ body {
     const hi = Number(slot.dataset.cribHandIndex);
     if (!cribFlippedSet.has(hi)) return; // not available on a card's back
     const picked = cribSelectedDiscard.has(hi);
+    const both = !picked && cribHi.length === 2 && cribHi.indexOf(hi) >= 0;   // two cards are bordered: one choice sends both
     const m = document.createElement('div');
     m.id = 'crib-card-menu';
     m.style.cssText = 'position:fixed;z-index:99999;background:#fffef6;border:1px solid #8a7a52;border-radius:6px;box-shadow:0 3px 10px rgba(0,0,0,.35);padding:4px 0;font:14px sans-serif;color:#000;min-width:130px;left:' + ev.clientX + 'px;top:' + ev.clientY + 'px;';
@@ -1465,7 +1485,7 @@ body {
     item.onmouseenter = () => { item.style.background = '#e9dfc0'; }; item.onmouseleave = () => { item.style.background = ''; };
     item.onclick = () => {
       cribCloseCardMenu();
-      if (picked) cribReturnToHand(hi); else cribStageCard(hi);
+      if (picked) cribReturnToHand(hi); else if (both) cribSendHighlighted(); else cribStageCard(hi);
     };
     m.appendChild(item);
     document.body.appendChild(m);
@@ -1551,7 +1571,7 @@ body {
       // dropped on the crib: send this card there (it must be face-up); otherwise it just returns to its place
       let hiIdx = Number(slot.dataset.cribHandIndex);
       cribDrag = null; cribRenderBoardHand(cribGetLocalIdx());
-      cribStageCard(hiIdx);
+      if (cribHi.length === 2 && cribHi.indexOf(hiIdx) >= 0) cribSendHighlighted(); else cribStageCard(hiIdx);   // two bordered cards go together
       return;
     }
     if (moved && slot) {
@@ -1651,6 +1671,7 @@ body {
       s2.setAttribute('font-size', sendFs); s2.setAttribute('font-weight', '700'); s2.setAttribute('fill', '#2b4a63'); s2.setAttribute('text-decoration', 'underline');
       s2.textContent = 'send to crib';
       s2.addEventListener('click', () => cribSendHighlighted());
+      s2.setAttribute('tabindex', '0'); s2.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); cribSendHighlighted(); } });
       cardsG.appendChild(s2);
     }
 
@@ -1998,7 +2019,7 @@ body {
     if (v < 1) { cribPegNote('Type what you are claiming first.'); return; }
     if (v > rem) { await cribOverclaim(); return; }
     pend.claimed = pend.claimed || {}; pend.claimed[key] = true; pend.claimedPts = cur + v;
-    cribState.players[li].score += v;
+    cribScore(li, v);
     R.fin[key].value = '';
     cribState.history.push(cribState.players[li].name + ' claims ' + (key === 'f31' ? '31' : 'last card') + ' for ' + v);
     cribState.moveCount++;
@@ -2027,7 +2048,7 @@ body {
     if ((pend.claimedPts || 0) + total > cribPegMax(pend)) { await cribOverclaim(); return; }
     picked.forEach(([kind], i) => { pend.claimed[kind] = true; });
     pend.claimedPts = (pend.claimedPts || 0) + total;
-    cribState.players[li].score += total;
+    cribScore(li, total);
     cribState.history.push(cribState.players[li].name + ' claims ' + says.join(', ') + ' = ' + total);
     cribState.moveCount++;
     cribPegSel = { f15: false, pair: 0, run: 0, f31: false, last: false };
@@ -2080,6 +2101,7 @@ body {
   let cribTurnG = null;
   function cribTurnSeat() {
     if (!cribState) return -1;
+    if (cribState.phase === 'discard') return cribState.dealer;   // the dealer holds the arrow until both players have sent their crib cards; then the pone's cut
     if (cribState.phase === 'pegging' && cribState.pegging) return cribState.pegging.turn;
     if (cribState.phase === 'counting') { const S = cribShowCtx(); return S ? S.active : 1 - cribState.dealer; }
     return -1;
@@ -2184,7 +2206,7 @@ body {
     if (!g) { g = document.createElementNS(NS, 'g'); g.setAttribute('id', 'crib-peg-table'); svg.appendChild(g); }
     g.innerHTML = '';
     const ph = cribState.phase, p = cribState.pegging, li = cribGetLocalIdx();
-    const dw = document.getElementById('crib-deck-word'); if (dw) dw.textContent = (ph === 'pegging' && p) ? 'hand' : 'crib';
+    const dw = document.getElementById('crib-deck-word'); if (dw) dw.textContent = ((ph === 'pegging' && p) || (ph === 'counting' && cribState.show && cribState.show.step === 2)) ? 'hand' : 'crib';
     if (ph !== 'pegging' || !p) return;
     const S = CRIB_SLOT, sx = S.sw / CRIB_CARD_W, sy = S.sh / CRIB_CARD_H;
     const mine = (p.inHand && p.inHand[li]) || [], orig = (cribState.hands && cribState.hands[li]) || [];
@@ -2268,8 +2290,8 @@ body {
     const counting = cribState.phase === 'counting', p = counting ? cribState.show : cribState.pegging, me = cribState.players[li].name, opp = 1 - li;
     if (counting) { p.mug.open = false; p.mug.claimed = cribShowPartsAt(p.mug.step).total; }   // muggins settles the count
     else p.pending.claimedPts = cribPegMax(p.pending);          // muggins settles the play: nothing more can be claimed on it
-    if (kind === 'claim') { cribState.players[li].score += n; p.report = { to: opp, text: me + ' claimed ' + n + ' in muggins', id: cribState.moveCount + 1 }; cribState.history.push(me + ' claimed ' + n + ' in muggins'); }
-    else { cribState.players[opp].score += n; p.report = { to: opp, text: me + ' awarded you ' + n + ' in muggins', id: cribState.moveCount + 1 }; cribState.history.push(me + ' awarded ' + cribState.players[opp].name + ' ' + n + ' in muggins'); }
+    if (kind === 'claim') { cribScore(li, n); p.report = { to: opp, text: me + ' claimed ' + n + ' in muggins', id: cribState.moveCount + 1 }; cribState.history.push(me + ' claimed ' + n + ' in muggins'); }
+    else { cribScore(opp, n); p.report = { to: opp, text: me + ' awarded you ' + n + ' in muggins', id: cribState.moveCount + 1 }; cribState.history.push(me + ' awarded ' + cribState.players[opp].name + ' ' + n + ' in muggins'); }
     cribState.moveCount++;
     try { cribMugRefs.inp.value = ''; cribMugRefs.inp.dispatchEvent(new Event('input')); } catch (e) { }
     cribCheckWin();
@@ -2299,7 +2321,7 @@ body {
     const ownRem = (pend && pend.seat === li) ? Math.max(0, cribPegMax(pend) - (pend.claimedPts || 0)) : 0;
     if (pts <= ownRem) {
       pend.claimedPts = (pend.claimedPts || 0) + pts; cribState.history.push(cribState.players[li].name + ' claims ' + pts);
-      cribState.players[li].score += pts; cribState.moveCount++;
+      cribScore(li, pts); cribState.moveCount++;
       cribCheckWinUnlessClaiming(); await cribSaveGame(cribState); cribBroadcastGame(cribState); cribRender(); return;
     }
     if (cribMugAvail()) { await cribMugAct('claim', pts); return; }
@@ -2393,7 +2415,7 @@ body {
     else if (n === 2) cribOverPop('One more overclaim will result in the loss of a point');
     else {
       const pl = cribState.players[li];
-      if (pl.score > 0) pl.score -= 1;
+      if (pl.score > 0) cribScore(li, -1);
       cribOverPop('You do not have that many points. One point has been taken from your score.');
     }
     cribState.moveCount++;
@@ -3478,6 +3500,7 @@ body {
   function cribSeat(g) { let ts = getTabSeat(g.id); if (ts !== null) return ts; return (getSeatToken(g.id, 1) && !getSeatToken(g.id, 0)) ? 1 : 0; }
   async function cribSaveGame(g, opts) {
     addGameId(g.id);
+    if (g === cribState) { try { cribRender(); } catch (e) { } }   // show the move at once; the save follows
     try {
       let r = await fetch(API + "/games/" + g.id, { method: "PUT", headers: seatHeaders(g.id, cribSeat(g), { "Content-Type": "application/json" }), body: JSON.stringify({ game: g }) });
       if (r.status === 404) {
@@ -3521,7 +3544,7 @@ body {
     try {
       btLink.open('crib', { url: WS_URL + '?game=' + encodeURIComponent(id) + '&user=' + encodeURIComponent(getOwner() || 'anon'), protocols: ['bt.' + tok], retryMs: 3000, keep: function () { return !!(cribState && cribState.id === id); },
         onopen: function (sock) { try { sock.send(JSON.stringify({ t: 'crib-refresh', id: id, c: cribClientId })); } catch (e) { } },   // announce arrival: the other page learns of a new opponent's name at once
-        onmessage: (ev) => { try { const m = JSON.parse(ev.data); if (m && m.t === 'crib-refresh' && m.c !== cribClientId && cribState && cribState.id === id) cribPullNow(); } catch (e) { } } });
+        onmessage: (ev) => { try { const m = JSON.parse(ev.data); if (m && m.type === 'chat') showChat(m); if (m && m.t === 'crib-refresh' && m.c !== cribClientId && cribState && cribState.id === id) cribPullNow(); } catch (e) { } } });
     } catch (e) { }
   }
   function cribPing() { try { if (cribState) btLink.send('crib', JSON.stringify({ t: 'crib-refresh', id: cribState.id, c: cribClientId })); } catch (e) { } }
@@ -3751,7 +3774,7 @@ body {
     const p = cribState.pegging, pend = p && p.pending;
     if (cribState.phase !== 'pegging' || !pend || !pend.heels || pend.seat !== li || pend.claimedPts > 0 || (p.played || []).length) { cribRender(); return; }
     pend.claimedPts = 2; pend.claimed = pend.claimed || {}; pend.claimed.heels = true;
-    cribState.players[li].score += 2;
+    cribScore(li, 2);
     cribState.history.push(cribState.players[li].name + ' claims 2 for his nibs');
     cribState.moveCount++;
     cribCheckWin();
@@ -3765,7 +3788,7 @@ body {
     const p = cribState.pegging, pend = p && p.pending, d = cribState.dealer;
     if (cribState.phase !== 'pegging' || !pend || !pend.heels || li === d || pend.claimedPts > 0 || (p.played || []).length) { cribRender(); return; }
     pend.claimedPts = 2; pend.claimed = pend.claimed || {}; pend.claimed.heels = true;
-    cribState.players[d].score += 2;
+    cribScore(d, 2);
     p.report = { to: d, text: cribState.players[li].name + ' awarded you 2 for your nibs', id: cribState.moveCount + 1 };
     cribState.history.push(cribState.players[li].name + ' awarded ' + cribState.players[d].name + ' 2 for his nibs');
     cribState.moveCount++;
@@ -3886,7 +3909,7 @@ body {
     const cur = S.sh.claimedPts || 0;
     if (S.sh.counted && total <= cur) { cribPegNote('You have claimed ' + cur + '. To claim more, enter a larger total, or advance your front paw.'); cribRenderBoardExtras(); return false; }
     const first = !S.sh.counted;
-    cribState.players[li].score += total - cur; S.sh.counted = true; S.sh.claimedPts = total; S.sh.report = null;
+    cribScore(li, total - cur); S.sh.counted = true; S.sh.claimedPts = total; S.sh.report = null;
     cribState.history.push(cribState.players[li].name + ' counts ' + (S.isCrib ? 'the crib' : 'a hand') + ': ' + total);
     cribState.moveCount++;
     await cribSaveGame(cribState); cribBroadcastGame(cribState);
@@ -3970,7 +3993,7 @@ body {
 
   // ---- Pegs (two white-holed paws per player), deck and crib holding area on the board ----
   const CRIB_PAW_COLORS = ['#c94a3c', '#2e8aa8']; // Wordage paw palette: P0 red, P1 blue
-  let cribPegInit = false, cribHoles = null, cribStartDots = null, cribFinishDot = null, cribPegState = [{ front: 0, back: -1 }, { front: 0, back: -1 }];
+  let cribPegGid = null, cribPegInit = false, cribHoles = null, cribStartDots = null, cribFinishDot = null, cribPegState = [{ front: 0, back: -1 }, { front: 0, back: -1 }];
   function cribBuildBoardExtras() {
     const NS = 'http://www.w3.org/2000/svg';
     const svg = document.getElementById('crib-board-svg'); if (!svg) return false;
@@ -4075,7 +4098,7 @@ body {
       const b = backCard(x, y, sw, sh); b.setAttribute('class', 'crib-slot-card'); b.style.display = 'none'; crib.appendChild(b);
     }
     g.appendChild(crib);
-    { const cw2 = lab('crib', CX + 1.5 * sw + gx, CY + 2 * sh + gy + 14); cw2.setAttribute('id', 'crib-deck-word'); cw2.setAttribute('text-anchor', 'middle'); g.appendChild(cw2);   // centred under the bottom-right card; reads "hand" while the hand is there
+    { const cw2 = lab('crib', CX + 2 * sw + gx, CY + 2 * sh + gy + 14); cw2.setAttribute('id', 'crib-deck-word'); cw2.setAttribute('text-anchor', 'end'); g.appendChild(cw2);   // right edge level with the right edge of the bottom-right card; reads "hand" while the hand is there
       const fw = lab('crib', 539.8, 480); fw.setAttribute('id', 'crib-flash-word'); fw.setAttribute('text-anchor', 'middle'); fw.setAttribute('fill', '#fff'); fw.setAttribute('stroke', '#2b1a0e'); fw.setAttribute('stroke-width', '0.4'); fw.setAttribute('display', 'none'); g.appendChild(fw); }
     svg.appendChild(g);
     return true;
@@ -4096,7 +4119,7 @@ body {
       D.starterKey = key;
     }
     { // the crib lies face-up while it is counted
-      const S = cribShowCtx(), up = S && S.isCrib ? cribState.crib.map(c => c.r + c.s).join(',') : '';
+      const up = '';   // the crib is counted in the hand's row now (cribRenderBoardHand)
       if (D.cribKey !== up) {
         if (!D.cribFaces) { D.cribFaces = document.createElementNS('http://www.w3.org/2000/svg', 'g'); D.cribFaces.setAttribute('id', 'crib-crib-faces'); D.cutG.parentNode.appendChild(D.cribFaces); }
         D.cribFaces.innerHTML = '';
@@ -4142,8 +4165,27 @@ body {
       if (cribState.phase === 'pegging' || cribState.phase === 'counting') { cribHoleClaim(n - sc); return; }   // in the play and the show, the hole is the claim: its number is the new score
       cribPegNote('That hole is past your confirmed score of ' + sc + '.'); cribRenderBoardExtras(); return;
     }
-    cribPegNote('Your rear paw only moves ahead of your front paw, and only by a claim.');   // never to a hole behind the front paw
+    cribPegNote('Your front paw only moves ahead, and only by a claim.');   // never to a hole behind the front paw
     cribRenderBoardExtras();
+  }
+  // The one place a Cribbage score changes. It also keeps the paws in the game itself: the front paw is the score, and the rear paw
+  // holds the score before the current count (it moves only when a new count scores; more points on the same count move only the front paw).
+  function cribScore(seat, n) {
+    const g = cribState, pl = g.players[seat], before = pl.score || 0;
+    pl.score = before + n;
+    g.paws = g.paws || [null, null];
+    let P = g.paws[seat];
+    if (!P || P.front !== before) P = { front: before, back: before > 0 ? 0 : -1, key: '' };   // a game begun before the paws were kept
+    const key = cribCountKey();
+    if (n > 0) { if (P.key !== key) P.back = before; P.front = pl.score; P.key = key; }
+    else { P.front = pl.score; P.back = pl.score > 0 ? 0 : -1; P.key = key; }
+    g.paws[seat] = P;
+  }
+  function cribCountKey() {
+    if (!cribState) return '';
+    if (cribState.phase === 'counting' && cribState.show) return 's' + cribState.show.step;
+    const p = cribState.pegging; if (cribState.phase === 'pegging' && p) return 'p' + (p.done || []).length + ':' + (p.pending ? p.pending.seq.length + '/' + p.pending.seat + '/' + (p.pending.heels ? 'h' : '') : '0');
+    return 'o' + cribState.phase;
   }
   function cribPegPos(pi, n) {
     if (n <= 0) { const d = cribStartDots[pi][n === 0 ? 0 : 1]; return { x: Number(d.getAttribute('cx')), y: Number(d.getAttribute('cy')), el: d }; }
@@ -4155,11 +4197,19 @@ body {
     if (!cribState) return;
     if (!cribPegInit) { cribPegInit = true; try { if (!cribBuildBoardExtras()) cribPegInit = false; } catch (e) { cribPegInit = false; return; } }
     // peg state: the front paw sits on the score, the back paw on the previous front (leapfrog)
+    if (cribPegGid !== cribState.id) {   // a different game (or a reload): take the paws back from where this browser last saw them
+      cribPegGid = cribState.id; cribPegState = [{ front: 0, back: -1 }, { front: 0, back: -1 }];
+      try { const sv = JSON.parse(localStorage.getItem('bt_crib_paws_' + cribState.id) || 'null'); if (Array.isArray(sv) && sv.length === 2) sv.forEach((o, i) => { if (o && Number.isFinite(o.front) && Number.isFinite(o.back)) cribPegState[i] = { front: o.front, back: o.back, key: o.key }; }); } catch (e) { }
+    }
     for (let pi = 0; pi < 2; pi++) {
       const s = Math.max(0, Math.min(121, (cribState.players[pi] && cribState.players[pi].score) || 0)), st = cribPegState[pi];
-      if (s < st.front) { st.front = s; st.back = s > 0 ? 0 : -1; }
-      else if (s > st.front) { st.back = st.front; st.front = s; }
+      const gp = cribState.paws && cribState.paws[pi];
+      if (gp && gp.front === s) { st.front = gp.front; st.back = gp.back; st.key = gp.key; continue; }   // the paws as the game kept them
+      const ck = cribCountKey();
+      if (s < st.front) { st.front = s; st.back = s > 0 ? 0 : -1; st.key = ck; }
+      else if (s > st.front) { if (st.key !== ck) st.back = st.front; st.front = s; st.key = ck; }   // more points for the same count move only the front paw; the rear paw leaps ahead at the next count
     }
+    try { localStorage.setItem('bt_crib_paws_' + cribState.id, JSON.stringify(cribPegState)); } catch (e) { }
     try { cribRenderDeckExtras(); } catch (e) { }
     cribHoles.forEach(c => c.setAttribute('fill', 'black'));
     cribStartDots.forEach(a => a.forEach(d => d.setAttribute('fill', '#fff')));
@@ -4176,12 +4226,12 @@ body {
         occupied.push(pos.el);
       });
     }
-    // your back paw can be picked up and dropped on a hole, like moving a peg
+    // your front paw can be picked up and dropped on a hole, like moving a peg
     try {
       const mine = cribGetLocalIdx();
       const mug = cribMugAvail() > 0;   // with muggins on the table you may also pick up the opponent's back paw
       document.querySelectorAll('#crib-paws use').forEach(u => {
-        const own = u.dataset.cribPaw === mine + ':1', theirs = u.dataset.cribPaw === (1 - mine) + ':1', live = own || (theirs && mug);
+        const own = u.dataset.cribPaw === mine + ':0', theirs = u.dataset.cribPaw === (1 - mine) + ':0', live = own || (theirs && mug);
         u.setAttribute('pointer-events', live ? 'all' : 'none'); u.style.cursor = live ? 'grab' : '';
         if (!u.dataset.dragWired) { u.dataset.dragWired = '1'; u.addEventListener('pointerdown', cribPawDown); }
       });
@@ -4205,13 +4255,14 @@ body {
     const S = CRIB_SLOT, d = cribState.dealer, li = cribGetLocalIdx(), opp = 1 - li;
     const face = (c, x, y, z) => { z = z || 1; const w = document.createElementNS(NS, 'g'); w.setAttribute('transform', 'translate(' + x + ',' + y + ') scale(' + (z * S.sw / CRIB_CARD_W) + ',' + (z * S.sh / CRIB_CARD_H) + ')'); w.appendChild(cribBuildCardFace(c.r, c.s, CRIB_CARD_W, CRIB_CARD_H)); g.appendChild(w); };
     if (sh.step === 2 && cribState.crib && cribState.crib.length) {
-      cribState.crib.slice(0, 4).forEach((c, i) => face(c, S.CX + (i % 2) * (S.sw + S.gx), S.CY + Math.floor(i / 2) * (S.sh + S.gy)));
+      ((cribState.hands && cribState.hands[li]) || []).slice(0, 4).forEach((c, i) => face(c, S.CX + (i % 2) * (S.sw + S.gx), S.CY + Math.floor(i / 2) * (S.sh + S.gy)));   // the crib is counted from the hand's place; the hand moves into the crib space
       slotCards.forEach(c => { c.style.display = 'none'; });
     }
     const oppStep = opp === 1 - d ? 0 : 1, oh = cribState.hands && cribState.hands[opp];
-    if (sh.step >= oppStep && oh && oh.length) {
+    if (oh && oh.length) {   // the opponent's hand lies in the front legs from the start of the show
       const lowY = 524 + 5.5, cx = 850, top = lowY + 4;
-      const t = document.createElementNS(NS, 'text'); t.setAttribute('x', cx); t.setAttribute('y', top + 10); t.setAttribute('text-anchor', 'middle'); t.setAttribute('font-family', 'sans-serif'); t.setAttribute('font-size', 12); t.setAttribute('font-weight', '700'); t.setAttribute('fill', '#000');
+      const zz = 1.25, rEdge = cx + zz * (2 * S.sw + S.gx) / 2;
+      const t = document.createElementNS(NS, 'text'); t.setAttribute('x', rEdge); t.setAttribute('y', top + 10); t.setAttribute('text-anchor', 'end'); t.setAttribute('font-family', 'sans-serif'); t.setAttribute('font-size', 12); t.setAttribute('font-weight', '700'); t.setAttribute('fill', '#000');
       t.textContent = cribState.players[opp].name + "'s hand"; g.appendChild(t);
       const z = 1.25, x0 = cx - z * (2 * S.sw + S.gx) / 2, y0 = top + 16;   // a quarter larger than the crib's cards
       oh.slice(0, 4).forEach((c, i) => face(c, x0 + (i % 2) * z * (S.sw + S.gx), y0 + Math.floor(i / 2) * z * (S.sh + S.gy), z));
@@ -4235,6 +4286,7 @@ body {
     cribRenderBoardHand(li);
     try { cribRenderBoardExtras(); } catch (e) { }
     try { cribBoardPhaseView(); } catch (e) { }
+    try { cribEnsureTalk(); } catch (e) { }
     $('crib-history').innerHTML = cribState.history.slice().reverse().slice(0, 12).map(x => '<li>' + esc(x) + '</li>').join('');
     let actionsEl = $('crib-actions');
     if (cribState.phase === 'done') {
@@ -4348,7 +4400,15 @@ body {
     if (su && !su.hidden && st && !st.hidden) { e.preventDefault(); backToFoyer(); }
   });
   function wordageToFoyer() { foyerUrl(); showEntryPage(); try { initEntryPaws(); } catch (e) { } try { populateEntryGames(); } catch (e) { } }
+  function cribEnsureTalk() {
+    const host = document.getElementById('crib-talk-body'); if (!host || !cribState) return;
+    const li = cribGetLocalIdx(), opp = cribState.players[1 - li] && cribState.players[1 - li].name;
+    document.getElementById('crib-talk').hidden = false;
+    chatPanelMount(host, opp);
+    try { const st = document.getElementById('comm-status'); if (st) st.textContent = ''; } catch (e) { }
+  }
   function cribLeaveGame() {
+    try { commClose(); chatPanelRemove(); const t = document.getElementById('crib-talk'); if (t) t.hidden = true; } catch (e) { }
     btLink.close('crib');
     cribWsGid = null;
     try { if (cribGameChannel) { cribGameChannel.close(); cribGameChannel = null; } } catch (e) { }
