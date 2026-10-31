@@ -1459,7 +1459,7 @@ body {
       t.setAttribute('x', S.CX + S.sw + S.gx / 2); t.setAttribute('y', S.CY + 2 * S.sh + S.gy + 34); t.setAttribute('text-anchor', 'middle');
       t.setAttribute('font-size', 12); t.setAttribute('font-weight', '700'); t.setAttribute('fill', '#2b4a63'); t.setAttribute('text-decoration', 'underline'); t.style.cursor = 'pointer';
       t.textContent = 'submit crib'; t.addEventListener('click', () => cribConfirmDiscard());
-      t.setAttribute('tabindex', '0'); t.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); cribConfirmDiscard(); } });
+      t.setAttribute('tabindex', '0'); t.style.outline = 'none'; t.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); cribConfirmDiscard(); } });
       g.appendChild(t);
       setTimeout(() => { try { if (cribSelectedDiscard.size === 2 && (!document.activeElement || document.activeElement === document.body || document.activeElement.tagName === 'text')) t.focus({ preventScroll: true }); } catch (e) { } }, 0);
     }
@@ -1671,7 +1671,7 @@ body {
       s2.setAttribute('font-size', sendFs); s2.setAttribute('font-weight', '700'); s2.setAttribute('fill', '#2b4a63'); s2.setAttribute('text-decoration', 'underline');
       s2.textContent = 'send to crib';
       s2.addEventListener('click', () => cribSendHighlighted());
-      s2.setAttribute('tabindex', '0'); s2.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); cribSendHighlighted(); } });
+      s2.setAttribute('tabindex', '0'); s2.style.outline = 'none'; s2.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); cribSendHighlighted(); } });
       cardsG.appendChild(s2);
     }
 
