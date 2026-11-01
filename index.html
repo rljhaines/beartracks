@@ -603,7 +603,17 @@ body {
 #gw-game { position: fixed; inset: 0; z-index: 6; background: var(--paper, #f6f0e4); color: #2b2620; overflow: hidden; display: flex; flex-direction: column; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); font-family: Georgia, "Times New Roman", serif; }
 #gw-game[hidden] { display: none; }
 #gw-msg { position: absolute; top: 6px; left: 0; right: 0; text-align: center; font-size: 14px; pointer-events: none; z-index: 2; }
-#gw-table { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; align-content: center; margin: auto; width: 100%; padding: 8px; gap: var(--gwgap, 10px); }
+#gw-table { flex: 1; min-height: 0; display: flex; flex-direction: row; align-items: stretch; box-sizing: border-box; width: 100%; padding: 0; }
+#gw-area { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--gwgap, 10px); }
+#gw-side { flex: none; display: flex; flex-direction: column; justify-content: center; gap: var(--gwgap, 10px); width: var(--gwcw); }
+.gw-side .gw-front { padding: calc(var(--gwcw) * .05); display: flex; flex-direction: column; align-items: stretch; }
+.gw-sd-h { font-size: calc(var(--gwcw) * .07); letter-spacing: .04em; font-weight: 700; cursor: pointer; margin-bottom: calc(var(--gwcw) * .03); }
+.gw-sd-b { flex: 1; min-height: 0; overflow-y: auto; font-size: calc(var(--gwcw) * .05); line-height: 1.35; }
+.gw-sd-b p { margin: 0 0 .35em; overflow-wrap: anywhere; }
+.gw-sd-b p.me b { color: #8a3b2e; }
+.gw-sd-b p.dim { opacity: .6; }
+.gw-cv-in { display: flex; align-items: baseline; gap: .4em; margin-top: calc(var(--gwcw) * .02); font-size: calc(var(--gwcw) * .055); }
+.gw-cv-in input { flex: 1; min-width: 0; font: inherit; border: 0; border-bottom: 2px solid #2b2620; background: transparent; color: inherit; outline: none; }
 .gw-row { display: flex; justify-content: center; gap: var(--gwgap, 10px); }
 .gw-card { width: var(--gwcw); height: calc(var(--gwcw) * 1.4); perspective: 1200px; --t: calc(var(--gwcw) * .165); --g: calc(var(--gwcw) * .015); user-select: none; -webkit-user-select: none; }
 .gw-card.can { cursor: pointer; }
@@ -919,6 +929,7 @@ body {
     var draftAnchor = anchor ? { r: anchor.r, c: anchor.c, d: anchor.d } : null;
     var draftWord = pendingWord;
 
+    var prevRack = ((waiting && waitingRack) ? waitingRack : (state.players && state.players[localIdx]) ? state.players[localIdx].rack : []).map(function (t) { return { l: t.l, blank: !!t.blank }; });   // while waiting, the arrangement lives in the waiting rack   // how this player has arranged the rack
     state = cloneRacks(g);
     pending = [];
     anchor = draftAnchor;
@@ -948,6 +959,12 @@ body {
       anchor = null;
       pendingWord = null;
     }
+    // The player's own arrangement of the rack outlives the opponent's move: letters keep their places, and any newly drawn letters go on the end.
+    try {
+      var left = lp.rack.slice(), kept = [];
+      prevRack.forEach(function (t) { var k = left.findIndex(function (u) { return u.l === t.l && !!u.blank === !!t.blank; }); if (k >= 0) kept.push(left.splice(k, 1)[0]); });
+      lp.rack = kept.concat(left);
+    } catch (e) { }
     render();
   }  
   function initBroadcastChannel(id) { if (location.protocol === 'file:') return; try { if (btChannel) btChannel.close(); btChannel = new BroadcastChannel('bt_' + id); btChannel.onmessage = function (e) { if (e.data && e.data.game) applyExternalState(e.data.game); }; } catch (e) { } }  
@@ -3186,7 +3203,7 @@ body {
   })();  
   let _sc = document.getElementById('share-copy'); if (_sc) { _sc.onclick = function () { let u = document.getElementById('share-url').value; try { navigator.clipboard.writeText(u).catch(() => { }) } catch (e) { prompt("Copy:", u) } }; }  
   }
-  const WORDAGE_HTML = "<main       class=\"wrap\"       id=\"game\"     ><button class=\"foyer-link\" id=\"wFoyer\" type=\"button\">&lsaquo; Foyer<\/button>       <span id=\"turnPill\" hidden><\/span>       <div class=\"stage\">         <div class=\"left-col\">           <div class=\"panel status-panel\">             <h3>Play Status<\/h3>             <div               class=\"panel-body gameplay-box\"               id=\"gameplayBox\"             >               <div                 class=\"placement\"                 id=\"placement\"               ><\/div>               <div                 class=\"status\"                 id=\"status\"               ><\/div><a href=\"#\" id=\"seatLink\" hidden style=\"display:inline-block;margin-top:6px;font-size:.8em;color:inherit;text-decoration:underline\">Copy my seat link<\/a>             <\/div>           <\/div>           <div             class=\"panel instr-panel\"             id=\"instrPanel\"           >             <h3               id=\"instrHead\"               role=\"button\"               tabindex=\"0\"               aria-expanded=\"true\"             >Gameplay Instructions<\/h3>             <div class=\"panel-body\">               <p>Type word or <em>word 8,8,0<\/em> format.<br><br>&bull; Drag rack letters to rearrange them. When all seven letters are together at an end, you can also drop a letter outside the group to bring the gap back into it. Drag a staged letter from the board back to the rack to unstage it.<br>&bull; Undo: last move<br>&bull; Shuffle: rack<br>&bull; Exchg: exchange tiles<br>&bull; Play: preview<br>&bull; Submit: lock in<br>&bull; Pass: skip turn<\/p>             <\/div>\n            <div class=\"two-letter\" id=\"twoLetter\" aria-label=\"Two-letter words\"><span>aa<\/span><span>ab<\/span><span>ad<\/span><span>ae<\/span><span>ag<\/span><span>ah<\/span><span>ai<\/span><span>al<\/span><span>am<\/span><span>an<\/span><span>ar<\/span><span>as<\/span><span>at<\/span><span>aw<\/span><span>ax<\/span><span>ay<\/span><span>ba<\/span><span>be<\/span><span>bi<\/span><span>bo<\/span><span>by<\/span><span>da<\/span><span>de<\/span><span>do<\/span><span>ed<\/span><span>ef<\/span><span>eh<\/span><span>el<\/span><span>em<\/span><span>en<\/span><span>er<\/span><span>es<\/span><span>et<\/span><span>ew<\/span><span>ex<\/span><span>fa<\/span><span>fe<\/span><span>gi<\/span><span>go<\/span><span>ha<\/span><span>he<\/span><span>hi<\/span><span>hm<\/span><span>ho<\/span><span>id<\/span><span>if<\/span><span>in<\/span><span>is<\/span><span>it<\/span><span>jo<\/span><span>ka<\/span><span>ki<\/span><span>la<\/span><span>li<\/span><span>lo<\/span><span>ma<\/span><span>me<\/span><span>mi<\/span><span>mm<\/span><span>mo<\/span><span>mu<\/span><span>my<\/span><span>na<\/span><span>ne<\/span><span>no<\/span><span>nu<\/span><span>od<\/span><span>oe<\/span><span>of<\/span><span>oh<\/span><span>oi<\/span><span>ok<\/span><span>om<\/span><span>on<\/span><span>op<\/span><span>or<\/span><span>os<\/span><span>ow<\/span><span>ox<\/span><span>oy<\/span><span>pa<\/span><span>pe<\/span><span>pi<\/span><span>po<\/span><span>qi<\/span><span>re<\/span><span>sh<\/span><span>si<\/span><span>so<\/span><span>ta<\/span><span>te<\/span><span>ti<\/span><span>to<\/span><span>uh<\/span><span>um<\/span><span>un<\/span><span>up<\/span><span>us<\/span><span>ut<\/span><span>we<\/span><span>wo<\/span><span>xi<\/span><span>xu<\/span><span>ya<\/span><span>ye<\/span><span>yo<\/span><span>za<\/span><\/div>           <\/div>         <\/div> \n\n  <div  \n    class=\"combo\"  \n    id=\"combo\"  \n  >  \n    <div  \n      class=\"upper\"  \n      id=\"upper\"  \n    >  \n      <div  \n        class=\"rack\"  \n        id=\"rack\"  \n      ><\/div>  \n      <div class=\"entry-wrap\"><input  \n          id=\"wordInput\"  \n          tabindex=\"1\"  \n          maxlength=\"30\"  \n          placeholder=\"Type word or word 8,8,0\"  \n          autocomplete=\"off\"  \n          spellcheck=\"false\"  \n        ><\/div>  \n      <div class=\"side-stack left\"><button  \n          class=\"btn-pill\"  \n          id=\"undo\" tabindex=\"4\"  \n        ><i>&#8617;<\/i> Undo<\/button><button  \n          class=\"btn-pill\"  \n          id=\"shuffle\" tabindex=\"5\"  \n        ><i>&#8644;<\/i> Shuffle<\/button><button  \n          class=\"btn-pill\"  \n          id=\"exchg\" tabindex=\"7\"  \n        ><i>&#8646;<\/i> Exchg<\/button><\/div>  \n      <div class=\"side-stack right\"><button  \n          class=\"btn-pill\"  \n          id=\"playWord\" tabindex=\"2\"  \n        ><i>&#9654;<\/i> Play<\/button><button  \n          class=\"btn-pill\"  \n          id=\"submitWord\" tabindex=\"3\"  \n        ><i>&#10003;<\/i> Submit<\/button><button  \n          class=\"btn-pill\"  \n          id=\"pass\" tabindex=\"6\"  \n        ><i>&#9197;<\/i> Pass<\/button><\/div>  \n    <\/div>  \n    <div  \n      class=\"board\"  \n      id=\"board\"  \n    ><\/div>  \n  <\/div>\n\n  <div class=\"right-col\">  \n    <section  \n      class=\"card\"  \n      id=\"share-panel\"  \n      hidden  \n    >  \n      <h2>Share<\/h2>  \n      <div  \n        class=\"help\"  \n        id=\"share-help\"  \n      ><\/div>  \n      <div style=\"display:flex;gap:6px;margin-top:6px\"><input  \n          id=\"share-url\"  \n          readonly  \n          style=\"flex:1;border:1px solid #b7bcad;border-radius:8px;padding:8px\"  \n        ><button  \n          id=\"share-copy\"  \n          class=\"action alt\"  \n        >Copy<\/button><\/div>  \n    <\/section>  \n    <div class=\"panel score-panel\">  \n      <h3>Scoring<\/h3>  \n      <div class=\"panel-body\">  \n        <div  \n          class=\"scores\"  \n          id=\"scores\"  \n        ><\/div>  \n        <p  \n          class=\"help\"  \n          id=\"bag\"  \n        ><\/p>  \n        <ul  \n          class=\"history\"  \n          id=\"history\"  \n        ><\/ul>  \n      <\/div>  \n    <\/div>  \n    <div class=\"panel talk-panel\">  \n      <h3>Convo-Ursidae<\/h3>  \n      <div  \n        class=\"panel-body talk-body\"  \n        id=\"talkBody\"  \n      >  \n        <div  \n          id=\"bt-comm-holder\"  \n          hidden  \n        ><\/div>  \n      <\/div>  \n    <\/div>  \n  <\/div>  \n<\/div>  \n\n\n   <\/main>";
+  const WORDAGE_HTML = "<main       class=\"wrap\"       id=\"game\"     ><button class=\"foyer-link\" id=\"wFoyer\" type=\"button\">&lsaquo; Foyer<\/button>       <span id=\"turnPill\" hidden><\/span>       <div class=\"stage\">         <div class=\"left-col\">           <div class=\"panel status-panel\">             <h3>Play Status<\/h3>             <div               class=\"panel-body gameplay-box\"               id=\"gameplayBox\"             >               <div                 class=\"placement\"                 id=\"placement\"               ><\/div>               <div                 class=\"status\"                 id=\"status\"               ><\/div><a href=\"#\" id=\"seatLink\" hidden style=\"display:inline-block;margin-top:6px;font-size:.8em;color:inherit;text-decoration:underline\">Copy my seat link<\/a>             <\/div>           <\/div>           <div             class=\"panel instr-panel\"             id=\"instrPanel\"           >             <h3               id=\"instrHead\"               role=\"button\"               tabindex=\"0\"               aria-expanded=\"true\"             >Gameplay Instructions<\/h3>             <div class=\"panel-body\">               <p>Type word or <em>word 8,8,0<\/em> format.<br><br>&bull; Drag rack letters to rearrange them. When all seven letters are together at an end, you can also drop a letter outside the group to bring the gap back into it. Drag a staged letter from the board back to the rack to unstage it.<br>&bull; Undo: last move<br>&bull; Shuffle: rack<br>&bull; Exchg: exchange tiles<br>&bull; Play: preview<br>&bull; Submit: lock in<br>&bull; Pass: skip turn<\/p>             <\/div>\n            <div class=\"two-letter\" id=\"twoLetter\" aria-label=\"Two-letter words\"><span>aa<\/span><span>ab<\/span><span>ad<\/span><span>ae<\/span><span>ag<\/span><span>ah<\/span><span>ai<\/span><span>al<\/span><span>am<\/span><span>an<\/span><span>ar<\/span><span>as<\/span><span>at<\/span><span>aw<\/span><span>ax<\/span><span>ay<\/span><span>ba<\/span><span>be<\/span><span>bi<\/span><span>bo<\/span><span>by<\/span><span>da<\/span><span>de<\/span><span>do<\/span><span>ed<\/span><span>ef<\/span><span>eh<\/span><span>el<\/span><span>em<\/span><span>en<\/span><span>er<\/span><span>es<\/span><span>et<\/span><span>ew<\/span><span>ex<\/span><span>fa<\/span><span>fe<\/span><span>gi<\/span><span>go<\/span><span>ha<\/span><span>he<\/span><span>hi<\/span><span>hm<\/span><span>ho<\/span><span>id<\/span><span>if<\/span><span>in<\/span><span>is<\/span><span>it<\/span><span>jo<\/span><span>ka<\/span><span>ki<\/span><span>la<\/span><span>li<\/span><span>lo<\/span><span>ma<\/span><span>me<\/span><span>mi<\/span><span>mm<\/span><span>mo<\/span><span>mu<\/span><span>my<\/span><span>na<\/span><span>ne<\/span><span>no<\/span><span>nu<\/span><span>od<\/span><span>oe<\/span><span>of<\/span><span>oh<\/span><span>oi<\/span><span>ok<\/span><span>om<\/span><span>on<\/span><span>op<\/span><span>or<\/span><span>os<\/span><span>ow<\/span><span>ox<\/span><span>oy<\/span><span>pa<\/span><span>pe<\/span><span>pi<\/span><span>po<\/span><span>qi<\/span><span>re<\/span><span>sh<\/span><span>si<\/span><span>so<\/span><span>ta<\/span><span>te<\/span><span>ti<\/span><span>to<\/span><span>uh<\/span><span>um<\/span><span>un<\/span><span>up<\/span><span>us<\/span><span>ut<\/span><span>we<\/span><span>wo<\/span><span>xi<\/span><span>xu<\/span><span>ya<\/span><span>ye<\/span><span>yo<\/span><span>za<\/span><\/div>           <\/div>         <\/div> \n\n  <div  \n    class=\"combo\"  \n    id=\"combo\"  \n  >  \n    <div  \n      class=\"upper\"  \n      id=\"upper\"  \n    >  \n      <div  \n        class=\"rack\"  \n        id=\"rack\"  \n      ><\/div>  \n      <div class=\"entry-wrap\"><input  \n          id=\"wordInput\"  \n          tabindex=\"1\"  \n          maxlength=\"30\"  \n          placeholder=\"Type word or word 8,8,0\"  \n          autocomplete=\"off\" autocorrect=\"off\" autocapitalize=\"off\" name=\"bt-word-entry\" data-lpignore=\"true\" data-1p-ignore data-form-type=\"other\"  \n          spellcheck=\"false\"  \n        ><\/div>  \n      <div class=\"side-stack left\"><button  \n          class=\"btn-pill\"  \n          id=\"undo\" tabindex=\"4\"  \n        ><i>&#8617;<\/i> Undo<\/button><button  \n          class=\"btn-pill\"  \n          id=\"shuffle\" tabindex=\"5\"  \n        ><i>&#8644;<\/i> Shuffle<\/button><button  \n          class=\"btn-pill\"  \n          id=\"exchg\" tabindex=\"7\"  \n        ><i>&#8646;<\/i> Exchg<\/button><\/div>  \n      <div class=\"side-stack right\"><button  \n          class=\"btn-pill\"  \n          id=\"playWord\" tabindex=\"2\"  \n        ><i>&#9654;<\/i> Play<\/button><button  \n          class=\"btn-pill\"  \n          id=\"submitWord\" tabindex=\"3\"  \n        ><i>&#10003;<\/i> Submit<\/button><button  \n          class=\"btn-pill\"  \n          id=\"pass\" tabindex=\"6\"  \n        ><i>&#9197;<\/i> Pass<\/button><\/div>  \n    <\/div>  \n    <div  \n      class=\"board\"  \n      id=\"board\"  \n    ><\/div>  \n  <\/div>\n\n  <div class=\"right-col\">  \n    <section  \n      class=\"card\"  \n      id=\"share-panel\"  \n      hidden  \n    >  \n      <h2>Share<\/h2>  \n      <div  \n        class=\"help\"  \n        id=\"share-help\"  \n      ><\/div>  \n      <div style=\"display:flex;gap:6px;margin-top:6px\"><input  \n          id=\"share-url\"  \n          readonly  \n          style=\"flex:1;border:1px solid #b7bcad;border-radius:8px;padding:8px\"  \n        ><button  \n          id=\"share-copy\"  \n          class=\"action alt\"  \n        >Copy<\/button><\/div>  \n    <\/section>  \n    <div class=\"panel score-panel\">  \n      <h3>Scoring<\/h3>  \n      <div class=\"panel-body\">  \n        <div  \n          class=\"scores\"  \n          id=\"scores\"  \n        ><\/div>  \n        <p  \n          class=\"help\"  \n          id=\"bag\"  \n        ><\/p>  \n        <ul  \n          class=\"history\"  \n          id=\"history\"  \n        ><\/ul>  \n      <\/div>  \n    <\/div>  \n    <div class=\"panel talk-panel\">  \n      <h3>Convo-Ursidae<\/h3>  \n      <div  \n        class=\"panel-body talk-body\"  \n        id=\"talkBody\"  \n      >  \n        <div  \n          id=\"bt-comm-holder\"  \n          hidden  \n        ><\/div>  \n      <\/div>  \n    <\/div>  \n  <\/div>  \n<\/div>  \n\n\n   <\/main>";
   let wordageRO = null;
   let wordageShare = null;   // the invite/backup link shown in the Share panel; the HeadsUp dialog sets it before the screen exists
   // Build the Wordage screen (once per open). Called by render(), which only runs while a Wordage game (state) is open.
@@ -4398,7 +4415,8 @@ body {
     if (!$('bt-removed').hidden) { e.preventDefault(); closeRemoved(); return; }
     let hu = $('bt-headsup'), st = $('box-start'), su = $('setup');
     if (hu && !hu.hidden) { e.preventDefault(); backToFoyer(); return; }
-    if (su && !su.hidden && st && !st.hidden) { e.preventDefault(); backToFoyer(); }
+    if (su && !su.hidden && st && !st.hidden) { e.preventDefault(); backToFoyer(); return; }
+    try { let cg = $('cribbage-game'); if (state && $('entry-home').hidden && !(cg && !cg.hidden) && !waiting && (pending.length || exchangeMode)) { e.preventDefault(); undo(); } } catch (err) { }   // in a Wordage game Esc returns the tiles to the rack; with none out, Esc is left to the system
   });
   function wordageToFoyer() { foyerUrl(); showEntryPage(); try { initEntryPaws(); } catch (e) { } try { populateEntryGames(); } catch (e) { } }
   function cribEnsureTalk() {
@@ -4423,7 +4441,7 @@ body {
     showEntryPage(); initEntryPaws(); populateEntryGames();
   }
   // ================= groupWords MODULE (additive) =================
-  let gw = { gid: null, token: null, seat: null, st: null, shown: {}, cur: '', items: [], ids: '', poll: null };
+  let gw = { gid: null, token: null, seat: null, st: null, shown: {}, cur: '', items: [], ids: '', poll: null, chatSig: '', chatSeenAt: null };
   let gwMsgTimer = null;
   function GW_TZ() { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; } catch (e) { return 'UTC'; } }
   function gwKeys() { try { return JSON.parse(localStorage.getItem('bt_gw') || '{}'); } catch (e) { return {}; } }
@@ -4501,7 +4519,7 @@ body {
     if (!owner) { postRegisterTarget = 'groupwords'; $('setup').hidden = false; renderBoxes(); return; }
     return gwJoin(gid, owner, false);
   }
-  function gwUse(gid, seat, token) { gw.st = null; gw.shown = {}; gw.ids = ''; gw.items = []; gw.cur = ''; gw.gid = gid; gw.token = token; gw.seat = +seat; gwSetTabSeat(gid, +seat, token); return gwEnter(); }
+  function gwUse(gid, seat, token) { gw.chatSig = ''; gw.chatSeenAt = null; gw.st = null; gw.shown = {}; gw.ids = ''; gw.items = []; gw.cur = ''; gw.gid = gid; gw.token = token; gw.seat = +seat; gwSetTabSeat(gid, +seat, token); return gwEnter(); }
   btHand.register('groupwords', {
     current: function () { let gg = $('gw-game'); if (!(gg && !gg.hidden && gw && gw.gid && gw.token)) return null; return { gid: gw.gid, seat: gw.seat, name: (gwSeatsOf(gw.gid)[gw.seat] || {}).name || getOwner() || '', token: gw.token }; },
     adopt: async function (b) { gwSaveKey(b.gameId, b.token, b.seat, b.name); await gwUse(b.gameId, b.seat, b.token); return ''; }
@@ -4552,8 +4570,8 @@ body {
   function gwClose() {
     clearInterval(gw.poll); gw.poll = null;
     btLink.close('gw');
-    gw.gid = null; gw.token = null; gw.seat = null; gw.st = null; gw.shown = {}; gw.cur = ''; gw.items = []; gw.ids = '';
-    let g = $('gw-game'); if (g) { g.hidden = true; let t = $('gw-table'); if (t) t.innerHTML = ''; let i = $('gw-inp'); if (i) i.value = ''; }
+    gw.gid = null; gw.token = null; gw.seat = null; gw.st = null; gw.shown = {}; gw.cur = ''; gw.items = []; gw.ids = ''; gw.chatSig = ''; gw.chatSeenAt = null;
+    let g = $('gw-game'); if (g) { g.hidden = true; let t = $('gw-area'); if (t) t.innerHTML = ''; gwSideReset(); let i = $('gw-inp'); if (i) i.value = ''; }
   }
   function gwLeave() { gwClose(); foyerUrl(); gwNoticeClose(); $('setup').hidden = true; showEntryPage(); try { initEntryPaws(); } catch (e) { } try { populateEntryGames(); } catch (e) { } }
 
@@ -4561,8 +4579,8 @@ body {
   function gwBuild() {
     if ($('gw-game')) return;
     let g = document.createElement('div'); g.id = 'gw-game'; g.hidden = true;
-    g.innerHTML = '<button class="foyer-link" id="gFoyer" type="button">&lsaquo; Foyer</button><div id="gw-msg"></div><div id="gw-table"></div><input id="gw-inp" maxlength="5" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" aria-label="Guess">';
-    document.body.appendChild(g);
+    g.innerHTML = '<button class="foyer-link" id="gFoyer" type="button">&lsaquo; Foyer</button><div id="gw-msg"></div><div id="gw-table"><div id="gw-area"></div><div id="gw-side"></div></div><input id="gw-inp" maxlength="5" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" aria-label="Guess">';
+    document.body.appendChild(g); gwSideBuild();
     $('gFoyer').onclick = gwLeave;
     let inp = $('gw-inp');
     inp.addEventListener('input', function () { let me = gw.st && gw.st.me; if (!me || me.status !== 'playing' || me.canNewDay) { inp.value = ''; return; } inp.value = inp.value.replace(/[^a-z]/gi, '').toUpperCase().slice(0, 5); gw.cur = inp.value; gwRender(); });
@@ -4676,19 +4694,92 @@ body {
     if (ids !== gw.ids) { gw.ids = ids; items.forEach(function (i) { i.el = gwMakeCard(i); }); gw.items = items; gwLayout(); }
     else { items.forEach(function (i, k) { i.el = gw.items[k].el; }); gw.items = items; }
     items.forEach(gwFill);
+    gwStatsRecord(st.me); gwSideRender();
   }
-  function gwLayout() {
-    let t = $('gw-table'); if (!t || !gw.items.length) return;
-    let n = gw.items.length, Wd = t.clientWidth - 16, Ht = t.clientHeight - 16, gap = Math.max(8, Math.min(Wd, Ht) * 0.02), best = { w: 0, c: 1 };
+  // Layout: the margin m on all four sides is 1/8 of today's gap between the screen edge and the six-player layout.
+  // The Convo-Ursidae and My Stats cards (today's six-player card size) sit at the right with their right edges on the margin;
+  // the 2-6 player cards are centred in what is left, as large as they can be.
+  function gwFitCards(n, aw, ah, gap) {
+    let best = { w: 0, c: 1 };
     for (let c = 1; c <= n; c++) {
       if (n === 5 && c !== 2 && c !== 3) continue; // five players: three up, two down (two across when the screen is upright)
-      let r = Math.ceil(n / c), w = Math.min((Wd - gap * (c - 1)) / c, (Ht - gap * (r - 1)) / r / 1.4);
+      let r = Math.ceil(n / c), w = Math.min((aw - gap * (c - 1)) / c, (ah - gap * (r - 1)) / r / 1.4);
       if (w > best.w) best = { w: w, c: c };
     }
-    let w = Math.max(60, best.w * (n === 6 ? 0.9 : 1));
-    document.documentElement.style.setProperty('--gwcw', w + 'px'); t.style.setProperty('--gwgap', gap + 'px'); t.innerHTML = '';
-    for (let i = 0; i < n; i += best.c) { let row = document.createElement('div'); row.className = 'gw-row'; gw.items.slice(i, i + best.c).forEach(function (it) { row.appendChild(it.el); }); t.appendChild(row); }
+    return best;
+  }
+  function gwLayout() {
+    let t = $('gw-table'), a = $('gw-area'), sd = $('gw-side'); if (!t || !a || !sd || !gw.items.length) return;
+    let n = gw.items.length, W = t.clientWidth, H = t.clientHeight; if (!W || !H) return;
+    let Wd = W - 16, Ht = H - 16, gap = Math.max(8, Math.min(Wd, Ht) * 0.02);
+    let b6 = gwFitCards(6, Wd, Ht, gap), s = Math.max(60, b6.w * 0.9);                  // the six-player card today
+    let edge = (W - (b6.c * s + (b6.c - 1) * gap)) / 2, m = Math.max(0, edge / 8);      // an eighth of today's edge gap
+    let best = gwFitCards(n, W - 3 * m - s, H - 2 * m, gap), w = Math.max(40, best.w);
+    t.style.padding = m + 'px'; t.style.gap = m + 'px'; t.style.setProperty('--gwgap', gap + 'px');
+    a.style.setProperty('--gwcw', w + 'px'); sd.style.setProperty('--gwcw', s + 'px');
+    a.innerHTML = '';
+    for (let i = 0; i < n; i += best.c) { let row = document.createElement('div'); row.className = 'gw-row'; gw.items.slice(i, i + best.c).forEach(function (it) { row.appendChild(it.el); }); a.appendChild(row); }
     gw.items.forEach(function (it) { if (!it.empty && it.el) gwFit(it.el); });
+  }
+  // ---- the two side cards: Convo-Ursidae (chat on its flipside) and My Stats; face down at the start, always flippable ----
+  function gwSideCard(id, title, body) {
+    return '<div class="gw-card gw-side down can" id="' + id + '"><div class="gw-inner"><div class="gw-face gw-front"><div class="gw-sd-h">' + title + '</div>' + body + '</div><div class="gw-face gw-back"><div class="gw-lab">' + title + '</div></div></div></div>';
+  }
+  function gwSideBuild() {
+    let sd = $('gw-side'); if (!sd || sd.firstChild) return;
+    sd.innerHTML = gwSideCard('gw-convo', 'Convo-Ursidae', '<div class="gw-sd-b" id="gw-cv-log"></div><div class="gw-cv-in"><input id="gw-cv-t" maxlength="300" autocomplete="off" placeholder="say something" aria-label="Message"><a href="#" class="gw-link" id="gw-cv-go">send</a></div>')
+      + gwSideCard('gw-stats', 'My Stats', '<div class="gw-sd-b" id="gw-st-log"></div>');
+    $('gw-convo').onclick = function (e) { if (e.target.closest('.gw-back') || e.target.closest('.gw-sd-h')) gwFlipSide('gw-convo'); };
+    $('gw-stats').onclick = function () { gwFlipSide('gw-stats'); };
+    $('gw-cv-go').onclick = function (e) { e.preventDefault(); e.stopPropagation(); gwSendChat(); };
+    $('gw-cv-t').onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); gwSendChat(); } };
+  }
+  function gwSideReset() { let sd = $('gw-side'); if (!sd) return; ['gw-convo', 'gw-stats'].forEach(function (id) { let c = $(id); if (c) c.classList.add('down'); }); let l = $('gw-cv-log'); if (l) l.innerHTML = ''; let l2 = $('gw-st-log'); if (l2) l2.innerHTML = ''; let i = $('gw-cv-t'); if (i) i.value = ''; }
+  function gwFlipSide(id) {
+    let c = $(id); if (!c) return; c.classList.toggle('down');
+    if (id === 'gw-convo' && !c.classList.contains('down')) { let ch = (gw.st && gw.st.chat) || []; gw.chatSeenAt = ch.length ? ch[ch.length - 1].at : 0; gwSideRender(); setTimeout(function () { let i = $('gw-cv-t'); if (i) i.focus({ preventScroll: true }); }, 350); }
+    else if (id === 'gw-convo') { let i = $('gw-inp'); if (i) i.focus({ preventScroll: true }); }
+  }
+  async function gwSendChat() {
+    let i = $('gw-cv-t'), tx = i.value.trim(); if (!tx) return; i.value = '';
+    let r = await gwApi('POST', 'chat', { text: tx });
+    if (r.s === 200 && r.j && r.j.me) { gw.st = r.j; gwRender(); let c = gw.st.chat || []; gw.chatSeenAt = c.length ? c[c.length - 1].at : 0; return; }
+    i.value = tx; gwMsg(r.s === 404 ? 'Chat is not available until the worker is updated' : 'That message could not be sent');
+  }
+  const GW_MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function gwDateText(d) { let m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d || ''); return m ? GW_MON[+m[2] - 1] + ' ' + (+m[3]) + ', ' + m[1] : (d || ''); }
+  function gwStatsKey(name) { return 'bt_gw_stats_' + String(name || '').toLowerCase(); }
+  function gwStatsLoad(name) { try { let a = JSON.parse(localStorage.getItem(gwStatsKey(name)) || '[]'); return Array.isArray(a) ? a : []; } catch (e) { return []; } }
+  // Each finished day is remembered on this device (the server only holds the current day's card).
+  function gwStatsRecord(me) {
+    if (!me || !me.day || me.status === 'playing') return;
+    let w = '', rows = me.rows || [];
+    if (me.status === 'won' && rows.length) w = rows[rows.length - 1].g || ''; else if (me.status === 'failed') w = me.word || '';
+    let sc = me.status === 'lapsed' ? (rows.length ? 'incomplete' : 'no-show') : String(me.score);
+    let a = gwStatsLoad(me.name), rec = { d: me.day, s: sc, w: String(w).toLowerCase() }, k = a.findIndex(function (x) { return x.d === me.day; });
+    if (k >= 0) { if (a[k].s === rec.s && a[k].w === rec.w) return; a[k] = rec; } else a.push(rec);
+    a.sort(function (x, y) { return x.d < y.d ? 1 : x.d > y.d ? -1 : 0; });
+    try { localStorage.setItem(gwStatsKey(me.name), JSON.stringify(a.slice(0, 400))); } catch (e) { }
+  }
+  function gwSideRender() {
+    let st = gw.st; if (!st || !$('gw-convo')) return;
+    let me = st.me, chat = st.chat || [], log = $('gw-cv-log'), cv = $('gw-convo'), lastAt = chat.length ? chat[chat.length - 1].at : 0;
+    if (gw.chatSeenAt === null) gw.chatSeenAt = lastAt;
+    let sig = gw.gid + ':' + chat.length + ':' + lastAt;
+    if (sig !== gw.chatSig) {
+      gw.chatSig = sig; log.innerHTML = '';
+      if (!chat.length) { let p = document.createElement('p'); p.className = 'dim'; p.textContent = 'No messages yet.'; log.appendChild(p); }
+      chat.forEach(function (m) { let p = document.createElement('p'), b = document.createElement('b'); if (m.n === me.n) p.className = 'me'; b.textContent = m.name + ': '; p.appendChild(b); p.appendChild(document.createTextNode(m.text)); log.appendChild(p); });
+      log.scrollTop = log.scrollHeight;
+    }
+    let down = cv.classList.contains('down');
+    if (!down) gw.chatSeenAt = lastAt;
+    let unread = down ? chat.filter(function (m) { return m.at > gw.chatSeenAt && m.n !== me.n; }).length : 0;
+    let lab = cv.querySelector('.gw-lab'), want = 'Convo-Ursidae' + (unread ? '  (' + unread + ')' : ''); if (lab.textContent !== want) lab.textContent = want;
+    let sl = $('gw-st-log'), recs = gwStatsLoad(me.name), h = '';
+    sl.innerHTML = '';
+    if (!recs.length) { let p = document.createElement('p'); p.className = 'dim'; p.textContent = 'No finished days yet.'; sl.appendChild(p); }
+    recs.forEach(function (r) { let p = document.createElement('p'); p.textContent = 'date: ' + gwDateText(r.d) + ', score: ' + r.s + ', word: ' + (r.w || '—'); sl.appendChild(p); });
   }
   // ================= END groupWords MODULE =================
 
