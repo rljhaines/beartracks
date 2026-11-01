@@ -4524,7 +4524,7 @@ body {
     current: function () { let gg = $('gw-game'); if (!(gg && !gg.hidden && gw && gw.gid && gw.token)) return null; return { gid: gw.gid, seat: gw.seat, name: (gwSeatsOf(gw.gid)[gw.seat] || {}).name || getOwner() || '', token: gw.token }; },
     adopt: async function (b) { gwSaveKey(b.gameId, b.token, b.seat, b.name); await gwUse(b.gameId, b.seat, b.token); return ''; }
   });
-  function gwBackdrop() { gwNoticeClose(); $('setup').hidden = false; $('box-start').hidden = true; $('box-register').hidden = true; $('setup').classList.add('gw-nodlg'); }
+  function gwBackdrop() { gwNoticeClose(); $('setup').hidden = false; $('box-start').hidden = true; $('box-register').hidden = true; $('setup').classList.add('gw-nodlg', 'gw-bg'); }   // gw-bg: the groupWords backdrop, so the Wordage board never shows through while a seat is being found
   function gwChoose(gid, seats) {
     gwBackdrop();
     let b = Object.keys(seats).map(function (n) { return ['Continue as ' + (seats[n].name || ('player ' + (+n + 1))), function () { gwUse(gid, n, seats[n].token); }]; });
@@ -4697,7 +4697,7 @@ body {
     gwStatsRecord(st.me); gwSideRender();
   }
   // Layout: the margin m on all four sides is 1/8 of today's gap between the screen edge and the six-player layout.
-  // The Convo-Ursidae and My Stats cards (today's six-player card size) sit at the right with their right edges on the margin;
+  // The Convo-Ursidae and My Stats cards (the six-player card size in every game) sit at the right with their right edges on the margin;
   // the 2-6 player cards are centred in what is left, as large as they can be.
   function gwFitCards(n, aw, ah, gap) {
     let best = { w: 0, c: 1 };
@@ -4714,7 +4714,9 @@ body {
     let Wd = W - 16, Ht = H - 16, gap = Math.max(8, Math.min(Wd, Ht) * 0.02);
     let b6 = gwFitCards(6, Wd, Ht, gap), s = Math.max(60, b6.w * 0.9);                  // the six-player card today
     let edge = (W - (b6.c * s + (b6.c - 1) * gap)) / 2, m = Math.max(0, edge / 8);      // an eighth of today's edge gap
-    let best = gwFitCards(n, W - 3 * m - s, H - 2 * m, gap), w = Math.max(40, best.w);
+    // The side cards are always the six-player card size: the largest size at which the six-player table and the side column fit inside the margins.
+    let lo = 40, hi = Math.max(41, H); for (let k = 0; k < 40; k++) { let mid = (lo + hi) / 2; if (gwFitCards(6, W - 3 * m - mid, H - 2 * m, gap).w >= mid) lo = mid; else hi = mid; }
+    s = lo; let best = gwFitCards(n, W - 3 * m - s, H - 2 * m, gap), w = Math.max(40, best.w);   // player cards: as large as fit; side cards: the six-player card size
     t.style.padding = m + 'px'; t.style.gap = m + 'px'; t.style.setProperty('--gwgap', gap + 'px');
     a.style.setProperty('--gwcw', w + 'px'); sd.style.setProperty('--gwcw', s + 'px');
     a.innerHTML = '';
