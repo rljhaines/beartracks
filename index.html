@@ -1141,6 +1141,8 @@ body {
   function seatHeaders(gid, seat, extra) { let h = Object.assign({}, extra || {}); let t = getSeatToken(gid, seat); if (t) h['X-Seat-Token'] = t; return h; }
   function makeSeatUrl(gid, seat) { let t = getSeatToken(gid, seat); if (!t) return null; return LIVE_SITE + '?game=' + encodeURIComponent(gid) + '&p=' + seat + '#k=' + encodeURIComponent(t); }
   function randomId() { let b = crypto.getRandomValues(new Uint8Array(16)), s2 = ''; for (let i = 0; i < b.length; i++) s2 += String.fromCharCode(b[i]); return btoa(s2).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+  // A whole number from 0 to n-1 chosen with the browser's cryptographic random source, without modulo bias (falls back to Math.random only if that source is missing).
+  function btRandBelow(n) { n = Math.floor(n); if (!(n > 1)) return 0; try { var lim = Math.floor(4294967296 / n) * n, a = new Uint32Array(1); do { crypto.getRandomValues(a); } while (a[0] >= lim); return a[0] % n; } catch (e) { return Math.floor(Math.random() * n); } }
   // Pull a seat key out of the URL hash (#k=TOKEN, or #s=STATE&p=N&k=TOKEN), store it, and remove it from the address bar.
   function absorbSeatKey(gid, queryP) {
     try {
@@ -2748,7 +2750,7 @@ body {
   function has(a, r, c) { for (var i = 0; i < a.length; i++)if (a[i][0] === r && a[i][1] === c) return true; return false }  
   function premium(r, c) { if (has(TW, r, c)) return 'TW'; if (has(DW, r, c)) return 'DW'; if (has(TL, r, c)) return 'TL'; if (has(DL, r, c)) return 'DL'; return '' }  
   function esc(t) { return String(t).replace(/[&<>"']/g, function (x) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[x] }) }  
-  function shuffle(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t } return a }  
+  function shuffle(a) { for (var i = a.length - 1; i > 0; i--) { var j = btRandBelow(i + 1), t = a[i]; a[i] = a[j]; a[j] = t } return a }  
   function tile(l) { return { l: l, blank: l === '?' } }  
   function draw(s, p) { while (p.rack.length < 7 && s.bag.length) p.rack.push(tile(s.bag.pop())) }  
   function fresh(a, b) { var bag = [], k, i; for (k in D) for (i = 0; i < D[k]; i++)bag.push(k); shuffle(bag); var s = { version: 4, id: randomId(), players: [{ name: a, score: 0, rack: [] }, { name: b, score: 0, rack: [] }], board: [], bag: bag, turn: 0, history: [], moveCount: 0, undoStack: [] }; for (i = 0; i < N; i++)s.board.push(Array(N).fill(null)); draw(s, s.players[0]); draw(s, s.players[1]); s.players[0].rack = s.players[0].rack.map(function (t) { return { l: t.l, blank: !!t.blank } }); s.players[1].rack = s.players[1].rack.map(function (t) { return { l: t.l, blank: !!t.blank } }); return s; }  
@@ -2950,7 +2952,7 @@ body {
   }
   function startGesture(e) { if (waiting) return; let li = getLocalIdx(); let isMyTurn = (state.moveCount === 0) ? true : (state.turn === li); if (!isMyTurn) return; if (selected >= 0 || state.board[Number(e.currentTarget.getAttribute('data-r'))][Number(e.currentTarget.getAttribute('data-c'))]) return; gesture = { r: Number(e.currentTarget.getAttribute('data-r')), c: Number(e.currentTarget.getAttribute('data-c')) } }  
   function endGesture(e) { if (waiting || !gesture) return; var r = Number(e.currentTarget.getAttribute('data-r')), c = Number(e.currentTarget.getAttribute('data-c')); if (r === gesture.r && c !== gesture.c) { anchor = { r: gesture.r, c: gesture.c, d: 'H' }; suppressClick = true; } else if (c === gesture.c && r !== gesture.r) { anchor = { r: gesture.r, c: gesture.c, d: 'V' }; suppressClick = true; } gesture = null; if (suppressClick) { render(); } }  
-  function undo() { if (waiting) return; if (exchangeMode) { cancelExchange(); render(); return; } let li = getLocalIdx(); let isMyTurn = (state.moveCount === 0) ? true : (state.turn === li); if (!isMyTurn) return; var lr = getLocalRack(); for (var i = 0; i < pending.length; i++) { var x = pending[i]; state.board[x.r][x.c] = null; lr.push(x.tile.blank ? tile('?') : x.tile); } pending = []; selected = -1; anchor = null; pendingWord = null; $('wordInput').value = ''; clearPrompt(); render(); }  
+  function undo() { if (waiting && !pending.length) return; if (exchangeMode) { cancelExchange(); render(); return; } var lr = getLocalRack(); for (var i = 0; i < pending.length; i++) { var x = pending[i]; state.board[x.r][x.c] = null; lr.push(x.tile.blank ? tile('?') : x.tile); } pending = []; selected = -1; anchor = null; pendingWord = null; $('wordInput').value = ''; clearPrompt(); render(); }  
   function line(r, c, dr, dc) { var a = []; while (r - dr >= 0 && r - dr < N && c - dc >= 0 && c - dc < N && state.board[r - dr][c - dc]) { r -= dr; c -= dc; } while (r >= 0 && r < N && c >= 0 && c < N && state.board[r][c]) { a.push({ r: r, c: c, t: state.board[r][c] }); r += dr; c += dc; } return a; }  
   function isNew(r, c) { for (var i = 0; i < pending.length; i++)if (pending[i].r === r && pending[i].c === c) return true; return false; }  
   function validate() { if (!pending.length) throw Error('Place at least one tile.'); var rows = {}, cols = {}, i, x; for (i = 0; i < pending.length; i++) { rows[pending[i].r] = 1; cols[pending[i].c] = 1; } if (Object.keys(rows).length > 1 && Object.keys(cols).length > 1) throw Error('New tiles must be in one row or column.'); var hasExisting = false; for (var rr = 0; rr < N; rr++)for (var cc = 0; cc < N; cc++)if (state.board[rr][cc] && !isNew(rr, cc)) hasExisting = true; if (!hasExisting) { if (!isNew(C, C)) throw Error('First move must cover the center.'); } else { var touches = false; for (i = 0; i < pending.length; i++) { x = pending[i]; if ((state.board[x.r - 1] && state.board[x.r - 1][x.c] && !isNew(x.r - 1, x.c)) || (state.board[x.r + 1] && state.board[x.r + 1][x.c] && !isNew(x.r + 1, x.c)) || (state.board[x.r][x.c - 1] && !isNew(x.r, x.c - 1)) || (state.board[x.r][x.c + 1] && !isNew(x.r, x.c + 1))) touches = true; } if (!touches) throw Error('Must connect to an existing tile.'); } var words = [], seen = {}; for (i = 0; i < pending.length; i++) { x = pending[i];[[0, 1], [1, 0]].forEach(function (d) { var w = line(x.r, x.c, d[0], d[1]); var key = w.map(function (y) { return y.r + ',' + y.c }).join('|'); if (w.length > 1 && !seen[key]) { seen[key] = 1; words.push(w); } }); } if (!words.length) throw Error('Must form at least two letters.'); return words; }  
@@ -3472,7 +3474,7 @@ body {
   function cribVal(rank) { if (rank === 'A') return 1; if (['10', 'J', 'Q', 'K'].includes(rank)) return 10; return Number(rank); }
   function cribRankIdx(rank) { return CRIB_RANKS.indexOf(rank); }
   function cribFreshDeck() { let d = []; for (const s of CRIB_SUITS) for (const r of CRIB_RANKS) d.push({ r, s }); return d; }
-  function cribShuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { let j = Math.floor(Math.random() * (i + 1));[a[i], a[j]] = [a[j], a[i]]; } return a; }
+  function cribShuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { let j = btRandBelow(i + 1);[a[i], a[j]] = [a[j], a[i]]; } return a; }
   function cribCardLabel(c) { return c.r + cribSuitGlyph(c.s); }
   function cribSuitGlyph(s) { return { S: '♠', H: '♥', D: '♦', C: '♣' }[s] || s; }
   function cribSuitColor(s) { return (s === 'H' || s === 'D') ? '#b5302a' : '#1a2a1e'; }
@@ -4509,7 +4511,7 @@ body {
     let hu = $('bt-headsup'), st = $('box-start'), su = $('setup');
     if (hu && !hu.hidden) { e.preventDefault(); backToFoyer(); return; }
     if (su && !su.hidden && st && !st.hidden) { e.preventDefault(); backToFoyer(); return; }
-    try { let cg = $('cribbage-game'); if (state && $('entry-home').hidden && !(cg && !cg.hidden) && !waiting && (pending.length || exchangeMode)) { e.preventDefault(); undo(); } } catch (err) { }   // in a Wordage game Esc returns the tiles to the rack; with none out, Esc is left to the system
+    try { let cg = $('cribbage-game'); if (state && $('entry-home').hidden && !(cg && !cg.hidden) && (pending.length || (exchangeMode && !waiting))) { e.preventDefault(); undo(); } } catch (err) { }   // in a Wordage game Esc returns the tiles to the rack; with none out, Esc is left to the system
   });
   function wordageToFoyer() { foyerUrl(); showEntryPage(); try { initEntryPaws(); } catch (e) { } try { populateEntryGames(); } catch (e) { } }
   function cribEnsureTalk() {
