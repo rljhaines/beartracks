@@ -718,7 +718,7 @@ body {
       </div>
     </div>
 
-    <div       class="modal"       id="setup"       hidden     >       <section class="dialog">         <div           id="box-register"           class="start-game-box"         >           <h1>BearTracks Registration</h1>           <p>Register to play.</p><label>Username<input               id="reg-user"               placeholder="Username"               autofocus               autocomplete="username"             ></label><label>Password<input               id="reg-pass"               type="password"             ></label><label>Confirm password<input               id="reg-pass2"               type="password"             ></label><button id="btn-register">Register</button>           <div             id="reg-error"             class="error"           ></div>
+    <div       class="modal"       id="setup"       hidden     >       <section class="dialog">         <div           id="box-register"           class="start-game-box"         >           <h1>BearTracks Registration</h1>           <p>Register to play.</p><label>Username<input               id="reg-user"               placeholder="Username"               autofocus               autocomplete="username"             ></label><label>Password<input               id="reg-pass"               type="password"               autocomplete="new-password"             ></label><label>Confirm password<input               id="reg-pass2"               type="password"               autocomplete="new-password"             ></label><button id="btn-register">Register</button>           <div             id="reg-error"             class="error"           ></div>
                    </div>         <div           id="box-start"           class="start-game-box"           hidden         ><button id="btn-cancel-start" class="bt-cancel" type="button">Cancel</button>           <h1>Start a game</h1>           <div><strong id="owner-name"></strong></div><label>Opponent's name (optional)<input               id="nameB"               maxlength="28"               placeholder="Opponent username"             ></label>           <div style="display:flex;gap:8px;margin-top:10px"><button id="btn-begin">Begin Game</button><button               id="btn-invite"               class="action alt"             >Create Invitation</button></div>         </div>
         <div id="box-login" class="start-game-box" hidden>
           <h1>Log in</h1>
@@ -773,6 +773,8 @@ body {
       connect(L); return L;
     }
     function reconnect(key) { let L = links[key]; if (!L) return false; if (L.ws && L.ws.readyState <= 1) return true; L.tried = true; connect(L); return true; }
+    // A connection that has stopped answering is dropped at once (not waited out) and retried the way a closed one is.
+    function drop(key) { let L = links[key]; if (!L || !L.ws) return; let o = L.ws; L.ws = null; clearTimeout(L.ct); note(L, 'offline'); try { o.close(); } catch (e) { } if (L.spec.retryMs) L.timer = setTimeout(function () { if (links[L.key] === L && !L.ws && (!L.spec.keep || L.spec.keep())) connect(L); }, L.spec.retryMs); }
     function live(key) { let L = links[key]; return !!(L && L.ws && L.ws.readyState <= 1); }
     function isOpen(key) { let L = links[key]; return !!(L && L.ws && L.ws.readyState === 1); }
     function send(key, text) { let L = links[key]; if (!(L && L.ws && L.ws.readyState === 1)) return false; try { L.ws.send(text); return true; } catch (e) { return false; } }
@@ -786,7 +788,7 @@ body {
       a.onclick = function (e) { e.preventDefault(); reconnect(key); };
       el.appendChild(a);
     }
-    return { open: open, close: close, reconnect: reconnect, live: live, isOpen: isOpen, send: send, paint: paint };
+    return { open: open, close: close, drop: drop, reconnect: reconnect, live: live, isOpen: isOpen, send: send, paint: paint };
   })();
   // ===== COMMS UNIT =====
   // Communication only: connections for a game id, send, receive, de-duplication, status. It has no screen elements and never
@@ -809,6 +811,21 @@ body {
     }  
   }
 
+  // Wordage: after every save a short "look again" nudge (with the move number) goes over the game's socket; the other page fetches at once.
+  // While the socket answers (the room sends our heartbeat back) there is no polling at all; with no socket, or a quiet one, the old 1 s look-again remains.
+  let wdHbAt = 0, wdPulling = false; const wdClientId = randomId();
+  async function wdPullNow(minN) {
+    if (wdPulling || typeof state === 'undefined' || !state || !state.id) return; wdPulling = true;
+    try { for (let k = 0; k < 4; k++) { let g = await loadGame(state.id); if (g) applyExternalState(g); if (typeof minN !== 'number' || !g || g.moveCount >= minN) break; await new Promise(r => setTimeout(r, 600)); } } catch (e) { } finally { wdPulling = false; }
+  }
+  function wdPing(g) { try { if (g && g.id) btLink.send('comm', JSON.stringify({ t: 'wd-refresh', id: g.id, c: wdClientId, n: g.moveCount })); } catch (e) { } }
+  setInterval(function () {
+    try {
+      if (document.hidden || typeof state === 'undefined' || !state || !state.id || state.over || !btLink.isOpen('comm')) return;
+      if (wdHbAt && Date.now() - wdHbAt > 12000) { btLink.drop('comm'); btLink.reconnect('comm'); return; }
+      btLink.send('comm', JSON.stringify({ t: 'wd-hb' }));
+    } catch (e) { }
+  }, 5000);
   function initComm(gid) {  
     if (!gid) gid = commHost.gameId(); if (!gid) return;  
     if (commGameId === gid && btLink.live('comm')) return;  
@@ -817,8 +834,8 @@ body {
     if (location.protocol === "file:") return;  
     try { let wsTok = getSeatToken(gid, commHost.seat()); commHost.connecting(); let url = WS_URL + "?game=" + encodeURIComponent(gid) + "&user=" + encodeURIComponent(getOwner() || "anon");
       btLink.open("comm", { url: url, protocols: wsTok ? ["bt." + wsTok] : null, status: function (st, tried) { commHost.status(st, tried); },
-        onopen: function (sock) { let li = commHost.seat(); let myName = commHost.myName(li); try { sock.send(JSON.stringify({ t: 'presence', p: li, name: myName, game: gid })); } catch (_) { } },
-        onmessage: async (e) => { try { let m = JSON.parse(e.data); if (m.type === "chat") showChat(m); if (m.type === "rtc-offer") handleOffer(m); if (m.type === "rtc-answer" && pc) await pc.setRemoteDescription(m.sdp); if (m.type === "rtc-ice" && pc) try { await pc.addIceCandidate(m.candidate); } catch (_) { } if (m.game) commHost.onGameState(m.game); } catch (_) { } } });
+        onopen: function (sock) { wdHbAt = Date.now(); let li = commHost.seat(); let myName = commHost.myName(li); try { sock.send(JSON.stringify({ t: 'presence', p: li, name: myName, game: gid })); } catch (_) { } wdPullNow(); },
+        onmessage: async (e) => { wdHbAt = Date.now(); try { let m = JSON.parse(e.data); if (m.t === 'wd-refresh' && m.c !== wdClientId && typeof state !== 'undefined' && state && state.id === commGameId) { if (!(typeof m.n === 'number' && state.moveCount > m.n)) wdPullNow(m.n); } if (m.t === 'presence' && typeof state !== 'undefined' && state && state.id === commGameId) wdPullNow(); if (m.type === "chat") showChat(m); if (m.type === "rtc-offer") handleOffer(m); if (m.type === "rtc-answer" && pc) await pc.setRemoteDescription(m.sdp); if (m.type === "rtc-ice" && pc) try { await pc.addIceCandidate(m.candidate); } catch (_) { } if (m.game) commHost.onGameState(m.game); } catch (_) { } } });
     } catch (e) { }  
   }  
   // A message reaches a tab by two routes (the same-browser channel and the server), so each chat message carries an id and is shown once.
@@ -968,7 +985,7 @@ body {
     render();
   }  
   function initBroadcastChannel(id) { if (location.protocol === 'file:') return; try { if (btChannel) btChannel.close(); btChannel = new BroadcastChannel('bt_' + id); btChannel.onmessage = function (e) { if (e.data && e.data.game) applyExternalState(e.data.game); }; } catch (e) { } }  
-  function broadcastGame(g) { if (location.protocol === 'file:') return; try { if (btChannel) btChannel.postMessage({ game: g }); } catch (e) { } }  
+  function broadcastGame(g) { if (location.protocol === 'file:') return; wdPing(g); try { if (btChannel) btChannel.postMessage({ game: g }); } catch (e) { } }  
   // END FIX  
   function getOwner() { return localStorage.getItem("bt_owner") }  
   function getOpponents() { try { return JSON.parse(localStorage.getItem("bt_opponents") || "[]") } catch (e) { return [] } }  
@@ -1038,7 +1055,7 @@ body {
     if (typeof d['bt_shared'] === 'string') { let inc = jparse(d['bt_shared'], {}), cur = sharedMap(); Object.keys(inc).forEach(function (g) { if (/^[A-Za-z0-9_-]{4,64}$/.test(g) && inc[g] === true) cur[g] = true; }); localStorage.setItem('bt_shared', JSON.stringify(cur)); }
     Object.keys(d).forEach(function (k) {
       if (typeof d[k] !== 'string' || d[k].length > 500000) return;
-      if (k === 'bt_owner' || k === 'username' || k.indexOf('bt_pw_') === 0 || k.indexOf('bt_pending_invite_') === 0 || k.indexOf('bt_pending_game_') === 0) { if (k !== 'bt_pending_invite_ids' && localStorage.getItem(k) === null) localStorage.setItem(k, d[k]); }
+      if (k === 'bt_owner' || k === 'username' || k.indexOf('bt_pw_') === 0 || k.indexOf('bt_mk_') === 0 || k.indexOf('bt_pending_invite_') === 0 || k.indexOf('bt_pending_game_') === 0) { if (k !== 'bt_pending_invite_ids' && localStorage.getItem(k) === null) localStorage.setItem(k, d[k]); }
     });
     return added;
   }
@@ -1052,6 +1069,28 @@ body {
   function pwHex(u8) { let o = ''; for (let i = 0; i < u8.length; i++) o += u8[i].toString(16).padStart(2, '0'); return o; }
   function pwUnhex(h) { let o = new Uint8Array(h.length / 2); for (let i = 0; i < o.length; i++) o[i] = parseInt(h.substr(i * 2, 2), 16); return o; }
   async function pwDerive(password, salt) { let km = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']); return pwHex(new Uint8Array(await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: salt, iterations: 100000, hash: 'SHA-256' }, km, 256))); }
+  /* ---- seat keys worked out from the player's own name and password ----
+     At registration and every login a "master" is derived from name + password (it differs from the stored check, which has a random salt)
+     and kept here.  A game's seat key is derived from the master, the game's id and the seat, so a browser that has lost its keys, or a
+     new device, gets them back by logging in with the same name and password.  The Worker keeps only a hash of each key. */
+  function mkName(name) { return 'bt_mk_' + String(name || '').trim().toLowerCase(); }
+  function mkTabMap() { try { return JSON.parse(sessionStorage.getItem('bt_mk_tab') || '{}') || {}; } catch (e) { return {}; } }
+  function getMk(name) { let k = mkName(name), v = null; try { v = localStorage.getItem(k); } catch (e) { } if (!v) v = mkTabMap()[k] || null; return /^[0-9a-f]{64}$/.test(v || '') ? v : null; }
+  function mkPut(name, mk) { try { let k = mkName(name); localStorage.setItem(k, mk); let m = mkTabMap(); m[k] = mk; sessionStorage.setItem('bt_mk_tab', JSON.stringify(m)); } catch (e) { } }
+  async function mkStore(name, password) { try { mkPut(name, await pwDerive(password, new TextEncoder().encode('beartracks seat key v1|' + String(name || '').trim().toLowerCase()))); } catch (e) { } }
+  async function seatKeyFor(name, gid, seat) {
+    let mk = getMk(name); if (!mk || !gid) return null;
+    try { let key = await crypto.subtle.importKey('raw', pwUnhex(mk), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']); let sig = new Uint8Array(await crypto.subtle.sign('HMAC', key, new TextEncoder().encode('seat|' + gid + '|' + seat))); let s = ''; for (let i = 0; i < sig.length; i++) s += String.fromCharCode(sig[i]); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); } catch (e) { return null; }
+  }
+  // A game opened in a browser that holds no key for the owner's seat: the key is worked out again.
+  async function seatRecover(g) {
+    try {
+      if (!g || !g.id || !g.players) return; let owner = getOwner(); if (!owner) return;
+      let i = g.players.findIndex(function (p) { return String(p && p.name || '').trim().toLowerCase() === String(owner).trim().toLowerCase(); });
+      if (i < 0 || i > 1 || getSeatToken(g.id, i)) return;
+      let k = await seatKeyFor(owner, g.id, i); if (k) setSeatToken(g.id, i, k);
+    } catch (e) { }
+  }
   function pwKey(name) { return 'bt_pw_' + String(name || '').trim().toLowerCase(); }
   function pwTabMap() { try { return JSON.parse(sessionStorage.getItem('bt_pw_tab') || '{}') || {}; } catch (e) { return {}; } }
   function pwRecord(name) { let k = pwKey(name), r = null; try { r = localStorage.getItem(k); } catch (e) { } if (!r) r = pwTabMap()[k] || null; return r; }
@@ -1097,7 +1136,7 @@ body {
   }
   async function tryUnlock() {
     let ok = false; try { ok = await checkPassword(gateName(), $('unlock-pass').value); } catch (e) { }
-    if (ok) unlockGate(); else { $('unlock-error').textContent = 'That password is not right.'; $('unlock-pass').select(); }
+    if (ok) { try { await mkStore(gateName(), $('unlock-pass').value); } catch (e) { } unlockGate(); } else { $('unlock-error').textContent = 'That password is not right.'; $('unlock-pass').select(); }
   }
   function seatHeaders(gid, seat, extra) { let h = Object.assign({}, extra || {}); let t = getSeatToken(gid, seat); if (t) h['X-Seat-Token'] = t; return h; }
   function makeSeatUrl(gid, seat) { let t = getSeatToken(gid, seat); if (!t) return null; return LIVE_SITE + '?game=' + encodeURIComponent(gid) + '&p=' + seat + '#k=' + encodeURIComponent(t); }
@@ -1124,7 +1163,7 @@ body {
     } catch (e) { }
   }
   async function loadInvite(id) { for (let k = 0; k < 3; k++) { try { let r = await fetch(API + "/invites/" + id); if (r.ok) { let j = await r.json(); return j.invite } } catch (e) { } await new Promise(r => setTimeout(r, 400)); } return null }  
-  async function loadGame(id) { for (let k = 0; k < 3; k++) { try { let r = await fetch(API + "/games/" + id); if (r.ok) { let j = await r.json(); return j.game } } catch (e) { } await new Promise(r => setTimeout(r, 400)); } return null }  
+  async function loadGame(id) { for (let k = 0; k < 3; k++) { try { let r = await fetch(API + "/games/" + id); if (r.ok) { let j = await r.json(); await seatRecover(j.game); return j.game } } catch (e) { } await new Promise(r => setTimeout(r, 400)); } return null }  
   function makeInviteUrl(id) { return LIVE_SITE + "?invite=" + encodeURIComponent(id); }  
   function makeGameStateUrl(gs) { try { let json = JSON.stringify(gs); let bytes = new TextEncoder().encode(json); let bin = ''; for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]); let b64 = btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); return LIVE_SITE + "#s=" + b64; } catch (e) { let b64 = btoa(unescape(encodeURIComponent(JSON.stringify(gs)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); return LIVE_SITE + "#s=" + b64; } }  
   async function saveGameToCF(g, opts) {
@@ -1134,7 +1173,7 @@ body {
       let r = await fetch(API + "/games/" + g.id, { method: "PUT", headers: seatHeaders(g.id, li, { "Content-Type": "application/json" }), body: JSON.stringify({ game: g }) });
       if (r.status === 404) {
         // New game: the worker issues the seat token(s) once, here.
-        r = await fetch(API + "/games", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ game: g, withSeat1: !!(opts && opts.withSeat1) }) });
+        r = await fetch(API + "/games", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ game: g, withSeat1: !!(opts && opts.withSeat1), k0: (await seatKeyFor(getOwner(), g.id, 0)) || undefined }) });
         if (r.ok) { let j = await r.json(); setSeatToken(g.id, 0, j.seat0Token); if (j.seat1Token) setSeatToken(g.id, 1, j.seat1Token); }
       }
       if (r.status === 401) { try { message('This browser has no key for your seat in this game. Open your seat link to resume.'); } catch (e) { } return g; }
@@ -2030,7 +2069,7 @@ body {
   // The final claim of a count ("31 for [n]" / "last card for [n]"): n is the total for that play; it can be raised until "next count".
   async function cribSubmitFinal() {
     let li = cribGetLocalIdx();
-    let server = await cribLoadGame(cribState.id); if (server) cribState = server;
+    await cribFreshState();
     const p = cribState.pegging, hd = p && p.hold, pend = p && p.pending, R = cribPegRefs;
     if (cribState.phase !== 'pegging' || !hd || hd.seat !== li || !pend || !R) { cribRender(); return; }
     const key = pend.count === 31 ? 'f31' : 'last', v = parseInt(R.fin[key].value || '0', 10) || 0, max = cribPegMax(pend), cur = pend.claimedPts || 0, rem = Math.max(0, max - cur);
@@ -2041,7 +2080,7 @@ body {
     R.fin[key].value = '';
     cribState.history.push(cribState.players[li].name + ' claims ' + (key === 'f31' ? '31' : 'last card') + ' for ' + v);
     cribState.moveCount++;
-    await cribSaveGame(cribState); cribBroadcastGame(cribState);
+    await cribSaveOrHold(cribState);
     cribRender();
     cribClaimTip();
   }
@@ -2053,7 +2092,7 @@ body {
     if (cribPegSel.f15) picked.push(['f15']); if (cribPegSel.pair) picked.push(['pair', cribPegSel.pair]); if (cribPegSel.run) picked.push(['run', cribPegSel.run]);
     if (cribPegSel.f31) picked.push(['f31']); if (cribPegSel.last) picked.push(['last']);
     if (!picked.length) { cribPegNote('Pick what you are claiming first, then press the tick.'); return; }
-    let server = await cribLoadGame(cribState.id); if (server) cribState = server;
+    await cribFreshState();
     let p = cribState.pegging, pend = p && p.pending;
     if (cribState.phase !== 'pegging' || !pend || pend.seat !== li) { cribPegNote('Nothing to claim right now - the play has moved on.'); cribPegSel = { f15: false, pair: 0, run: 0, f31: false, last: false }; cribRender(); return; }
     pend.claimed = pend.claimed || {};
@@ -2079,7 +2118,7 @@ body {
   // "next count": only the player who made the last play can click it. It ends their claim; whatever was not claimed is lost.
   async function cribHoldPress() {
     let li = cribGetLocalIdx();
-    let server = await cribLoadGame(cribState.id); if (server) cribState = server;
+    await cribFreshState();
     let p = cribState.pegging, hd = p && p.hold;
     if (cribState.phase !== 'pegging' || !hd || hd.seat !== li) { cribRender(); return; }
     if (!(p.pending && p.pending.claimedPts > 0)) { cribPegNote('Claim your last card (or 31) first.'); cribRender(); return; }
@@ -2299,7 +2338,7 @@ body {
   async function cribMugAct(kind, n) {
     if (!cribState || (cribState.phase !== 'pegging' && cribState.phase !== 'counting')) return false;
     const li = cribGetLocalIdx();
-    let server = await cribLoadGame(cribState.id); if (server) cribState = server;
+    await cribFreshState();
     const avail = cribMugAvail();
     const mugM = cribState.phase === 'counting' && cribState.show && cribState.show.mug;
     if (!avail) { if (n >= 1 && mugM && mugM.open && mugM.seat === li) await cribOverclaim(); else cribPegNote('There is no muggins to take right now.'); cribRenderBoardExtras(); return false; }
@@ -2320,7 +2359,7 @@ body {
   // A claim made by clicking (or dragging your paw to) a hole in your own lane: the hole's number is your new score.
   async function cribHoleClaim(pts) {
     const li = cribGetLocalIdx();
-    let server = await cribLoadGame(cribState.id); if (server) cribState = server;
+    await cribFreshState();
     if (cribState.phase === 'counting') {   // in the show the hole adds to your own claim until you click "next count", or is muggins on the opponent's count
       const S = cribShowOwn();
       const mine = !!S && S.counter === li && !S.sh.fin, own = mine ? Math.max(0, S.parts.total - (S.sh.claimedPts || 0)) : 0;
@@ -3042,11 +3081,12 @@ body {
       // A browser that already holds that key is simply let back in.
       for (let a = 0; a < 5; a++) {
         try {
-          let r = await fetch(API + "/invites/" + encodeURIComponent(inviteId) + "/claim", { method: "POST", headers: seatHeaders(inv.gameId, 1, { "Content-Type": "application/json" }), body: JSON.stringify({ name: claimName }) });
+          let dk = await seatKeyFor(getOwner(), inv.gameId, 1), hh = seatHeaders(inv.gameId, 1, { "Content-Type": "application/json" }); if (!hh['X-Seat-Token'] && dk) hh['X-Seat-Token'] = dk;
+          let r = await fetch(API + "/invites/" + encodeURIComponent(inviteId) + "/claim", { method: "POST", headers: hh, body: JSON.stringify({ name: claimName, key: dk || undefined }) });
           if (r.status === 409) { try { message('This invitation has already been used.'); } catch (e) { } return null; }
           if (!r.ok) { await new Promise(r => setTimeout(r, 400)); continue; }
           let j = await r.json(); if (!j || !j.game) return null;
-          if (j.token) setSeatToken(j.game.id, 1, j.token);
+          if (j.token) setSeatToken(j.game.id, 1, j.token); else if (dk && !getSeatToken(j.game.id, 1)) setSeatToken(j.game.id, 1, dk);
           if (j.token && getSeatToken(j.game.id, 0)) { markShared(j.game.id); gateFresh = true; }
           let g = cloneRacks(j.game);
           try { initBroadcastChannel(g.id); broadcastGame(g); } catch (e) { }
@@ -3156,7 +3196,7 @@ body {
       $('box-install').hidden = true; $('box-register').hidden = false;
     } catch (e) { try { $('box-install').hidden = true; } catch (e2) { } }
   }
-  async function handleRegister() { let uEl = $('reg-user'), pEl = $('reg-pass'), p2El = $('reg-pass2'), errEl = $('reg-error'); let u = uEl ? uEl.value.trim() : '', p = pEl ? pEl.value : '', p2 = p2El ? p2El.value : ''; if (errEl) errEl.textContent = ''; if (!u || !p) { if (errEl) errEl.textContent = 'Fill username and password'; return; } if (p !== p2) { if (errEl) errEl.textContent = 'Passwords do not match'; return; } let users = []; try { users = JSON.parse(localStorage.getItem("bt_users") || "[]") } catch (e) { users = [] } if (users.some(x => x.toLowerCase() === u.toLowerCase())) { if (errEl) errEl.textContent = 'Username taken'; return; } localStorage.setItem("bt_owner", u); try { localStorage.removeItem("bt_pass_" + u.toLowerCase()); } catch (e) { } try { await storePassword(u, p); mirrorPassword(u); } catch (e) { } users.push(u); localStorage.setItem("bt_users", JSON.stringify(users)); let inviteParam = null; try { inviteParam = new URLSearchParams(location.search).get("invite"); } catch (e) { } await installGate(inviteParam); if (inviteParam) { if (postRegisterTarget === 'cribbage') { try { let inv = await cribLoadInvite(inviteParam); if (inv) { forgetPendingInvite(inviteParam); currentInvite = inv; if (await cribJoinViaInvite(inv, u)) return; } } catch (e) { } } else { try { let res = await linkGameViaInvite(inviteParam, u); if (res && res.game) { forgetPendingInvite(inviteParam); currentInvite = res.invite || currentInvite; await enterGameDirect(res.game, 1); return; } } catch (e) { } } } if (pendingGameOnRegister) { let pg = pendingGameOnRegister; pendingGameOnRegister = null; try { let fg = await loadGame(pg.id); if (fg) pg = fg; let mi = (pg.players || []).findIndex(pl => String(pl.name || '').toLowerCase() === u.toLowerCase()); if (mi >= 0) { await enterGameDirect(pg, mi); return; } } catch (e) { } $('setup').hidden = true; showEntryPage(); initEntryPaws(); await populateEntryGames(); return; } if (postRegisterTarget === 'groupwords') { gwAfterRegister(); return; } if (postRegisterTarget === 'cribbage') { showCribbageLanding(); } else if (postRegisterTarget === 'foyer') { $('setup').hidden = true; showEntryPage(); initEntryPaws(); await populateEntryGames(); } else { renderBoxes(); } }
+  async function handleRegister() { let uEl = $('reg-user'), pEl = $('reg-pass'), p2El = $('reg-pass2'), errEl = $('reg-error'); let u = uEl ? uEl.value.trim() : '', p = pEl ? pEl.value : '', p2 = p2El ? p2El.value : ''; if (errEl) errEl.textContent = ''; if (!u || !p) { if (errEl) errEl.textContent = 'Fill username and password'; return; } if (p !== p2) { if (errEl) errEl.textContent = 'Passwords do not match'; return; } let users = []; try { users = JSON.parse(localStorage.getItem("bt_users") || "[]") } catch (e) { users = [] } if (users.some(x => x.toLowerCase() === u.toLowerCase())) { if (errEl) errEl.textContent = 'Username taken'; return; } localStorage.setItem("bt_owner", u); try { localStorage.removeItem("bt_pass_" + u.toLowerCase()); } catch (e) { } try { await storePassword(u, p); mirrorPassword(u); await mkStore(u, p); } catch (e) { } users.push(u); localStorage.setItem("bt_users", JSON.stringify(users)); let inviteParam = null; try { inviteParam = new URLSearchParams(location.search).get("invite"); } catch (e) { } await installGate(inviteParam); if (inviteParam) { if (postRegisterTarget === 'cribbage') { try { let inv = await cribLoadInvite(inviteParam); if (inv) { forgetPendingInvite(inviteParam); currentInvite = inv; if (await cribJoinViaInvite(inv, u)) return; } } catch (e) { } } else { try { let res = await linkGameViaInvite(inviteParam, u); if (res && res.game) { forgetPendingInvite(inviteParam); currentInvite = res.invite || currentInvite; await enterGameDirect(res.game, 1); return; } } catch (e) { } } } if (pendingGameOnRegister) { let pg = pendingGameOnRegister; pendingGameOnRegister = null; try { let fg = await loadGame(pg.id); if (fg) pg = fg; let mi = (pg.players || []).findIndex(pl => String(pl.name || '').toLowerCase() === u.toLowerCase()); if (mi >= 0) { await enterGameDirect(pg, mi); return; } } catch (e) { } $('setup').hidden = true; showEntryPage(); initEntryPaws(); await populateEntryGames(); return; } if (postRegisterTarget === 'groupwords') { gwAfterRegister(); return; } if (postRegisterTarget === 'cribbage') { showCribbageLanding(); } else if (postRegisterTarget === 'foyer') { $('setup').hidden = true; showEntryPage(); initEntryPaws(); await populateEntryGames(); } else { renderBoxes(); } }
   async function handleBegin() { let owner = getOwner(); if (!owner) { renderBoxes(); return; } let opp = ($('nameB') ? $('nameB').value.trim() : ''); let g = fresh(owner, opp || "Opponent"); await saveGameToCF(g, { withSeat1: !!opp }); initBroadcastChannel(g.id); if (!opp) { let iid = randomId(); currentInvite = { id: iid, invitedBy: owner, invitedByOpponents: getOpponents(), gameId: g.id, mode: "game-invite", created: Date.now() }; try { await saveInviteToCF(currentInvite); } catch (e) { } addOpponent(opp); await showHeadsUp(iid, g, true); } else { currentInvite = null; if (opp) addOpponent(opp); await showHeadsUp(null, g, false); } }  
   async function handleCreateInvitation() { let owner = getOwner(); if (!owner) { renderBoxes(); return; } let id = randomId(); let placeholder = fresh(owner, "Opponent"); await saveGameToCF(placeholder); initBroadcastChannel(placeholder.id); let inv = { id: id, invitedBy: owner, invitedByOpponents: getOpponents(), gameId: placeholder.id, mode: "unregistered-invite", created: Date.now() }; await saveInviteToCF(inv); currentInvite = inv; await showHeadsUp(id, placeholder, true); }  
   // ===== WORDAGE MODULE: the screen exists only while a Wordage game is open =====
@@ -3279,7 +3319,7 @@ body {
   function showRegistration() { postRegisterTarget = 'foyer'; wordageRemove(); hideEntryPage(); $('box-login').hidden = true; $('setup').hidden = false; renderBoxes(); }
   // No one is in BearTracks unregistered or logged out: registered names get the log-in box, otherwise registration.
   function requireSignIn() { let us = []; try { us = JSON.parse(localStorage.getItem('bt_users') || '[]'); } catch (e) { } if (us.length) showLogin(); else showRegistration(); }
-  async function handleLogin() { let u = $('login-user').value.trim(), p = $('login-pass').value, us = []; try { us = JSON.parse(localStorage.getItem('bt_users') || '[]'); } catch (e) { } let name = us.find(x => String(x).toLowerCase() === u.toLowerCase()); let ok = false; if (name) { try { ok = await checkPassword(name, p); } catch (e) { } } if (!ok) { $('login-error').textContent = 'Username or password is not right.'; return; } localStorage.setItem('bt_owner', name); mirrorPassword(name); $('box-login').hidden = true; $('setup').hidden = true; showEntryPage(); initEntryPaws(); populateEntryGames(); }
+  async function handleLogin() { let u = $('login-user').value.trim(), p = $('login-pass').value, us = []; try { us = JSON.parse(localStorage.getItem('bt_users') || '[]'); } catch (e) { } let name = us.find(x => String(x).toLowerCase() === u.toLowerCase()); let ok = false; if (name) { try { ok = await checkPassword(name, p); } catch (e) { } } if (!ok) { $('login-error').textContent = 'Username or password is not right.'; return; } localStorage.setItem('bt_owner', name); mirrorPassword(name); await mkStore(name, p); $('box-login').hidden = true; $('setup').hidden = true; showEntryPage(); initEntryPaws(); populateEntryGames(); }
   $('btn-login').onclick = handleLogin; $('login-pass').onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); handleLogin(); } }; $('login-user').onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); $('login-pass').focus(); } };
   $('login-register').onclick = function (ev) { ev.preventDefault(); showRegistration(); };
   if ($('btn-logout')) $('btn-logout').onclick = function () { localStorage.removeItem("bt_owner"); $('setup').hidden = true; $('reg-user').value = ''; $('reg-pass').value = ''; $('reg-pass2').value = ''; $('nameB').value = ''; let sp = $('share-panel'); if (sp) sp.hidden = true; currentInvite = null; $('bt-headsup').hidden = true; pendingGameForHeadsUp = null; requireSignIn(); };  
@@ -3295,6 +3335,7 @@ body {
       let p1 = (state.players?.[1]?.name || "").toLowerCase();  
       let isPlaceholder = p1 === "" || p1.indexOf("opponent") === 0;  
       if (!isPlaceholder && !waiting) return;  
+      if (btLink.isOpen('comm') && Date.now() - wdHbAt < 12000) return;   // the socket has answered lately: its nudges bring every move and every arrival
       let g = await loadGame(state.id);  
       if (g) applyExternalState(g);  
     } catch (e) { }  
@@ -3343,7 +3384,7 @@ body {
   function hoClean(c) { return String(c || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); }
   function hoStandalone() { try { return navigator.standalone === true || (window.matchMedia && matchMedia('(display-mode: standalone)').matches); } catch (e) { return false; } }
   async function hoCreate(h) {
-    let r = await fetch(API + '/handoff', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Seat-Token': h.token }, body: JSON.stringify({ kind: h.kind, gameId: h.gid, pw: (h.name && pwRecord(h.name)) || '' }) });
+    let r = await fetch(API + '/handoff', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Seat-Token': h.token }, body: JSON.stringify({ kind: h.kind, gameId: h.gid, pw: (h.name && pwRecord(h.name)) || '', mk: (h.name && getMk(h.name)) || '' }) });
     if (!r.ok) throw new Error(String(r.status));
     return (await r.json()).code;
   }
@@ -3358,6 +3399,7 @@ body {
       localStorage.setItem('bt_owner', b.name);
       try { let us = JSON.parse(localStorage.getItem('bt_users') || '[]'); if (!us.some(function (x) { return String(x).toLowerCase() === b.name.toLowerCase(); })) { us.push(b.name); localStorage.setItem('bt_users', JSON.stringify(us)); } } catch (e) { }
       if (b.pw && /^[0-9a-f]+:[0-9a-f]+$/.test(b.pw) && !localStorage.getItem(pwKey(b.name))) localStorage.setItem(pwKey(b.name), b.pw);
+      if (b.mk && /^[0-9a-f]{64}$/.test(b.mk) && !getMk(b.name)) mkPut(b.name, b.mk);
     }
     return true;
   }
@@ -3512,7 +3554,48 @@ body {
       winner: null
     };
   }
-  async function cribLoadGame(id) { for (let k = 0; k < 3; k++) { try { let r = await fetch(API + "/games/" + id); if (r.ok) { let j = await r.json(); return j.game; } } catch (e) { } await new Promise(r => setTimeout(r, 400)); } return null; }
+  async function cribLoadGame(id) { for (let k = 0; k < 3; k++) { try { let r = await fetch(API + "/games/" + id); if (r.ok) { let j = await r.json(); await seatRecover(j.game); return cribUnsavedNewer(j.game); } } catch (e) { } await new Promise(r => setTimeout(r, 400)); } return null; }
+  // ---- held-back saves ----
+  // A claim made where the opponent cannot act until you press "next count" (the play after 31 / the last card, and each count in the show)
+  // is kept on this page and goes to the server with the next save that matters, or when the page is hidden or closed, or after 20 s.
+  // A copy is kept in this browser, so a closed tab or a dead connection loses nothing.
+  let cribDirty = false, cribDirtyId = null, cribFlushT = null;
+  function cribUnsavedKey(id) { return 'bt_crib_unsaved_' + id; }
+  function cribUnsavedClear(id) { try { localStorage.removeItem(cribUnsavedKey(id)); } catch (e) { } if (cribDirtyId === id) { cribDirty = false; cribDirtyId = null; clearTimeout(cribFlushT); } }
+  function cribUnsavedNewer(sg) {   // a copy kept here that is ahead of the server's wins, and goes up at once
+    try {
+      if (!sg || !sg.id) return sg; let raw = localStorage.getItem(cribUnsavedKey(sg.id)); if (!raw) return sg;
+      let u = JSON.parse(raw);
+      if (u && u.id === sg.id && typeof u.moveCount === 'number' && u.moveCount > (sg.moveCount || 0)) { cribDirty = true; cribDirtyId = sg.id; clearTimeout(cribFlushT); cribFlushT = setTimeout(function () { cribFlush(); }, 1500); return u; }
+      localStorage.removeItem(cribUnsavedKey(sg.id));
+    } catch (e) { }
+    return sg;
+  }
+  async function cribFreshState() { if (cribDirty && cribState && cribDirtyId === cribState.id) return; let server = await cribLoadGame(cribState.id); if (server) cribState = server; }
+  function cribHoldable() {
+    if (!cribState) return false;
+    if (cribState.phase === 'counting') return true;
+    let p = cribState.pegging; return cribState.phase === 'pegging' && !!(p && p.hold && p.hold.seat === cribGetLocalIdx());
+  }
+  async function cribSaveOrHold(g) {
+    if (g === cribState && cribHoldable()) {
+      cribDirty = true; cribDirtyId = g.id;
+      try { localStorage.setItem(cribUnsavedKey(g.id), JSON.stringify(g)); } catch (e) { }
+      clearTimeout(cribFlushT); cribFlushT = setTimeout(function () { cribFlush(); }, 20000);
+      try { cribRender(); } catch (e) { }
+      return g;
+    }
+    await cribSaveGame(g); cribBroadcastGame(g); return g;
+  }
+  async function cribFlush(keepalive) {
+    if (!cribDirty || !cribDirtyId) return;
+    let g = null;
+    if (cribState && cribState.id === cribDirtyId) g = cribState;
+    else { try { g = JSON.parse(localStorage.getItem(cribUnsavedKey(cribDirtyId))); } catch (e) { } }
+    if (!g) { cribDirty = false; cribDirtyId = null; return; }
+    await cribSaveGame(g, { keepalive: !!keepalive }); if (!cribDirty) cribBroadcastGame(g);
+    if (cribDirty) { clearTimeout(cribFlushT); cribFlushT = setTimeout(function () { cribFlush(); }, 10000); }   // not through yet: try again
+  }
   // Cribbage games are protected by seat keys like every other game: saves carry this tab's seat key, and the
   // key for a brand-new game is issued once, by the POST that creates it.
   function cribSeat(g) { let ts = getTabSeat(g.id); if (ts !== null) return ts; return (getSeatToken(g.id, 1) && !getSeatToken(g.id, 0)) ? 1 : 0; }
@@ -3520,9 +3603,10 @@ body {
     addGameId(g.id);
     if (g === cribState) { try { cribRender(); } catch (e) { } }   // show the move at once; the save follows
     try {
-      let r = await fetch(API + "/games/" + g.id, { method: "PUT", headers: seatHeaders(g.id, cribSeat(g), { "Content-Type": "application/json" }), body: JSON.stringify({ game: g }) });
+      let r = await fetch(API + "/games/" + g.id, { method: "PUT", keepalive: !!(opts && opts.keepalive), headers: seatHeaders(g.id, cribSeat(g), { "Content-Type": "application/json" }), body: JSON.stringify({ game: g }) });
+      cribUnsavedClear(g.id);   // the whole game reached the server (or was refused): nothing is held back any more
       if (r.status === 404) {
-        r = await fetch(API + "/games", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ game: g, withSeat1: !!(opts && opts.withSeat1) }) });
+        r = await fetch(API + "/games", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ game: g, withSeat1: !!(opts && opts.withSeat1), k0: (await seatKeyFor(getOwner(), g.id, 0)) || undefined }) });
         if (r.ok) { let j = await r.json(); setSeatToken(g.id, 0, j.seat0Token); if (j.seat1Token) setSeatToken(g.id, 1, j.seat1Token); }
       }
       if (r.status === 401) { try { cribMessage('This browser has no key for your seat in this game. Open your seat link to resume.'); } catch (e) { } return g; }
@@ -3551,7 +3635,7 @@ body {
   function cribBroadcastGame(g) { cribPing(); if (location.protocol === 'file:') return; try { if (cribGameChannel) cribGameChannel.postMessage({ game: g }); } catch (e) { } }
   // A silent "look again" nudge over the game's existing socket: after every save (and on arrival) each player's page fetches the state at once,
   // instead of waiting for the next poll. No game state travels over the socket.
-  let cribWsGid = null, cribPulling = false, cribLastPoll = 0;
+  let cribWsGid = null, cribPulling = false, cribLastPoll = 0, cribHbAt = 0;   // cribHbAt: when the room last answered; the socket counts as alive while this is recent
   const cribClientId = randomId();   // tells a page its own nudge when the room echoes it back
   function cribConnectWs(id) {
     if (location.protocol === 'file:' || !id) return;
@@ -3561,14 +3645,14 @@ body {
     cribWsGid = id;
     try {
       btLink.open('crib', { url: WS_URL + '?game=' + encodeURIComponent(id) + '&user=' + encodeURIComponent(getOwner() || 'anon'), protocols: ['bt.' + tok], retryMs: 3000, keep: function () { return !!(cribState && cribState.id === id); },
-        onopen: function (sock) { try { sock.send(JSON.stringify({ t: 'crib-refresh', id: id, c: cribClientId })); } catch (e) { } },   // announce arrival: the other page learns of a new opponent's name at once
-        onmessage: (ev) => { try { const m = JSON.parse(ev.data); if (m && m.type === 'chat') showChat(m); if (m && m.t === 'crib-refresh' && m.c !== cribClientId && cribState && cribState.id === id) cribPullNow(); } catch (e) { } } });
+        onopen: function (sock) { cribHbAt = Date.now(); try { sock.send(JSON.stringify({ t: 'crib-refresh', id: id, c: cribClientId, a: 1 })); } catch (e) { } cribPullNow(); cribFlush(); },   // announce arrival: the other page learns of a new opponent's name at once; and look once ourselves, since moves may have been missed while the socket was down
+        onmessage: (ev) => { cribHbAt = Date.now(); try { const m = JSON.parse(ev.data); if (m && m.type === 'chat') showChat(m); if (m && m.t === 'crib-refresh' && m.c !== cribClientId && cribState && cribState.id === id) { if (!m.a && typeof m.n === 'number' && cribState.moveCount > m.n) return; cribPullNow(m.n); } } catch (e) { } } });
     } catch (e) { }
   }
-  function cribPing() { try { if (cribState) btLink.send('crib', JSON.stringify({ t: 'crib-refresh', id: cribState.id, c: cribClientId })); } catch (e) { } }
-  async function cribPullNow() {
+  function cribPing() { try { if (cribState) btLink.send('crib', JSON.stringify({ t: 'crib-refresh', id: cribState.id, c: cribClientId, n: cribState.moveCount })); } catch (e) { } }
+  async function cribPullNow(minN) {   // minN: the move number the nudge announced; look again (briefly) if what comes back is older
     if (cribPulling || !cribState || !cribState.id) return; cribPulling = true;
-    try { let g = await cribLoadGame(cribState.id); if (g) cribApplyExternalState(g); } catch (e) { } finally { cribPulling = false; }
+    try { for (let k = 0; k < 4; k++) { let g = await cribLoadGame(cribState.id); if (g) cribApplyExternalState(g); if (typeof minN !== 'number' || !g || g.moveCount >= minN) break; await new Promise(r => setTimeout(r, 600)); } } catch (e) { } finally { cribPulling = false; }
   }
   function cribApplyExternalState(g) {
     if (!g || !g.id || !cribState || g.id !== cribState.id) return;
@@ -3577,20 +3661,15 @@ body {
   }
   // Backup poll. The socket nudge delivers moves at once; this only catches a nudge that never arrived.
   //  - hidden tab: nothing (coming back to the tab pulls at once, see below)
-  //  - socket healthy: nothing on your own move once the opponent has joined; while waiting, at most one fetch every 15 s
-  //  - no socket: every 1.5 s, as before
+  //  - socket answering (the room's reply to our heartbeat or any nudge within 12 s): nothing
+  //  - no socket, or one that has gone quiet: every 1.5 s, as before
   setInterval(async () => {
     try {
       if (!cribState || !cribState.id || cribState.phase === 'done') return;
       if (document.hidden) return;
       let li = cribGetLocalIdx();
       let myTurn = cribIsMyTurn(li);
-      if (btLink.isOpen('crib')) {
-        let p1 = ((cribState.players[1] && cribState.players[1].name) || '').toLowerCase();
-        let noOpponent = p1 === '' || p1.indexOf('opponent') === 0;
-        if (myTurn && !noOpponent) return;
-        if (Date.now() - cribLastPoll < 15000) return;
-      }
+      if (btLink.isOpen('crib') && Date.now() - cribHbAt < 12000) return;   // the socket has answered lately: its nudges bring every move
       cribLastPoll = Date.now();
       let g = await cribLoadGame(cribState.id);
       if (!g) return;
@@ -3602,8 +3681,21 @@ body {
 
   // Back in the tab: catch up at once (and reconnect the socket if it dropped while the tab was hidden).
   document.addEventListener('visibilitychange', function () {
-    try { if (!document.hidden && cribState && cribState.id) { if (!btLink.live('crib')) cribConnectWs(cribState.id); cribPullNow(); } } catch (e) { }
+    try {
+      if (document.hidden) { cribFlush(true); return; }
+      if (cribState && cribState.id) { if (!btLink.live('crib')) cribConnectWs(cribState.id); else { cribHbAt = 0; btLink.send('crib', JSON.stringify({ t: 'crib-hb' })); } cribPullNow(); }
+    } catch (e) { }
   });
+  window.addEventListener('pagehide', function () { try { cribFlush(true); } catch (e) { } });
+  window.addEventListener('online', function () { try { cribFlush(); if (cribState && cribState.id) { btLink.drop('crib'); cribConnectWs(cribState.id); cribPullNow(); } } catch (e) { } });
+  // Heartbeat: the room sends every message back to its sender, so an answer proves the socket is alive. No answer for 12 s: drop it, retry, and polling takes over meanwhile.
+  setInterval(function () {
+    try {
+      if (document.hidden || !cribState || !cribState.id || !btLink.isOpen('crib')) return;
+      if (Date.now() - cribHbAt > 12000) { btLink.drop('crib'); return; }
+      btLink.send('crib', JSON.stringify({ t: 'crib-hb' }));
+    } catch (e) { }
+  }, 5000);
 
   function cribIsMyTurn(li) {
     if (!cribState) return false;
@@ -3700,11 +3792,12 @@ body {
     if (inv.invitedBy && String(owner).toLowerCase() === String(inv.invitedBy).toLowerCase()) claimName = owner + ' (2)';
     for (let a = 0; a < 5; a++) {
       try {
-        let r = await fetch(API + "/invites/" + encodeURIComponent(inv.id) + "/claim", { method: "POST", headers: seatHeaders(inv.gameId, 1, { "Content-Type": "application/json" }), body: JSON.stringify({ name: claimName }) });
+        let dk = await seatKeyFor(getOwner(), inv.gameId, 1), hh = seatHeaders(inv.gameId, 1, { "Content-Type": "application/json" }); if (!hh['X-Seat-Token'] && dk) hh['X-Seat-Token'] = dk;
+        let r = await fetch(API + "/invites/" + encodeURIComponent(inv.id) + "/claim", { method: "POST", headers: hh, body: JSON.stringify({ name: claimName, key: dk || undefined }) });
         if (r.status === 409) { try { message('This invitation has already been used.'); } catch (e) { } return null; }
         if (!r.ok) { await new Promise(res => setTimeout(res, 400)); continue; }
         let j = await r.json(); if (!j || !j.game) return null;
-        if (j.token) setSeatToken(j.game.id, 1, j.token);
+        if (j.token) setSeatToken(j.game.id, 1, j.token); else if (dk && !getSeatToken(j.game.id, 1)) setSeatToken(j.game.id, 1, dk);
         return j.game;
       } catch (e) { await new Promise(res => setTimeout(res, 400)); }
     }
@@ -3737,7 +3830,7 @@ body {
   async function cribConfirmDiscard() {
     let li = cribGetLocalIdx();
     if (cribSelectedDiscard.size !== 2) { cribMessage('Pick exactly 2 cards to send to the crib.'); return; }
-    let server = await cribLoadGame(cribState.id); if (server) cribState = server;
+    await cribFreshState();
     if (cribState.discarded[li]) { cribMessage('Already sent your discards.'); return; }
     let idxArr = Array.from(cribSelectedDiscard).sort((a, b) => b - a);
     let hand = cribState.hands[li];
@@ -3770,7 +3863,7 @@ body {
   // The non-dealer cuts: k is how many cards were lifted (ten a second while the deck is held); the next card is turned up.
   async function cribDoCut(k) {
     const li = cribGetLocalIdx();
-    let server = await cribLoadGame(cribState.id); if (server) cribState = server;
+    await cribFreshState();
     const p = cribState.pegging;
     if (cribState.phase !== 'pegging' || !p || !p.needCut || li !== 1 - cribState.dealer) { cribRender(); return; }
     const deck = cribState.deckRemaining, n = deck.length;
@@ -3788,7 +3881,7 @@ body {
   }
   async function cribHeelsClaim() {
     const li = cribGetLocalIdx();
-    let server = await cribLoadGame(cribState.id); if (server) cribState = server;
+    await cribFreshState();
     const p = cribState.pegging, pend = p && p.pending;
     if (cribState.phase !== 'pegging' || !pend || !pend.heels || pend.seat !== li || pend.claimedPts > 0 || (p.played || []).length) { cribRender(); return; }
     pend.claimedPts = 2; pend.claimed = pend.claimed || {}; pend.claimed.heels = true;
@@ -3802,7 +3895,7 @@ body {
   // The pone awards the dealer the 2 for nibs the dealer has not claimed (before the first card is played).
   async function cribHeelsAward() {
     const li = cribGetLocalIdx();
-    let server = await cribLoadGame(cribState.id); if (server) cribState = server;
+    await cribFreshState();
     const p = cribState.pegging, pend = p && p.pending, d = cribState.dealer;
     if (cribState.phase !== 'pegging' || !pend || !pend.heels || li === d || pend.claimedPts > 0 || (p.played || []).length) { cribRender(); return; }
     pend.claimedPts = 2; pend.claimed = pend.claimed || {}; pend.claimed.heels = true;
@@ -3820,7 +3913,7 @@ body {
   }
   async function cribPlayCard(cardIdx) {
     let li = cribGetLocalIdx();
-    let server = await cribLoadGame(cribState.id); if (server) cribState = server;
+    await cribFreshState();
     let p = cribState.pegging;
     if (!p || p.turn !== li) { cribMessage('Not your turn.'); return; }
     if (p.needCut) { cribMessage('The deck has not been cut yet.'); return; }
@@ -3842,7 +3935,7 @@ body {
   }
   async function cribSayGo() {
     let li = cribGetLocalIdx();
-    let server = await cribLoadGame(cribState.id); if (server) cribState = server;
+    await cribFreshState();
     let p = cribState.pegging;
     if (!p || p.turn !== li || p.finished || p.needCut || p.hold) { cribMessage('Not your turn.'); return; }
     if (cribHasPlayable(li)) { cribMessage('You have a playable card.'); return; }
@@ -3919,7 +4012,7 @@ body {
   // The claim stays open - it can be raised - until the counter clicks "next count".
   async function cribShowClaim(total) {
     const li = cribGetLocalIdx();
-    let server = await cribLoadGame(cribState.id); if (server) cribState = server;
+    await cribFreshState();
     const S = cribShowCtx();
     if (!S || S.counter !== li || S.sh.fin) { cribPegNote('It is not your count.'); cribRender(); return false; }
     if (!(total >= 0)) { cribPegNote('Enter the count first.'); return false; }
@@ -3930,7 +4023,7 @@ body {
     cribScore(li, total - cur); S.sh.counted = true; S.sh.claimedPts = total; S.sh.report = null;
     cribState.history.push(cribState.players[li].name + ' counts ' + (S.isCrib ? 'the crib' : 'a hand') + ': ' + total);
     cribState.moveCount++;
-    await cribSaveGame(cribState); cribBroadcastGame(cribState);
+    await cribSaveOrHold(cribState);
     cribRender();
     return true;
   }
@@ -3947,7 +4040,7 @@ body {
   // "next count": ends the counter's claim (step 0 and 1) and passes the turn on; or, for the pone after the dealer's hand, hands the turn back to the dealer for the crib.
   async function cribShowNext() {
     const li = cribGetLocalIdx();
-    let server = await cribLoadGame(cribState.id); if (server) cribState = server;
+    await cribFreshState();
     const S = cribShowCtx();
     if (!S || S.active !== li || S.step >= 2 && !S.sh.fin) { cribRender(); return; }
     if (!S.sh.fin && !S.sh.counted) { cribPegNote('Claim your count first (a hand worth nothing is claimed with the blinking 0).'); cribRender(); return; }
@@ -3970,7 +4063,7 @@ body {
   // The crib's counter (the dealer) clicks "deal next hand" to finish the crib count and pass the deal; the new dealer (the pone), after any muggins on the crib, clicks it to deal.
   async function cribDealNext() {
     let li = cribGetLocalIdx();
-    let server = await cribLoadGame(cribState.id); if (server) cribState = server;
+    await cribFreshState();
     const S0 = cribShowCtx();
     if (cribState.phase !== 'counting' || !S0 || S0.step !== 2) { cribRender(); return; }
     const dealer = cribState.dealer;
@@ -4401,7 +4494,7 @@ body {
   function wordageResync() {
     try {
       if (!state || state.over || !$('entry-home').hidden) return;
-      btLink.reconnect('comm');
+      wdHbAt = 0; btLink.send('comm', JSON.stringify({ t: 'wd-hb' })); btLink.reconnect('comm');
       loadGame(state.id).then(function (g) { if (g) applyExternalState(g); }).catch(function () { });
     } catch (e) { }
   }
@@ -4593,12 +4686,22 @@ body {
     try { let u = new URL(location.href); u.searchParams.set('kind', 'groupwords'); u.searchParams.set('gw', gw.gid); u.searchParams.set('p', String(gw.seat)); u.searchParams.delete('invite'); history.replaceState(null, '', u.pathname + u.search + u.hash); } catch (e) { }
     if (first && first.me) { gw.st = first; gwRender(); }
     await gwRefresh(); gwConnect();
-    clearInterval(gw.poll); gw.poll = setInterval(function () { if (!document.hidden) gwRefresh(); }, 30000);
+    clearInterval(gw.poll); gw.poll = setInterval(function () { if (document.hidden) return; if (btLink.isOpen('gw') && Date.now() - gwHbAt < 25000) return; gwRefresh(); }, 30000);   // no look-again while the socket answers
     $('gw-inp').focus({ preventScroll: true });
   }
   function gwConnect() {
-    try { btLink.open('gw', { url: API.replace(/^http/, 'ws') + '/gw/' + encodeURIComponent(gw.gid) + '/ws', protocols: ['bt.' + gw.token], retryMs: 8000, keep: function () { return !$('gw-game').hidden; }, onmessage: function () { gwRefresh(); } }); } catch (e) { }
+    try { btLink.open('gw', { url: API.replace(/^http/, 'ws') + '/gw/' + encodeURIComponent(gw.gid) + '/ws', protocols: ['bt.' + gw.token], retryMs: 8000, keep: function () { return !$('gw-game').hidden; }, onopen: function () { gwHbAt = Date.now(); gwRefresh(); }, onmessage: function (ev) { gwHbAt = Date.now(); if (ev && ev.data === '{"t":"hb"}') return; gwRefresh(); } }); } catch (e) { }
   }
+  // The room answers a heartbeat on groupWords sockets too: no answer for 25 s and the socket is dropped and retried (the 30 s look-again covers meanwhile).
+  let gwHbAt = 0;
+  setInterval(function () {
+    try {
+      if (document.hidden || !gw.gid || !btLink.isOpen('gw')) return;
+      if (gwHbAt && Date.now() - gwHbAt > 25000) { btLink.drop('gw'); return; }
+      btLink.send('gw', '{"t":"hb"}');
+    } catch (e) { }
+  }, 10000);
+  document.addEventListener('visibilitychange', function () { try { if (!document.hidden && gw.gid && $('gw-game') && !$('gw-game').hidden) { gwHbAt = 0; btLink.send('gw', '{"t":"hb"}'); gwRefresh(); } } catch (e) { } });
   async function gwRefresh() {
     if (!gw.gid) return;
     let r = await gwApi('GET', 'status');
