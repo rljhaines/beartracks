@@ -668,7 +668,6 @@ body {
 .gw-bd { left: calc(var(--gwcw) * .065 + 4px); }
 .gw-bn { right: calc(var(--gwcw) * .065 + 4px); }
 .gw-bn .gw-link { color: inherit; }
-.gw-side .gw-lab { max-width: 90%; }
 #gw-convo .gw-back .gw-lab, .gw-card:not(.gw-side) .gw-back .gw-lab { position: absolute; left: 50%; top: calc(var(--gwcw) * 1.4 / 6); transform: translate(-50%, -50%); }
 .gw-back::before { content: ""; position: absolute; inset: calc(var(--gwcw) * .05); border: 2px solid #f6f0e4; border-radius: calc(var(--gwcw) * .03); opacity: .8; }
 .gw-lab { position: relative; background: #f6f0e4; padding: .4em .9em; border-radius: 99px; font-size: calc(var(--gwcw) * .09 * var(--gwkl, 1)); max-width: calc(var(--gwcw) * .674); overflow: hidden; text-overflow: ellipsis; white-space: pre; }
@@ -4819,12 +4818,22 @@ body {
     gwFit(el);
   }
   // Longer names get a smaller font (down to 45%) until they fit; ellipsis only as a last resort.
+  // The width of the "Bear Bot Tom" box as a share of its card: no name box (player names, Convo-Ursidae) is wider than that, and its text and height flex to fit.
+  function gwNameRatio() {
+    let t = $('gw-opt-tom'), tc = t && t.closest('.gw-card');
+    return (t && tc && tc.offsetWidth > 20 && t.offsetWidth > 20) ? t.offsetWidth / tc.offsetWidth : .674;
+  }
   function gwFit(el) {
+    if (!el) return;
     [['.gw-hd b', '--gwkb'], ['.gw-lab', '--gwkl']].forEach(function (p) {
       let n = el.querySelector(p[0]); if (!n) return;
-      if (p[0] === '.gw-lab') { let t = $('gw-opt-tom'), tc = t && t.closest('.gw-card'), r = (t && tc && tc.offsetWidth > 20 && t.offsetWidth > 20) ? t.offsetWidth / tc.offsetWidth : .674; n.style.maxWidth = (el.offsetWidth * r) + 'px'; }   // a name box stays as far from the card's edges as the Bear Bot Tom box
+      if (p[0] === '.gw-lab') { n.style.maxWidth = (el.offsetWidth * gwNameRatio()) + 'px'; }   // a name box gets no wider, relative to its card, than the Bear Bot Tom box
       el.style.removeProperty(p[1]);
-      let k = 1; while (n.scrollWidth > n.clientWidth + 1 && k > 0.45) { k -= 0.05; el.style.setProperty(p[1], k.toFixed(2)); }
+      let k = 1;
+      if (n.scrollWidth > n.clientWidth + 1) {   // scale straight to the width that fits, then nudge down until nothing is clipped
+        k = Math.max(0.45, n.clientWidth / n.scrollWidth); el.style.setProperty(p[1], k.toFixed(3));
+        for (let g = 0; g < 30 && n.scrollWidth > n.clientWidth + 1 && k > 0.45; g++) { k = Math.max(0.45, k - 0.005); el.style.setProperty(p[1], k.toFixed(3)); }
+      }
     });
   }
   function gwRender() {
@@ -4865,6 +4874,7 @@ body {
     a.innerHTML = '';
     for (let i = 0; i < n; i += best.c) { let row = document.createElement('div'); row.className = 'gw-row'; gw.items.slice(i, i + best.c).forEach(function (it) { row.appendChild(it.el); }); a.appendChild(row); }
     gw.items.forEach(function (it) { if (!it.empty && it.el) gwFit(it.el); });
+    gwFit($('gw-convo'));
   }
   // ---- the two side cards: Convo-Ursidae (chat on its flipside) and My Stats; face down at the start, always flippable ----
   function gwSideCard(id, title, body, back) {
@@ -4879,7 +4889,7 @@ body {
     $('gw-opt-st').onclick = function (e) { e.preventDefault(); e.stopPropagation(); gwTomHide(); gwFlipSide('gw-stats'); };
     $('gw-opt-tom').onclick = async function (e) { e.preventDefault(); e.stopPropagation(); if (await gwTomShow()) gwFlipSide('gw-stats'); };
     $('gw-cv-go').onclick = function (e) { e.preventDefault(); e.stopPropagation(); gwSendChat(); };
-    $('gw-cv-t').onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); gwSendChat(); } };
+    $('gw-cv-t').onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); gwSendChat(); } };    gwFit($('gw-convo'));
   }
   function gwSideReset() { let sd = $('gw-side'); if (!sd) return; ['gw-convo', 'gw-stats'].forEach(function (id) { let c = $(id); if (c) c.classList.add('down'); }); let l = $('gw-cv-log'); if (l) l.innerHTML = ''; let l2 = $('gw-st-log'); if (l2) l2.innerHTML = ''; let i = $('gw-cv-t'); if (i) i.value = ''; }
   // Bear Bot Tom: the stats card shows his solve of your day word instead of your stats; letters only once you have finished.
@@ -4939,7 +4949,7 @@ body {
     let down = cv.classList.contains('down');
     if (!down) gw.chatSeenAt = lastAt;
     let unread = down ? chat.filter(function (m) { return m.at > gw.chatSeenAt && m.n !== me.n; }).length : 0;
-    let lab = cv.querySelector('.gw-lab'), want = 'Convo-Ursidae' + (unread ? '  (' + unread + ')' : ''); if (lab.textContent !== want) lab.textContent = want;
+    let lab = cv.querySelector('.gw-lab'), want = 'Convo-Ursidae' + (unread ? '  (' + unread + ')' : ''); if (lab.textContent !== want) { lab.textContent = want; gwFit(cv); }
     let sl = $('gw-st-log'), S = gwStatsCompute(gwStatsLoad(me.name), st.today), h = '';
     h += '<div class="gw-ns"><div><b>' + S.played + '</b><span>Played</span></div><div><b>' + S.pct + '</b><span>Win %</span></div><div><b>' + S.cur + '</b><span>Current Streak</span></div><div><b>' + S.max + '</b><span>Max Streak</span></div></div>';
     h += '<div class="gw-nh">GUESS DISTRIBUTION</div><div class="gw-nd">';
