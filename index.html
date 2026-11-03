@@ -670,7 +670,7 @@ body {
 .gw-bn .gw-link { color: inherit; }
 #gw-convo .gw-back .gw-lab, .gw-card:not(.gw-side) .gw-back .gw-lab { position: absolute; left: 50%; top: calc(var(--gwcw) * 1.4 / 6); transform: translate(-50%, -50%); }
 .gw-back::before { content: ""; position: absolute; inset: calc(var(--gwcw) * .05); border: 2px solid #f6f0e4; border-radius: calc(var(--gwcw) * .03); opacity: .8; }
-.gw-lab { position: relative; background: #f6f0e4; padding: .4em .9em; border-radius: 99px; font-size: calc(var(--gwcw) * .09 * var(--gwkl, 1)); max-width: calc(var(--gwcw) * .674); overflow: hidden; text-overflow: ellipsis; white-space: pre; }
+.gw-lab { position: relative; background: #f6f0e4; padding: .4em .9em; border-radius: 99px; font-size: calc(var(--gwcw) * .09 * var(--gwkl, 1)); max-width: 80%; overflow: hidden; text-overflow: ellipsis; white-space: pre; }
 .gw-lab:empty { display: none; }
 #gw-inp { position: fixed; top: 0; left: 0; width: 1px; height: 1px; opacity: 0; font-size: 16px; border: 0; padding: 0; }
 #gw-notice { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 30; background: #f6f0e4; border: 1px solid #cfc4ad; border-radius: 10px; padding: 18px 22px; text-align: center; box-shadow: 0 6px 24px rgba(0,0,0,.3); color: #2b2620; max-width: 86vw; }
@@ -4823,6 +4823,9 @@ body {
     let t = $('gw-opt-tom'), tc = t && t.closest('.gw-card');
     return (t && tc && tc.offsetWidth > 20 && t.offsetWidth > 20) ? t.offsetWidth / tc.offsetWidth : .674;
   }
+  // Fit every name box again (after a layout, and when a web font arrives and the text widths change).
+  function gwRefit() { try { (gw.items || []).forEach(function (it) { if (!it.empty && it.el) gwFit(it.el); }); gwFit($('gw-convo')); } catch (e) { } }
+  try { if (document.fonts) { if (document.fonts.ready) document.fonts.ready.then(gwRefit); document.fonts.addEventListener('loadingdone', gwRefit); } } catch (e) { }
   function gwFit(el) {
     if (!el) return;
     [['.gw-hd b', '--gwkb'], ['.gw-lab', '--gwkl']].forEach(function (p) {
@@ -4873,8 +4876,7 @@ body {
     a.style.setProperty('--gwcw', w + 'px'); sd.style.setProperty('--gwcw', s + 'px');
     a.innerHTML = '';
     for (let i = 0; i < n; i += best.c) { let row = document.createElement('div'); row.className = 'gw-row'; gw.items.slice(i, i + best.c).forEach(function (it) { row.appendChild(it.el); }); a.appendChild(row); }
-    gw.items.forEach(function (it) { if (!it.empty && it.el) gwFit(it.el); });
-    gwFit($('gw-convo'));
+    gwRefit();
   }
   // ---- the two side cards: Convo-Ursidae (chat on its flipside) and My Stats; face down at the start, always flippable ----
   function gwSideCard(id, title, body, back) {
