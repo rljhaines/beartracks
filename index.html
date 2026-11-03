@@ -4824,13 +4824,25 @@ body {
     return (t && tc && tc.offsetWidth > 20 && t.offsetWidth > 20) ? t.offsetWidth / tc.offsetWidth : .674;
   }
   // Fit every name box again (after a layout, and when a web font arrives and the text widths change).
+  let gwRefitT = 0;
   function gwRefit() { try { (gw.items || []).forEach(function (it) { if (!it.empty && it.el) gwFit(it.el); }); gwFit($('gw-convo')); } catch (e) { } }
   try { if (document.fonts) { if (document.fonts.ready) document.fonts.ready.then(gwRefit); document.fonts.addEventListener('loadingdone', gwRefit); } } catch (e) { }
+  // A name box's natural width (font factor 1), measured on an unclipped copy, so the fit never depends on detecting overflow.
+  function gwNatural(n) {
+    let m = n.cloneNode(true); m.style.cssText = 'visibility:hidden;position:absolute;left:0;top:0;transform:none;max-width:none;'; m.style.setProperty('--gwkl', '1');
+    n.parentNode.appendChild(m); let w = m.getBoundingClientRect().width; n.parentNode.removeChild(m); return w;
+  }
   function gwFit(el) {
     if (!el) return;
     [['.gw-hd b', '--gwkb'], ['.gw-lab', '--gwkl']].forEach(function (p) {
       let n = el.querySelector(p[0]); if (!n) return;
-      if (p[0] === '.gw-lab') { n.style.maxWidth = (el.offsetWidth * gwNameRatio()) + 'px'; }   // a name box gets no wider, relative to its card, than the Bear Bot Tom box
+      if (p[0] === '.gw-lab') {   // a name box gets no wider, relative to its card, than the Bear Bot Tom box; its text and height shrink together to fit
+        let cw = el.getBoundingClientRect().width; if (!(cw > 20)) return;
+        let lim = cw * gwNameRatio(), w1 = gwNatural(n);
+        n.style.maxWidth = lim + 'px';
+        if (w1 > lim + .5) el.style.setProperty(p[1], Math.max(0.45, lim / w1 - 0.003).toFixed(4)); else el.style.removeProperty(p[1]);
+        return;
+      }
       el.style.removeProperty(p[1]);
       let k = 1;
       if (n.scrollWidth > n.clientWidth + 1) {   // scale straight to the width that fits, then nudge down until nothing is clipped
@@ -4876,7 +4888,7 @@ body {
     a.style.setProperty('--gwcw', w + 'px'); sd.style.setProperty('--gwcw', s + 'px');
     a.innerHTML = '';
     for (let i = 0; i < n; i += best.c) { let row = document.createElement('div'); row.className = 'gw-row'; gw.items.slice(i, i + best.c).forEach(function (it) { row.appendChild(it.el); }); a.appendChild(row); }
-    gwRefit();
+    gwRefit(); clearTimeout(gwRefitT); gwRefitT = setTimeout(gwRefit, 400); setTimeout(gwRefit, 1500);
   }
   // ---- the two side cards: Convo-Ursidae (chat on its flipside) and My Stats; face down at the start, always flippable ----
   function gwSideCard(id, title, body, back) {
