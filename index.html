@@ -640,7 +640,8 @@ body {
 .gw-nd > div > em.hi { background: #5a8f5a; }
 .gw-opts { position: absolute; inset: 0; display: grid; grid-template-rows: 1fr 1fr 1fr; justify-items: center; align-items: center; }
 .gw-opts #gw-opt-st { grid-row: 1; }
-.gw-opts #gw-opt-tom { grid-row: 3; }
+.gw-opts #gw-opt-tom { grid-row: 3; position: relative; box-sizing: border-box; text-align: center; }
+.gw-ts { position: absolute; top: 50%; transform: translateY(-50%); right: 0; font-weight: 400; }
 .gw-opts .gw-lab { text-decoration: none; color: inherit; cursor: pointer; }
 .gw-tom { display: flex; flex-direction: column; align-items: center; gap: calc(var(--gwcw) * .03); }
 .gw-tom .gw-rows { --t: calc(var(--gwcw) * .12); --g: calc(var(--gwcw) * .02); }
@@ -689,16 +690,11 @@ body {
 #gw-notice button { min-height: 44px; min-width: 44px; }
 #gwp { display: none; }
 #gwp, #gwp * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
-.gwp-kb button.u { opacity: .3; }
+.gwp-kb button.k0 { background: #8d867a; color: #fff; }
+.gwp-kb button.k1 { background: #d6a33a; color: #fff; }
+.gwp-kb button.k2 { background: #5a8f5a; color: #fff; }
 .gwp-mid { display: flex; align-items: center; gap: 8px; }
 .gwp-mid i { font-style: normal; font-size: 11px; }
-#gwp-code { position: fixed; inset: 0; z-index: 99985; background: #f6f0e4; color: #1f3b32; overflow: auto; padding: max(24px, env(safe-area-inset-top)) 24px 24px; font-family: Georgia, serif; }
-#gwp-code h1 { font-size: 1.4em; margin: 6vh 0 14px; }
-#gwp-code input { display: block; width: 100%; box-sizing: border-box; min-height: 48px; font: 600 22px ui-monospace, Menlo, monospace; letter-spacing: .12em; text-transform: uppercase; border: 1px solid #b7bcad; border-radius: 8px; padding: 8px 12px; background: #fffdf8; color: inherit; }
-#gwp-code button { min-height: 48px; margin-top: 12px; padding: 0 22px; border: 0; border-radius: 9px; background: #28604b; color: #fff; font: 800 16px sans-serif; }
-#gwp-code a { display: inline-block; padding: 14px 0; color: inherit; }
-#gwp-code p { min-height: 1.4em; font-weight: 600; }
-.bt-code { font: 700 28px ui-monospace, Menlo, monospace; letter-spacing: .14em; margin: 4px 0 14px; user-select: all; }
 .bt-phone #gw-table, .bt-phone #gw-game .foyer-link { display: none; }
 .bt-phone #gwp { display: block; position: relative; flex: 1; min-height: 0; padding: 8px; box-sizing: border-box; --gwcw: 300px; }
 .bt-phone #gw-msg { z-index: 9; top: calc(env(safe-area-inset-top, 0px) + 6px); }
@@ -726,8 +722,10 @@ body {
 .gwp-top { position: relative; z-index: 1; flex: none; display: flex; justify-content: space-between; align-items: center; padding: calc(var(--gwcw) * .06) calc(var(--gwcw) * .1) 0; color: #f6f0e4; font-style: italic; font-size: 16px; }
 .gwp-top a { color: inherit; text-decoration: underline; min-height: 44px; display: flex; align-items: center; padding: 0 4px; }
 .gwp-rows { position: relative; z-index: 1; flex: 1; min-height: 0; display: flex; flex-direction: column; padding-bottom: calc(var(--gwcw) * .08); }
-.gwp-row { flex: 1; min-height: 44px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-.gwp-nb { width: 66%; height: 44px; box-sizing: border-box; background: #f6f0e4; color: #2b2620; border-radius: 99px; display: flex; align-items: center; justify-content: center; overflow: hidden; white-space: pre; padding: 0 10px; }
+.gwp-row { position: relative; flex: 1; min-height: 44px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.gwp-sc { position: absolute; top: 50%; transform: translateY(-50%); right: 22px; font-weight: 400; font-size: 17px; line-height: 1; white-space: nowrap; }
+.gwp-sc sup { font-size: .7em; line-height: 0; vertical-align: baseline; position: relative; top: -.5em; }
+.gwp-nb { position: relative; width: 66%; height: 44px; box-sizing: border-box; background: #f6f0e4; color: #2b2620; border-radius: 99px; display: flex; align-items: center; justify-content: center; overflow: hidden; white-space: pre; padding: 0 10px; }
 #gwp-big { position: fixed; inset: 0; z-index: 99980; background: #f6f0e4; color: #1f3b32; display: flex; align-items: center; justify-content: center; text-align: center; padding: 24px; font-size: 20px; font-family: Georgia, serif; }
 #gw-inp { position: fixed; top: 0; left: 0; width: 1px; height: 1px; opacity: 0; font-size: 16px; border: 0; padding: 0; }
 #gw-notice { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 30; background: #f6f0e4; border: 1px solid #cfc4ad; border-radius: 10px; padding: 18px 22px; text-align: center; box-shadow: 0 6px 24px rgba(0,0,0,.3); color: #2b2620; max-width: 86vw; }
@@ -3525,9 +3523,8 @@ body {
       box.appendChild(mk('h1', 'Use this game in the BearTracks app', 'font-size:1.5em;margin:0 0 12px'));
       let ol = mk('ol', '', 'line-height:1.55;padding-left:1.3em;margin:0 0 12px');
       let li1 = mk('li', IOSP ? 'Tap Share ' : 'In the top-right of Safari’s toolbar, click Share '); li1.appendChild(btIcon('share')); li1.appendChild(document.createTextNode(IOSP ? ', then Add to Home Screen.' : ', then choose Add to Dock.')); ol.appendChild(li1);
-      (IOSP ? ['Open BearTracks from your Home Screen and enter the code below. The app registers you as ' + ((h && h.name) || 'this player') + ' and opens the game.'] : ['If the blue Open button does not appear beside the address, refresh this tab (⌘R).', 'Click Open. The app registers you as ' + ((h && h.name) || 'this player') + ' and opens the game.']).forEach(function (t) { ol.appendChild(mk('li', t)); });
+      (IOSP ? ['Open BearTracks from your Home Screen. The app registers you as ' + ((h && h.name) || 'this player') + ' and opens the game.'] : ['If the blue Open button does not appear beside the address, refresh this tab (⌘R).', 'Click Open. The app registers you as ' + ((h && h.name) || 'this player') + ' and opens the game.']).forEach(function (t) { ol.appendChild(mk('li', t)); });
       box.appendChild(ol);
-      if (IOSP && code) { box.appendChild(mk('p', 'Enter this code in the app:', 'margin:0')); box.appendChild(mk('div', code.slice(0, 4) + ' ' + code.slice(4), '')).className = 'bt-code'; }
       box.appendChild(mk('p', note || '', 'font-weight:600;min-height:1.4em;margin:0 0 12px'));
       let row = mk('div', '', 'display:flex;gap:10px');
       if (canRetry) { let b = mk('button', 'New code'); b.onclick = function () { open(null); }; row.appendChild(b); }
@@ -4899,7 +4896,7 @@ body {
   }
   // Fit every name box again (after a layout, and when a web font arrives and the text widths change).
   let gwRefitT = 0;
-  function gwRefit() { try { (gw.items || []).forEach(function (it) { if (!it.empty && it.el) gwFit(it.el); }); gwFit($('gw-convo')); } catch (e) { } }
+  function gwRefit() { try { gwTomFit(); (gw.items || []).forEach(function (it) { if (!it.empty && it.el) gwFit(it.el); }); gwFit($('gw-convo')); } catch (e) { } }
   try { if (document.fonts) { if (document.fonts.ready) document.fonts.ready.then(gwRefit); document.fonts.addEventListener('loadingdone', gwRefit); } } catch (e) { }
   // A name box's natural width (font factor 1), measured on an unclipped copy, so the fit never depends on detecting overflow.
   function gwNatural(n) {
@@ -5078,12 +5075,25 @@ body {
     if (r.s === 200 && r.j && r.j.rows) { gw.tomScore = gwTomScoreOf(r.j); gwRender(); }
   }
   function gwTomLabel() {
-    let o = $('gw-opt-tom'); if (!o) return; let want = 'Bear Bot Tom' + (gw.tomScore != null ? '   ' + gw.tomScore : '');
-    if (o.textContent !== want || gw.tomCw !== (o.closest('.gw-card') || {}).offsetWidth) {
-      o.textContent = want; o.style.removeProperty('font-size');
-      let cw = o.closest('.gw-card').offsetWidth; gw.tomCw = cw;
-      if (cw > 20) { let w1 = gwNatural(o), lim = cw * .8; if (w1 > lim) o.style.setProperty('font-size', 'calc(var(--gwcw) * .09 * ' + (lim / w1 - .003).toFixed(4) + ')'); }
-      gwRefit(); gwFit($('gw-stats'));
+    let o = $('gw-opt-tom'); if (!o) return;
+    let html = '<span class="gw-tn">Bear Bot Tom</span>' + (gw.tomScore != null ? '<b class="gw-ts">' + gw.tomScore + '</b>' : '');
+    if (o.getAttribute('data-h') !== html) { o.setAttribute('data-h', html); o.innerHTML = html; }
+    gwRefit(); gwFit($('gw-stats'));
+  }
+  // The Bear Bot Tom box keeps the width of the box for "Bear Bot Tom" alone. With a score, the score sits inside it, right-justified at the vertical line where the right-hand curve begins, and the text size (and with it the box height) shrinks until name and score do not meet.
+  function gwTomFit() {
+    let o = $('gw-opt-tom'); if (!o) return; let card = o.closest('.gw-card'), cw = card && card.offsetWidth; if (!(cw > 20)) return;
+    let tn = o.querySelector('.gw-tn'), ts = o.querySelector('.gw-ts'); if (!tn) return;
+    o.style.removeProperty('width'); o.style.removeProperty('font-size');
+    let m = document.createElement('a'); m.className = o.className; m.textContent = 'Bear Bot Tom'; m.style.cssText = 'visibility:hidden;position:absolute;left:0;top:0;transform:none;max-width:none;';
+    o.parentNode.appendChild(m); let w1 = m.offsetWidth; o.parentNode.removeChild(m);
+    let W = Math.min(w1, cw * .8); o.style.width = W + 'px';
+    for (let k = 1; k > .44; k -= .02) {
+      o.style.setProperty('font-size', 'calc(var(--gwcw) * .09 * ' + k.toFixed(3) + ')');
+      let cs = getComputedStyle(o), em = parseFloat(cs.fontSize) || 16, pad = parseFloat(cs.paddingLeft) || 0;
+      if (ts) ts.style.right = (o.offsetHeight / 2) + 'px';
+      let fits = tn.offsetWidth <= o.clientWidth - 2 * pad + .5 && (!ts || tn.offsetLeft + tn.offsetWidth + .3 * em <= ts.offsetLeft);
+      if (fits) break;
     }
   }
   function gwpLabel(it) { return it.lapsed ? (it.noshow ? '∞' : 'dnf') : (it.score != null ? String(it.score) : ''); }
@@ -5093,21 +5103,25 @@ body {
     return ord.filter(function (s) { return s.n !== st.me.n; }).slice(0, 5);
   }
   function gwpBackHtml(st) {
-    let h = '<div class="gwp-top"><a href="#" data-a="newgroup">new group</a><span class="gwp-mid"><a href="#" data-a="groups">groups</a><i>\u2190</i><span>my</span><i>\u2192</i><a href="#" data-a="card">card</a></span></div><div class="gwp-rows">';
+    let prev = function (day) { return !!(day && st.today && day < st.today); };
+    let sc = function (lb, day) { return lb === '' ? '' : '<b class="gwp-sc">' + gwpEsc(lb) + (prev(day) ? '<sup>*</sup>' : '') + '</b>'; };
+    let pill = function (name, lb, day) { return '<div class="gwp-nb"><span class="gwp-n">' + gwpEsc(name) + '</span>' + sc(lb, day) + '</div>'; };
+    let h = '<div class="gwp-top"><a href="#" data-a="newgroup">new group</a><a href="#" data-a="groups">my groups</a></div><div class="gwp-rows">';
+    h += '<div class="gwp-row" data-a="card">' + pill('my card', '') + '</div>';
     let o = gwpOthers(st);
     for (let k = 0; k < 5; k++) {
       let it = o[k];
       if (!it) { h += '<div class="gwp-row"></div>'; continue; }
-      let lb = gwpLabel(it);
-      h += '<div class="gwp-row" data-n="' + it.n + '"><div class="gwp-nb"><span>' + gwpEsc(it.name + (lb ? '   ' + lb : '')) + '</span></div></div>';
+      h += '<div class="gwp-row" data-n="' + it.n + '">' + pill(it.name, gwpLabel(it), it.day) + '</div>';
     }
-    h += '<div class="gwp-row" data-a="tom"><div class="gwp-nb"><span>' + gwpEsc('Bear Bot Tom' + (gw.tomScore != null ? '   ' + gw.tomScore : '')) + '</span></div></div><div class="gwp-row" data-a="stats"><div class="gwp-nb"><span>My Stats</span></div></div></div>';
+    h += '<div class="gwp-row" data-a="tom">' + pill('Bear Bot Tom', gw.tomScore != null ? String(gw.tomScore) : '', st.me.day) + '</div>';
+    h += '<div class="gwp-row" data-a="stats">' + pill('My Stats', '') + '</div></div>';
     return h;
   }
   function gwpKbHtml(rows) {
-    let used = {}; (rows || []).forEach(function (x) { if (x && x.g) for (let q = 0; q < x.g.length; q++) used[x.g[q]] = 1; });
+    let used = {}; (rows || []).forEach(function (x) { if (x && x.g && x.c) for (let q = 0; q < x.g.length; q++) used[x.g[q]] = Math.max(used[x.g[q]] === undefined ? -1 : used[x.g[q]], x.c[q]); });   // each letter takes its best color so far, the same colors as the tiles
     return '<div class="gwp-kb">' + GW_KB.map(function (r, i) {
-      let k = r.split('').map(function (L) { return '<button type="button" data-k="' + L + '"' + (used[L] ? ' class="u"' : '') + '>' + L + '</button>'; }).join('');
+      let k = r.split('').map(function (L) { return '<button type="button" data-k="' + L + '"' + (used[L] !== undefined ? ' class="k' + used[L] + '"' : '') + '>' + L + '</button>'; }).join('');
       if (i === 2) k = '<button type="button" class="w" data-k="ENTER">ENTER</button>' + k + '<button type="button" class="w" data-k="BACK" aria-label="Backspace">⌫</button>';
       return '<div class="gwp-kr">' + k + '</div>';
     }).join('') + '</div>';
@@ -5159,8 +5173,10 @@ body {
     let g = $('gwp-face').querySelector('.gwp-gw');
     if (g) { let gap = 5, W = g.clientWidth, H = g.clientHeight, t = Math.floor(Math.min((W - 4 * gap) / 5, (H - 5 * gap) / 6, 66)); if (t > 10) g.style.setProperty('--t', t + 'px'); }
     Array.prototype.forEach.call($('gwp-back').querySelectorAll('.gwp-nb'), function (nb) {
-      let sp = nb.firstChild, fs = 22; sp.style.fontSize = fs + 'px';
-      while (fs > 9 && sp.offsetWidth > nb.clientWidth - 20) { fs--; sp.style.fontSize = fs + 'px'; }
+      let sp = nb.querySelector('.gwp-n'), sc = nb.querySelector('.gwp-sc'), fs = 22, W = nb.clientWidth, r = nb.offsetHeight / 2;
+      let room = sc ? 2 * (W / 2 - r - sc.offsetWidth - 6) : W - 20;   // the name is centered; with a score it must stop short of the score
+      sp.style.fontSize = fs + 'px';
+      while (fs > 9 && sp.offsetWidth > room) { fs--; sp.style.fontSize = fs + 'px'; }
     });
   }
   async function gwpGroups() {
@@ -5216,19 +5232,6 @@ body {
     let gid = ids.indexOf(last) >= 0 ? last : ids[ids.length - 1]; if (!gid) return false;
     let seats = gwSeatsOf(gid), sk = Object.keys(seats), mine = sk.find(function (n) { return (seats[n].name || '').toLowerCase() === owner; }); if (mine === undefined) mine = sk[0]; if (mine === undefined) return false;
     hideEntryPage(); await gwUse(gid, +mine, seats[mine].token); return true;
-  }
-  // iPhone: the installed app cannot be opened with the hand-off code in its address, so it asks for the code the browser shows.
-  function gwpCodeEntry() {
-    let d = document.createElement('div'); d.id = 'gwp-code';
-    d.innerHTML = '<h1>Enter the code shown in your browser</h1><input id="gwp-code-i" maxlength="12" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" aria-label="Code"><button type="button" id="gwp-code-go">Continue</button><p id="gwp-code-m"></p><a href="#" id="gwp-code-reg">Register here instead</a>';
-    document.body.appendChild(d);
-    let go = async function () {
-      let v = $('gwp-code-i').value; if (!v.trim()) return; $('gwp-code-m').textContent = '';
-      let err = ''; try { err = await hoEnter(v); } catch (e) { err = 'The hand-off failed.'; }
-      if (err) $('gwp-code-m').textContent = err; else d.remove();
-    };
-    $('gwp-code-go').onclick = go; $('gwp-code-i').onkeydown = function (e) { if (e.key === 'Enter') go(); };
-    $('gwp-code-reg').onclick = function (e) { e.preventDefault(); d.remove(); requireSignIn(); };
   }
   function gwpBigScreen() {
     let d = document.createElement('div'); d.id = 'gwp-big'; d.textContent = 'Wordage and Cribbage are played on a larger screen.'; document.body.appendChild(d);
@@ -5311,7 +5314,7 @@ body {
           history.replaceState(null, '', url.pathname + url.search + location.hash);  
         } catch (e) { }  
       } else { pendingGameOnRegister = state; try { addGameId(state.id); } catch (e) { } $('setup').hidden = false; renderBoxes(); }  
-    } else if (!iid && !gid && !hasState) { if (!getOwner()) { if (GW_PHONE && hoStandalone()) gwpCodeEntry(); else requireSignIn(); } else if (GW_PHONE) { if (!(await gwpLaunch())) entryGroupWords(); } else { showEntryPage(); initEntryPaws(); await populateEntryGames(); } }  
+    } else if (!iid && !gid && !hasState) { if (!getOwner()) requireSignIn(); else if (GW_PHONE) { if (!(await gwpLaunch())) entryGroupWords(); } else { showEntryPage(); initEntryPaws(); await populateEntryGames(); } }  
    
     if (gateFresh) gateFresh = false; else lockGate();  
   })();  
