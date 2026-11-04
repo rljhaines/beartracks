@@ -640,7 +640,7 @@ body {
 .gw-nd > div > em.hi { background: #5a8f5a; }
 .gw-opts { position: absolute; inset: 0; display: grid; grid-template-rows: 1fr 1fr 1fr; justify-items: center; align-items: center; }
 .gw-opts #gw-opt-st { grid-row: 1; }
-.gw-opts #gw-opt-tom { grid-row: 3; position: relative; box-sizing: border-box; text-align: center; }
+.gw-opts #gw-opt-tom { grid-row: 3; position: relative; box-sizing: border-box; text-align: left; }
 .gw-ts { position: absolute; top: 50%; transform: translateY(-50%); right: 0; font-weight: 400; }
 .gw-opts .gw-lab { text-decoration: none; color: inherit; cursor: pointer; }
 .gw-tom { display: flex; flex-direction: column; align-items: center; gap: calc(var(--gwcw) * .03); }
@@ -1072,7 +1072,7 @@ body {
       try { if (app) sessionStorage.setItem('bt_app', '1'); else if (sessionStorage.getItem('bt_app') === '1') app = true; } catch (e) { } let secure = location.protocol === 'https:' || location.hostname === 'localhost'; return chromium && !app && secure; } catch (e) { return false; } })();
   // Small drawings of the browser's own controls, so the steps can show what to look for.
   function btIcon(kind) {
-    let d = { share: '<path d="M12 3v12M8 7l4-4 4 4M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/>', menu: '<circle cx="12" cy="5" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="19" r="1.6" fill="currentColor"/>', install: '<rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M12 7v6M9.5 10.5L12 13l2.5-2.5M8 20h8"/>', open: '<path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>' }[kind] || '';
+    let d = { share: '<path d="M12 3v12M8 7l4-4 4 4M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/>', menu: '<circle cx="12" cy="5" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="19" r="1.6" fill="currentColor"/>', install: '<rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M12 7v6M9.5 10.5L12 13l2.5-2.5M8 20h8"/>', open: '<path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>', more: '<path d="M4 7h16M4 12h16M4 17h11"/>', addhome: '<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M12 8v8M8 12h8"/>' }[kind] || '';
     let w = document.createElement('span'); w.style.cssText = 'display:inline-block;vertical-align:-5px;margin:0 2px;padding:2px 4px;border:1px solid #c9b98f;border-radius:6px;background:#fff';
     w.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + d + '</svg>'; w.title = kind; return w;
   }
@@ -3266,7 +3266,7 @@ body {
         let ua = navigator.userAgent, br = /CriOS/.test(ua) ? 'Chrome' : /FxiOS/.test(ua) ? 'Firefox' : /EdgiOS/.test(ua) ? 'Edge' : /OPiOS/.test(ua) ? 'Opera' : 'Safari';
         $('install-line').textContent = 'Add BearTracks to your Home Screen';
         $('install-msg').style.color = 'inherit';
-        $('install-msg').textContent = 'In ' + br + ', tap Share, then Add to Home Screen. Then continue here.';
+        let im = $('install-msg'); im.textContent = ''; im.appendChild(document.createTextNode('In ' + br + ', tap ')); im.appendChild(btIcon('more')); im.appendChild(document.createTextNode(', then ')); im.appendChild(btIcon('share')); im.appendChild(document.createTextNode(' Share, then ')); im.appendChild(btIcon('addhome')); im.appendChild(document.createTextNode(' Add to Home Screen. Then continue here.'));
         let go = document.createElement('button'); go.type = 'button'; go.textContent = 'Continue'; $('install-msg').appendChild(document.createElement('br')); $('install-msg').appendChild(go);
         $('box-register').hidden = true; $('box-install').hidden = false;
         await new Promise(function (resolve) { go.onclick = resolve; });
@@ -3476,6 +3476,10 @@ body {
   // (btHand itself is declared with the early helpers.)
   function hoClean(c) { return String(c || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); }
   function hoStandalone() { try { return navigator.standalone === true || (window.matchMedia && matchMedia('(display-mode: standalone)').matches); } catch (e) { return false; } }
+  // iPhone: Safari copies a site's cookies into the Home Screen app when it is added, so the tab leaves the hand-off code in a cookie and the app picks it up on its first launch.
+  function hoCookieSet(code) { try { document.cookie = 'bt_ho=' + encodeURIComponent(code) + '; Max-Age=86400; Path=/; SameSite=Lax' + (location.protocol === 'https:' ? '; Secure' : ''); } catch (e) { } }
+  function hoCookieGet() { try { let m = /(?:^|;\s*)bt_ho=([^;]*)/.exec(document.cookie || ''); return m ? decodeURIComponent(m[1]) : ''; } catch (e) { return ''; } }
+  function hoCookieClear() { try { document.cookie = 'bt_ho=; Max-Age=0; Path=/; SameSite=Lax' + (location.protocol === 'https:' ? '; Secure' : ''); } catch (e) { } }
   async function hoCreate(h) {
     let r = await fetch(API + '/handoff', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Seat-Token': h.token }, body: JSON.stringify({ kind: h.kind, gameId: h.gid, pw: (h.name && pwRecord(h.name)) || '', mk: (h.name && getMk(h.name)) || '' }) });
     if (!r.ok) throw new Error(String(r.status));
@@ -3522,7 +3526,10 @@ body {
       let box = mk('div', '', 'max-width:520px;width:100%;margin-top:6vh'); ov.appendChild(box);
       box.appendChild(mk('h1', 'Use this game in the BearTracks app', 'font-size:1.5em;margin:0 0 12px'));
       let ol = mk('ol', '', 'line-height:1.55;padding-left:1.3em;margin:0 0 12px');
-      let li1 = mk('li', IOSP ? 'Tap Share ' : 'In the top-right of Safari’s toolbar, click Share '); li1.appendChild(btIcon('share')); li1.appendChild(document.createTextNode(IOSP ? ', then Add to Home Screen.' : ', then choose Add to Dock.')); ol.appendChild(li1);
+      let li1 = mk('li', '');
+      if (IOSP) { li1.appendChild(document.createTextNode('Tap ')); li1.appendChild(btIcon('more')); li1.appendChild(document.createTextNode(', then ')); li1.appendChild(btIcon('share')); li1.appendChild(document.createTextNode(' Share, then ')); li1.appendChild(btIcon('addhome')); li1.appendChild(document.createTextNode(' Add to Home Screen.')); }
+      else { li1.appendChild(document.createTextNode('In the top-right of Safari’s toolbar, click Share ')); li1.appendChild(btIcon('share')); li1.appendChild(document.createTextNode(', then choose Add to Dock.')); }
+      ol.appendChild(li1);
       (IOSP ? ['Open BearTracks from your Home Screen. The app registers you as ' + ((h && h.name) || 'this player') + ' and opens the game.'] : ['If the blue Open button does not appear beside the address, refresh this tab (⌘R).', 'Click Open. The app registers you as ' + ((h && h.name) || 'this player') + ' and opens the game.']).forEach(function (t) { ol.appendChild(mk('li', t)); });
       box.appendChild(ol);
       box.appendChild(mk('p', note || '', 'font-weight:600;min-height:1.4em;margin:0 0 12px'));
@@ -3534,16 +3541,16 @@ body {
       stop(); let t0 = Date.now();
       poll = setInterval(async function () {
         let st = await hoStatus(code);
-        if (st === 'claimed') { stop(); show(h, code, IOSP ? 'The app is connected. Open BearTracks from your Home Screen to play.' : 'The app is connected. Open BearTracks from the Dock to play.', false); }
-        else if (st === 'expired' || Date.now() - t0 > 86430000) { stop(); setUrl(null); show(h, null, 'That code has expired.', true); }
+        if (st === 'claimed') { stop(); hoCookieClear(); show(h, code, IOSP ? 'The app is connected. Open BearTracks from your Home Screen to play.' : 'The app is connected. Open BearTracks from the Dock to play.', false); }
+        else if (st === 'expired' || Date.now() - t0 > 86430000) { stop(); hoCookieClear(); setUrl(null); show(h, null, 'That code has expired.', true); }
       }, 2500);
     }
     async function open(resumeCode) {
       let h = btHand.here(); if (!h) return;
-      if (resumeCode) { cur = resumeCode; show(h, cur, 'Waiting for the app…', false); watch(h, cur); return; }
+      if (resumeCode) { cur = resumeCode; if (IOSP) hoCookieSet(cur); show(h, cur, 'Waiting for the app…', false); watch(h, cur); return; }
       show(h, null, 'Making a code…', false);
       try { cur = await hoCreate(h); } catch (e) { show(h, null, 'A code could not be made (' + (e && e.message) + '). This browser may not hold the key for this seat.', true); return; }
-      setUrl(cur); show(h, cur, IOSP ? 'Waiting for the app…' : 'Waiting for the app… BearTracks is played in the app. Use a browser such as Firefox or Opera for a browser game.', false); watch(h, cur);
+      setUrl(cur); if (IOSP) hoCookieSet(cur); show(h, cur, IOSP ? 'Waiting for the app…' : 'Waiting for the app… BearTracks is played in the app. Use a browser such as Firefox or Opera for a browser game.', false); watch(h, cur);
     }
     setInterval(function () {
       try {
@@ -5233,6 +5240,13 @@ body {
     let seats = gwSeatsOf(gid), sk = Object.keys(seats), mine = sk.find(function (n) { return (seats[n].name || '').toLowerCase() === owner; }); if (mine === undefined) mine = sk[0]; if (mine === undefined) return false;
     hideEntryPage(); await gwUse(gid, +mine, seats[mine].token); return true;
   }
+  async function gwpCookieHandoff() {
+    let c = hoCookieGet(); if (!c) return false;
+    let err = ''; try { err = await hoEnter(c); } catch (e) { err = 'The hand-off failed.'; }
+    hoCookieClear();
+    if (err) { try { message(err); } catch (e) { } return false; }
+    return true;
+  }
   function gwpBigScreen() {
     let d = document.createElement('div'); d.id = 'gwp-big'; d.textContent = 'Wordage and Cribbage are played on a larger screen.'; document.body.appendChild(d);
   }
@@ -5314,7 +5328,7 @@ body {
           history.replaceState(null, '', url.pathname + url.search + location.hash);  
         } catch (e) { }  
       } else { pendingGameOnRegister = state; try { addGameId(state.id); } catch (e) { } $('setup').hidden = false; renderBoxes(); }  
-    } else if (!iid && !gid && !hasState) { if (!getOwner()) requireSignIn(); else if (GW_PHONE) { if (!(await gwpLaunch())) entryGroupWords(); } else { showEntryPage(); initEntryPaws(); await populateEntryGames(); } }  
+    } else if (!iid && !gid && !hasState) { if (!getOwner()) { if (!(GW_PHONE && hoStandalone() && await gwpCookieHandoff())) requireSignIn(); } else if (GW_PHONE) { if (!(await gwpLaunch())) entryGroupWords(); } else { showEntryPage(); initEntryPaws(); await populateEntryGames(); } }  
    
     if (gateFresh) gateFresh = false; else lockGate();  
   })();  
