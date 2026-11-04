@@ -688,6 +688,17 @@ body {
 .bt-phone #btn-cancel-headsup { bottom: 0; left: 8px; min-height: 44px; font-size: 16px; display: flex; align-items: center; }
 #gw-notice button { min-height: 44px; min-width: 44px; }
 #gwp { display: none; }
+#gwp, #gwp * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+.gwp-kb button.u { opacity: .3; }
+.gwp-mid { display: flex; align-items: center; gap: 8px; }
+.gwp-mid i { font-style: normal; font-size: 11px; }
+#gwp-code { position: fixed; inset: 0; z-index: 99985; background: #f6f0e4; color: #1f3b32; overflow: auto; padding: max(24px, env(safe-area-inset-top)) 24px 24px; font-family: Georgia, serif; }
+#gwp-code h1 { font-size: 1.4em; margin: 6vh 0 14px; }
+#gwp-code input { display: block; width: 100%; box-sizing: border-box; min-height: 48px; font: 600 22px ui-monospace, Menlo, monospace; letter-spacing: .12em; text-transform: uppercase; border: 1px solid #b7bcad; border-radius: 8px; padding: 8px 12px; background: #fffdf8; color: inherit; }
+#gwp-code button { min-height: 48px; margin-top: 12px; padding: 0 22px; border: 0; border-radius: 9px; background: #28604b; color: #fff; font: 800 16px sans-serif; }
+#gwp-code a { display: inline-block; padding: 14px 0; color: inherit; }
+#gwp-code p { min-height: 1.4em; font-weight: 600; }
+.bt-code { font: 700 28px ui-monospace, Menlo, monospace; letter-spacing: .14em; margin: 4px 0 14px; user-select: all; }
 .bt-phone #gw-table, .bt-phone #gw-game .foyer-link { display: none; }
 .bt-phone #gwp { display: block; position: relative; flex: 1; min-height: 0; padding: 8px; box-sizing: border-box; --gwcw: 300px; }
 .bt-phone #gw-msg { z-index: 9; top: calc(env(safe-area-inset-top, 0px) + 6px); }
@@ -3514,8 +3525,9 @@ body {
       box.appendChild(mk('h1', 'Use this game in the BearTracks app', 'font-size:1.5em;margin:0 0 12px'));
       let ol = mk('ol', '', 'line-height:1.55;padding-left:1.3em;margin:0 0 12px');
       let li1 = mk('li', IOSP ? 'Tap Share ' : 'In the top-right of Safari’s toolbar, click Share '); li1.appendChild(btIcon('share')); li1.appendChild(document.createTextNode(IOSP ? ', then Add to Home Screen.' : ', then choose Add to Dock.')); ol.appendChild(li1);
-      (IOSP ? ['Open BearTracks from your Home Screen. The app registers you as ' + ((h && h.name) || 'this player') + ' and opens the game.'] : ['If the blue Open button does not appear beside the address, refresh this tab (⌘R).', 'Click Open. The app registers you as ' + ((h && h.name) || 'this player') + ' and opens the game.']).forEach(function (t) { ol.appendChild(mk('li', t)); });
+      (IOSP ? ['Open BearTracks from your Home Screen and enter the code below. The app registers you as ' + ((h && h.name) || 'this player') + ' and opens the game.'] : ['If the blue Open button does not appear beside the address, refresh this tab (⌘R).', 'Click Open. The app registers you as ' + ((h && h.name) || 'this player') + ' and opens the game.']).forEach(function (t) { ol.appendChild(mk('li', t)); });
       box.appendChild(ol);
+      if (IOSP && code) { box.appendChild(mk('p', 'Enter this code in the app:', 'margin:0')); box.appendChild(mk('div', code.slice(0, 4) + ' ' + code.slice(4), '')).className = 'bt-code'; }
       box.appendChild(mk('p', note || '', 'font-weight:600;min-height:1.4em;margin:0 0 12px'));
       let row = mk('div', '', 'display:flex;gap:10px');
       if (canRetry) { let b = mk('button', 'New code'); b.onclick = function () { open(null); }; row.appendChild(b); }
@@ -3526,7 +3538,7 @@ body {
       poll = setInterval(async function () {
         let st = await hoStatus(code);
         if (st === 'claimed') { stop(); show(h, code, IOSP ? 'The app is connected. Open BearTracks from your Home Screen to play.' : 'The app is connected. Open BearTracks from the Dock to play.', false); }
-        else if (st === 'expired' || Date.now() - t0 > 330000) { stop(); setUrl(null); show(h, null, 'That code has expired.', true); }
+        else if (st === 'expired' || Date.now() - t0 > 86430000) { stop(); setUrl(null); show(h, null, 'That code has expired.', true); }
       }, 2500);
     }
     async function open(resumeCode) {
@@ -4901,7 +4913,7 @@ body {
       if (p[0] === '.gw-lab') {   // a name box gets no wider, relative to its card, than the Bear Bot Tom box; its text and height shrink together to fit
         let cw = el.getBoundingClientRect().width; if (!(cw > 20)) return;
         let lim = cw * gwNameRatio(), w1 = gwNatural(n);
-        n.style.maxWidth = lim + 'px';
+        n.style.maxWidth = lim + 'px'; if (el.id === 'gw-convo') n.style.minWidth = lim + 'px';
         if (w1 > lim + .5) el.style.setProperty(p[1], Math.max(0.45, lim / w1 - 0.003).toFixed(4)); else el.style.removeProperty(p[1]);
         return;
       }
@@ -4924,7 +4936,7 @@ body {
     if (ids !== gw.ids) { gw.ids = ids; items.forEach(function (i) { i.el = gwMakeCard(i); }); gw.items = items; gwLayout(); }
     else { items.forEach(function (i, k) { i.el = gw.items[k].el; }); gw.items = items; }
     items.forEach(gwFill);
-    gwStatsRecord(st.me); gwSideRender();
+    gwStatsRecord(st.me); gwSideRender(); gwTomLabel(); gwTomScoreLoad();
   }
   // Layout: the margin m on all four sides is 1/8 of today's gap between the screen edge and the six-player layout.
   // The Convo-Ursidae and My Stats cards (the six-player card size in every game) sit at the right with their right edges on the margin;
@@ -5058,6 +5070,22 @@ body {
     addEventListener('resize', gwpLayout); addEventListener('orientationchange', function () { setTimeout(gwpLayout, 250); });
   }
   function gwpFlip(down) { gw.pdown = !!down; let c = $('gwp-card'); if (c) c.classList.toggle('down', gw.pdown); }
+  function gwTomScoreOf(j) { return j && j.rows ? (j.status === 'won' ? j.score : 7) : null; }
+  // Bear Bot Tom's score for your day word is shown on the back of his card, once per group and day.
+  async function gwTomScoreLoad() {
+    let st = gw.st; if (!st) return; let key = gw.gid + ':' + st.me.day; if (gw.tomKey === key) return; gw.tomKey = key; gw.tomScore = null;
+    let r = await gwApi('POST', 'tom', {}); if (gw.tomKey !== key) return;
+    if (r.s === 200 && r.j && r.j.rows) { gw.tomScore = gwTomScoreOf(r.j); gwRender(); }
+  }
+  function gwTomLabel() {
+    let o = $('gw-opt-tom'); if (!o) return; let want = 'Bear Bot Tom' + (gw.tomScore != null ? '   ' + gw.tomScore : '');
+    if (o.textContent !== want || gw.tomCw !== (o.closest('.gw-card') || {}).offsetWidth) {
+      o.textContent = want; o.style.removeProperty('font-size');
+      let cw = o.closest('.gw-card').offsetWidth; gw.tomCw = cw;
+      if (cw > 20) { let w1 = gwNatural(o), lim = cw * .8; if (w1 > lim) o.style.setProperty('font-size', 'calc(var(--gwcw) * .09 * ' + (lim / w1 - .003).toFixed(4) + ')'); }
+      gwRefit(); gwFit($('gw-stats'));
+    }
+  }
   function gwpLabel(it) { return it.lapsed ? (it.noshow ? '∞' : 'dnf') : (it.score != null ? String(it.score) : ''); }
   function gwpOthers(st) {
     let seats = st.seats, ord = st.order.map(function (nm) { return seats.find(function (s) { return s.name === nm; }); }).filter(Boolean);
@@ -5065,7 +5093,7 @@ body {
     return ord.filter(function (s) { return s.n !== st.me.n; }).slice(0, 5);
   }
   function gwpBackHtml(st) {
-    let h = '<div class="gwp-top"><a href="#" data-a="newgroup">new group</a><a href="#" data-a="groups">groups</a><span>my</span><a href="#" data-a="card">card</a></div><div class="gwp-rows">';
+    let h = '<div class="gwp-top"><a href="#" data-a="newgroup">new group</a><span class="gwp-mid"><a href="#" data-a="groups">groups</a><i>\u2190</i><span>my</span><i>\u2192</i><a href="#" data-a="card">card</a></span></div><div class="gwp-rows">';
     let o = gwpOthers(st);
     for (let k = 0; k < 5; k++) {
       let it = o[k];
@@ -5073,12 +5101,13 @@ body {
       let lb = gwpLabel(it);
       h += '<div class="gwp-row" data-n="' + it.n + '"><div class="gwp-nb"><span>' + gwpEsc(it.name + (lb ? '   ' + lb : '')) + '</span></div></div>';
     }
-    h += '<div class="gwp-row" data-a="tom"><div class="gwp-nb"><span>Bear Bot Tom</span></div></div><div class="gwp-row" data-a="stats"><div class="gwp-nb"><span>My Stats</span></div></div></div>';
+    h += '<div class="gwp-row" data-a="tom"><div class="gwp-nb"><span>' + gwpEsc('Bear Bot Tom' + (gw.tomScore != null ? '   ' + gw.tomScore : '')) + '</span></div></div><div class="gwp-row" data-a="stats"><div class="gwp-nb"><span>My Stats</span></div></div></div>';
     return h;
   }
-  function gwpKbHtml() {
+  function gwpKbHtml(rows) {
+    let used = {}; (rows || []).forEach(function (x) { if (x && x.g) for (let q = 0; q < x.g.length; q++) used[x.g[q]] = 1; });
     return '<div class="gwp-kb">' + GW_KB.map(function (r, i) {
-      let k = r.split('').map(function (L) { return '<button type="button" data-k="' + L + '">' + L + '</button>'; }).join('');
+      let k = r.split('').map(function (L) { return '<button type="button" data-k="' + L + '"' + (used[L] ? ' class="u"' : '') + '>' + L + '</button>'; }).join('');
       if (i === 2) k = '<button type="button" class="w" data-k="ENTER">ENTER</button>' + k + '<button type="button" class="w" data-k="BACK" aria-label="Backspace">⌫</button>';
       return '<div class="gwp-kr">' + k + '</div>';
     }).join('') + '</div>';
@@ -5110,7 +5139,7 @@ body {
       return top(it.name + (sol ? '   solution: ' + sol : '')) + '<div class="gwp-gw"><div class="gw-rows">' + gwRowsHtml(rows, '', letters) + '</div></div><div class="gwp-slim"><span>' + gwpEsc(it.day || '') + '</span><span></span></div>';
     }
     let playing = me.status === 'playing' && !me.canNewDay;
-    return top(me.status === 'failed' && me.word ? 'solution: ' + me.word : '') + '<div class="gwp-gw"><div class="gw-rows">' + gwRowsHtml(me.rows, me.status === 'playing' ? gw.cur : '', true) + '</div></div><div class="gwp-slim"><span>' + gwpEsc(me.day || '') + '</span><span>' + (me.canNewDay ? '<a href="#" data-a="newword">new word</a>' : '') + '</span></div>' + (playing ? gwpKbHtml() : '');
+    return top(me.status === 'failed' && me.word ? 'solution: ' + me.word : '') + '<div class="gwp-gw"><div class="gw-rows">' + gwRowsHtml(me.rows, me.status === 'playing' ? gw.cur : '', true) + '</div></div><div class="gwp-slim"><span>' + gwpEsc(me.day || '') + '</span><span>' + (me.canNewDay ? '<a href="#" data-a="newword">new word</a>' : '') + '</span></div>' + (playing ? gwpKbHtml(me.rows) : '');
   }
   function gwpRender() {
     let st = gw.st; if (!st || !$('gwp')) return;
@@ -5122,7 +5151,7 @@ body {
     if (b !== gw.phB) { gw.phB = b; $('gwp-back').innerHTML = b; }
     if (f !== gw.phF) { gw.phF = f; $('gwp-face').innerHTML = f; }
     $('gwp-card').classList.toggle('down', gw.pdown);
-    gwpLayout();
+    gwpLayout(); gwTomScoreLoad();
   }
   function gwpLayout() {
     let c = $('gwp-card'); if (!c || !gw.st) return;
@@ -5160,7 +5189,7 @@ body {
       else if (act === 'tom') {
         let r2 = await gwApi('POST', 'tom', {});
         if (r2.s !== 200 || !r2.j || !r2.j.rows) { gwMsg('Bear Bot Tom could not play'); return; }
-        gw.ptom = r2.j; gw.pv = 'face'; gw.pt = 'tom'; gwpRender(); gwpFlip(false);
+        gw.ptom = r2.j; gw.tomScore = gwTomScoreOf(r2.j); gw.pv = 'face'; gw.pt = 'tom'; gwpRender(); gwpFlip(false);
       }
       return;
     }
@@ -5187,6 +5216,19 @@ body {
     let gid = ids.indexOf(last) >= 0 ? last : ids[ids.length - 1]; if (!gid) return false;
     let seats = gwSeatsOf(gid), sk = Object.keys(seats), mine = sk.find(function (n) { return (seats[n].name || '').toLowerCase() === owner; }); if (mine === undefined) mine = sk[0]; if (mine === undefined) return false;
     hideEntryPage(); await gwUse(gid, +mine, seats[mine].token); return true;
+  }
+  // iPhone: the installed app cannot be opened with the hand-off code in its address, so it asks for the code the browser shows.
+  function gwpCodeEntry() {
+    let d = document.createElement('div'); d.id = 'gwp-code';
+    d.innerHTML = '<h1>Enter the code shown in your browser</h1><input id="gwp-code-i" maxlength="12" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" aria-label="Code"><button type="button" id="gwp-code-go">Continue</button><p id="gwp-code-m"></p><a href="#" id="gwp-code-reg">Register here instead</a>';
+    document.body.appendChild(d);
+    let go = async function () {
+      let v = $('gwp-code-i').value; if (!v.trim()) return; $('gwp-code-m').textContent = '';
+      let err = ''; try { err = await hoEnter(v); } catch (e) { err = 'The hand-off failed.'; }
+      if (err) $('gwp-code-m').textContent = err; else d.remove();
+    };
+    $('gwp-code-go').onclick = go; $('gwp-code-i').onkeydown = function (e) { if (e.key === 'Enter') go(); };
+    $('gwp-code-reg').onclick = function (e) { e.preventDefault(); d.remove(); requireSignIn(); };
   }
   function gwpBigScreen() {
     let d = document.createElement('div'); d.id = 'gwp-big'; d.textContent = 'Wordage and Cribbage are played on a larger screen.'; document.body.appendChild(d);
@@ -5269,7 +5311,7 @@ body {
           history.replaceState(null, '', url.pathname + url.search + location.hash);  
         } catch (e) { }  
       } else { pendingGameOnRegister = state; try { addGameId(state.id); } catch (e) { } $('setup').hidden = false; renderBoxes(); }  
-    } else if (!iid && !gid && !hasState) { if (!getOwner()) requireSignIn(); else if (GW_PHONE) { if (!(await gwpLaunch())) entryGroupWords(); } else { showEntryPage(); initEntryPaws(); await populateEntryGames(); } }  
+    } else if (!iid && !gid && !hasState) { if (!getOwner()) { if (GW_PHONE && hoStandalone()) gwpCodeEntry(); else requireSignIn(); } else if (GW_PHONE) { if (!(await gwpLaunch())) entryGroupWords(); } else { showEntryPage(); initEntryPaws(); await populateEntryGames(); } }  
    
     if (gateFresh) gateFresh = false; else lockGate();  
   })();  
