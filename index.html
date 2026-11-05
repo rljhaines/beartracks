@@ -689,6 +689,19 @@ body {
 .bt-phone #btn-cancel-headsup { bottom: 0; left: 8px; min-height: 44px; font-size: 16px; display: flex; align-items: center; }
 #gw-notice button { min-height: 44px; min-width: 44px; }
 #gwp { display: none; }
+.gw-x { position: absolute; left: calc(var(--gwcw) * .065 + 2px); top: calc(var(--gwcw) * .05 + 2px); width: 30px; height: 30px; padding: 0; margin: 0; background: none; border: 0; border-radius: 6px; color: #f6f0e4; cursor: pointer; z-index: 2; }
+.gw-x[hidden] { display: none; }
+.gw-x::before, .gw-x::after, .gwp-x::before, .gwp-x::after, .gwp-gx::before, .gwp-gx::after { content: ''; position: absolute; left: 50%; top: 50%; width: 14px; height: 2px; border-radius: 1px; background: currentColor; }
+.gw-x::before, .gwp-x::before, .gwp-gx::before { transform: translate(-50%, -50%) rotate(45deg); }
+.gw-x::after, .gwp-x::after, .gwp-gx::after { transform: translate(-50%, -50%) rotate(-45deg); }
+.gw-x:hover { color: #fff; background: rgba(0,0,0,.18); }
+.gw-x:focus-visible, .gwp-x:focus-visible, .gwp-gx:focus-visible { outline: 2px solid #f6f0e4; outline-offset: 1px; }
+.gwp-x { position: absolute; right: 0; top: 0; width: 44px; height: 44px; padding: 0; margin: 0; background: none; border: 0; border-radius: 22px; color: #2b2620; }
+.gwp-gr { display: flex; align-items: center; min-height: 44px; border-bottom: 1px solid #e6dcc6; }
+.gwp-gr a[data-g] { flex: 1; min-width: 0; border-bottom: 0; }
+.gwp-gx { position: relative; flex: none; width: 44px; height: 44px; padding: 0; margin: 0; background: none; border: 0; color: #8a7a62; }
+.gwp-gh { justify-content: space-between; padding: 0 6px; font-size: 18px; color: #6b6455; }
+.gwp-gh a { color: #8a3b2e; text-decoration: underline; min-height: 44px; display: flex; align-items: center; padding: 0 6px; }
 #gwp, #gwp * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
 .gwp-kb button.k0 { background: #8d867a; color: #fff; }
 .gwp-kb button.k1 { background: #d6a33a; color: #fff; }
@@ -2815,13 +2828,13 @@ body {
     });
     el.scrollTop = top;
   }
-  function removeFoyerGame(L, it) { setHiddenGame(it.id, true); lastRemoved = { L: L, it: it }; paintEntryGames(L); $('bt-removed').hidden = false; try { $('bt-removed-box').focus({ preventScroll: true }); } catch (e) { } }
+  function removeFoyerGame(L, it) { setHiddenGame(it.id, true); if (it.game === 'groupWords') gwLeaveMark(it.id); lastRemoved = { L: L, it: it }; paintEntryGames(L); $('bt-removed').hidden = false; try { $('bt-removed-box').focus({ preventScroll: true }); } catch (e) { } }
   function closeRemoved() { $('bt-removed').hidden = true; }
-  function undoRemoved() { if (lastRemoved) { setHiddenGame(lastRemoved.it.id, false); paintEntryGames(lastRemoved.L); lastRemoved = null; } closeRemoved(); }
+  function undoRemoved() { if (lastRemoved) { setHiddenGame(lastRemoved.it.id, false); if (lastRemoved.it.game === 'groupWords') gwLeaveUnmark(lastRemoved.it.id); paintEntryGames(lastRemoved.L); lastRemoved = null; } closeRemoved(); }
   function cribOpenFromFoyer(g, seat) { cribEnterGame(g, seat); try { lockGate(); } catch (e) { } }
   async function populateEntryGames() { updateBackupVisibility(); let owner = getOwner(), underwayEl = $('underway-games'), pendingEl = $('pending-games'), playedEl = $('played-games'); if (!underwayEl || !pendingEl) return; underwayEl.innerHTML = ''; pendingEl.innerHTML = ''; if (!owner) { underwayEl.innerHTML = '<div class="entry-empty">No underway games.</div>'; if (playedEl) playedEl.innerHTML = '<div class="entry-empty">No played games.</div>'; } else { let ids = getAllGameIds(), items = [], played = [];
       for (let i = 0; i < ids.length; i++) { try { let g = await loadGame(ids[i]); if (!g || !g.players) continue; let my = g.players.findIndex(p => (p.name || '').toLowerCase() === owner.toLowerCase()); if (my < 0) continue; let crib = g.phase !== undefined, done = crib ? g.phase === 'done' : !!g.over; (done ? played : items).push({ id: g.id, who: g.players[1 - my]?.name || 'Opponent', game: crib ? 'Cribbage' : 'Wordage', open: crib ? (() => cribOpenFromFoyer(g, my)) : (() => enterGameDirect(g, my)) }); } catch (e) { } }
-      try { let gk = gwKeys(); for (const gid of Object.keys(gk)) { let seats = gwSeatsOf(gid), sk = Object.keys(seats); if (!sk.length) continue; let mine = sk.find(n => (seats[n].name || '').toLowerCase() === owner.toLowerCase()); if (mine == null) continue; let r = await gwApi('GET', 'status', null, gid, seats[mine].token); if (r.s !== 200 || !r.j || !r.j.seats) continue; let others = r.j.seats.filter(x => String(x.n) !== String(mine) && x.name).map(x => x.name); items.push({ id: gid, who: r.j.title || 'Group', game: 'groupWords', open: (() => gwUse(gid, mine, seats[mine].token)) }); } } catch (e) { }
+      try { let gk = gwKeys(); for (const gid of Object.keys(gk)) { let seats = gwSeatsOf(gid), sk = Object.keys(seats); if (!sk.length) continue; let mine = sk.find(n => (seats[n].name || '').toLowerCase() === owner.toLowerCase()); if (mine == null) continue; let r = await gwApi('GET', 'status', null, gid, seats[mine].token); if (r.s === 404) { gwPrune(gid); continue; } if (r.s !== 200 || !r.j || !r.j.seats) continue; let others = r.j.seats.filter(x => String(x.n) !== String(mine) && x.name).map(x => x.name); items.push({ id: gid, who: r.j.title || 'Group', game: 'groupWords', open: (() => gwUse(gid, mine, seats[mine].token)) }); } } catch (e) { }
       renderEntryGames(underwayEl, items); if (playedEl) renderEntryGames(playedEl, played, { empty: 'No played games.' }); }
     let pids = getPendingInviteIds(); if (!pids.length) renderEntryGames(pendingEl, [], { empty: 'No pending games.', expanded: true }); else { let pitems = []; for (let i = 0; i < pids.length; i++) { try { let inv = await loadInvite(pids[i]); if (!inv) { forgetPendingInvite(pids[i]); continue; } pitems.push({ id: inv.id, who: inv.invitedBy || 'Opponent', game: inv.kind === 'cribbage' ? 'Cribbage' : 'Wordage', open: (function (v) { return function () { openPendingInvite(v); }; })(inv) }); } catch (e) { } } renderEntryGames(pendingEl, pitems, { empty: 'No pending games.', expanded: true }); }
   }
@@ -4639,10 +4652,44 @@ body {
   let gwMsgTimer = null;
   const GW_PHONE = (function () { try { let u = navigator.userAgent || ''; return /iPhone|iPod/.test(u) || /Android.*Mobile/.test(u); } catch (e) { return false; } })();
   if (GW_PHONE) { try { document.documentElement.classList.add('bt-phone'); } catch (e) { } }
-  gw.pdown = true; gw.pv = 'face'; gw.pt = null; gw.ptom = null; gw.pgl = null; gw.pday = null;
+  gw.pdown = true; gw.pv = 'face'; gw.pt = null; gw.ptom = null; gw.pgl = null; gw.pday = null; gw.pgh = {};
   function GW_TZ() { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; } catch (e) { return 'UTC'; } }
   function gwKeys() { try { return JSON.parse(localStorage.getItem('bt_gw') || '{}'); } catch (e) { return {}; } }
   // Vault shape: { gid: { seats: { "0": {token, name}, "2": {...} } } }.  The old shape { gid: {token, seat} } is upgraded on read.
+  // A group that no longer exists (the Worker answers 404): forget it on this device.
+  function gwPrune(gid) {
+    try { let k = gwKeys(); delete k[gid]; localStorage.setItem('bt_gw', JSON.stringify(k)); } catch (e) { }
+    try { if (localStorage.getItem('bt_gw_last') === gid) localStorage.removeItem('bt_gw_last'); } catch (e) { }
+    try { let m = JSON.parse(sessionStorage.getItem('bt_gw_tab') || '{}') || {}; delete m[gid]; sessionStorage.setItem('bt_gw_tab', JSON.stringify(m)); } catch (e) { }
+    try { setHiddenGame(gid, false); } catch (e) { }
+    gwLeaveDrop(gid);
+  }
+  // Removing a group from your own list (the "x") tells the group you have left, 20 seconds later and only if it is still removed, so Undo costs nothing; offline, it waits for the next chance.
+  function gwLQ() { try { return JSON.parse(localStorage.getItem('bt_gw_leave') || '{}') || {}; } catch (e) { return {}; } }
+  function gwLQSave(q) { try { localStorage.setItem('bt_gw_leave', JSON.stringify(q)); } catch (e) { } }
+  function gwMySeat(gid) {
+    let seats = gwSeatsOf(gid), sk = Object.keys(seats), owner = (getOwner() || '').toLowerCase(), m = sk.find(function (n) { return (seats[n].name || '').toLowerCase() === owner; });
+    if (m === undefined) m = sk[0]; return m === undefined ? null : { seat: +m, token: seats[m].token };
+  }
+  function gwLeaveMark(gid) { let me = gwMySeat(gid); if (!me) return; let q = gwLQ(); q[gid] = { token: me.token, due: Date.now() + 20000, sent: false }; gwLQSave(q); }
+  async function gwLeaveUnmark(gid) { let q = gwLQ(), e = q[gid]; if (!e) return; delete q[gid]; gwLQSave(q); if (e.sent) { try { await gwApi('POST', 'stay', {}, gid, e.token); } catch (x) { } } }
+  function gwLeaveDrop(gid) { let q = gwLQ(); if (q[gid]) { delete q[gid]; gwLQSave(q); } }
+  let gwLFlushing = false;
+  async function gwLeaveFlush() {
+    if (gwLFlushing) return; gwLFlushing = true;
+    try {
+      let q = gwLQ();
+      for (const gid of Object.keys(q)) {
+        let e = q[gid]; if (e.sent || e.due > Date.now()) continue;
+        if (!hiddenGames()[gid]) { q = gwLQ(); delete q[gid]; gwLQSave(q); continue; }
+        let r = await gwApi('POST', 'leave', {}, gid, e.token); q = gwLQ();
+        if (r.s === 200 && q[gid]) q[gid].sent = true; else if (r.s === 404 || r.s === 401) delete q[gid];
+        gwLQSave(q);
+      }
+    } catch (e) { }
+    gwLFlushing = false;
+  }
+  setInterval(function () { try { if (!document.hidden) gwLeaveFlush(); } catch (e) { } }, 5000);
   function gwSeatsOf(gid) { let r = gwKeys()[gid]; if (!r) return {}; if (r.seats) return r.seats; if (r.token != null) { let o = {}; o[r.seat] = { token: r.token, name: getOwner() || '' }; return o; } return {}; }
   function gwSaveKey(gid, token, seat, name) { let k = gwKeys(), v = gwSeatsOf(gid); v[seat] = { token: token, name: name || (v[seat] && v[seat].name) || '' }; k[gid] = { seats: v }; localStorage.setItem('bt_gw', JSON.stringify(k)); }
   // Each browser tab remembers its own seat (sessionStorage survives a reload of that tab, and keeps working even if another tab clears localStorage).
@@ -4716,7 +4763,7 @@ body {
     if (!owner) { postRegisterTarget = 'groupwords'; $('setup').hidden = false; renderBoxes(); return; }
     return gwJoin(gid, owner, false);
   }
-  function gwUse(gid, seat, token) { gw.chatSig = ''; gw.chatSeenAt = null; gw.st = null; gw.shown = {}; gw.ids = ''; gw.items = []; gw.cur = ''; gw.gid = gid; gw.token = token; gw.seat = +seat; gwSetTabSeat(gid, +seat, token); if (GW_PHONE) { gw.pv = 'face'; gw.pt = null; gw.pdown = true; gw.ptom = null; try { localStorage.setItem('bt_gw_last', gid); } catch (e) { } } return gwEnter(); }
+  function gwUse(gid, seat, token) { gw.chatSig = ''; gw.chatSeenAt = null; gw.st = null; gw.shown = {}; gw.ids = ''; gw.items = []; gw.cur = ''; gw.gid = gid; gw.token = token; gw.seat = +seat; gwSetTabSeat(gid, +seat, token); try { setHiddenGame(gid, false); } catch (e) { } gwLeaveUnmark(gid); if (GW_PHONE) { gw.pv = 'face'; gw.pt = null; gw.pdown = true; gw.ptom = null; try { localStorage.setItem('bt_gw_last', gid); } catch (e) { } } return gwEnter(); }
   btHand.register('groupwords', {
     current: function () { let gg = $('gw-game'); if (!(gg && !gg.hidden && gw && gw.gid && gw.token)) return null; return { gid: gw.gid, seat: gw.seat, name: (gwSeatsOf(gw.gid)[gw.seat] || {}).name || getOwner() || '', token: gw.token }; },
     adopt: async function (b) { gwSaveKey(b.gameId, b.token, b.seat, b.name); await gwUse(b.gameId, b.seat, b.token); return ''; }
@@ -4790,7 +4837,7 @@ body {
     hideEntryPage(); $('setup').hidden = true; $('bt-headsup').hidden = true; gwNoticeClose(); gwBuild(); $('gw-game').hidden = false;
     try { let u = new URL(location.href); u.searchParams.set('kind', 'groupwords'); u.searchParams.set('gw', gw.gid); u.searchParams.set('p', String(gw.seat)); u.searchParams.delete('invite'); history.replaceState(null, '', u.pathname + u.search + u.hash); } catch (e) { }
     if (first && first.me) { gw.st = first; gwRender(); }
-    await gwRefresh(); gwConnect();
+    await gwRefresh(); if (!gw.gid) return; gwConnect();
     clearInterval(gw.poll); gw.poll = setInterval(function () { if (document.hidden) return; if (btLink.isOpen('gw') && Date.now() - gwHbAt < 25000) return; gwRefresh(); }, 30000);   // no look-again while the socket answers
     if (!GW_PHONE) $('gw-inp').focus({ preventScroll: true });
   }
@@ -4810,6 +4857,7 @@ body {
   async function gwRefresh() {
     if (!gw.gid) return;
     let r = await gwApi('GET', 'status');
+    if (r.s === 404) { let gone = gw.gid; gwPrune(gone); gwLeave(); return; }
     if (r.s === 401) { gwMsg('This device does not hold a seat in this game.'); return; }
     if (r.s !== 200) return;
     gw.st = r.j;
@@ -4843,11 +4891,17 @@ body {
     let r = await gwApi('POST', it.reveal ? 'reveal' : 'flip', { target: it.n, tz: GW_TZ() });
     if (r.s === 200) { gw.shown[it.n] = r.j; gwRender(); } else gwRefresh();
   }
+  // A player who has left shows "player seceded"; any player still in the group may remove that seat for good.
+  function gwDropAsk(it) { gwNotice('Remove ' + it.name + ' from the group? This cannot be undone.', [['Remove', function () { gwNoticeClose(); gwDrop(it.n); }], ['Keep', gwNoticeClose]]); }
+  async function gwDrop(n) {
+    let r = await gwApi('POST', 'drop', { target: n });
+    if (r.s === 200 && r.j && r.j.me) { gw.st = r.j; delete gw.shown[n]; gwRender(); } else gwMsg('That player could not be removed');
+  }
   function gwLink(text, fn) { let a = document.createElement('a'); a.href = '#'; a.className = 'gw-link'; a.textContent = text; a.onclick = function (e) { e.preventDefault(); e.stopPropagation(); fn(); }; return a; }
   const GW_KB = ['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'];
   function gwMakeCard(it) {
     let c = document.createElement('div'); c.className = 'gw-card';
-    c.innerHTML = '<div class="gw-inner"><div class="gw-face gw-front"><div class="gw-hd"><div class="gw-nm"><b></b><i class="gw-sol"></i></div><span></span></div><div class="gw-rw"><div class="gw-az">' + GW_KB.map(function (r, i) { return '<div class="gw-azr r' + (i + 1) + '">' + r.split('').map(function (L) { return '<i>' + L + '</i>'; }).join('') + '</div>'; }).join('') + '</div><div class="gw-rows"></div></div><div class="gw-ps"></div></div><div class="gw-face gw-back"><div class="gw-lab"></div><div class="gw-lapsed"></div><div class="gw-bd"></div><div class="gw-bn"></div></div></div>';
+    c.innerHTML = '<div class="gw-inner"><div class="gw-face gw-front"><div class="gw-hd"><div class="gw-nm"><b></b><i class="gw-sol"></i></div><span></span></div><div class="gw-rw"><div class="gw-az">' + GW_KB.map(function (r, i) { return '<div class="gw-azr r' + (i + 1) + '">' + r.split('').map(function (L) { return '<i>' + L + '</i>'; }).join('') + '</div>'; }).join('') + '</div><div class="gw-rows"></div></div><div class="gw-ps"></div></div><div class="gw-face gw-back"><div class="gw-lab"></div><div class="gw-lapsed"></div><button type="button" class="gw-x" hidden aria-label="Remove player"></button><div class="gw-bd"></div><div class="gw-bn"></div></div></div>';
     c.onclick = function () { let cur = gw.items.find(function (x) { return x.n === it.n; }); if (cur) gwClick(cur); };
     return c;
   }
@@ -4868,7 +4922,8 @@ body {
     el.classList.toggle('down', !mine && !shown);
     el.classList.toggle('mine', mine && me.status === 'playing');
     el.classList.toggle('can', mine || !!it.flip);
-    el.querySelector('.gw-lab').textContent = it.name + (it.score != null ? '   ' + it.score : '');
+    el.querySelector('.gw-lab').textContent = it.name + (it.gone ? '   player seceded' : (it.score != null ? '   ' + it.score : ''));
+    let xb = el.querySelector('.gw-x'); xb.hidden = !(it.gone && !mine && !me.gone); xb.onclick = function (e) { e.stopPropagation(); gwDropAsk(it); };
         el.querySelector('.gw-lapsed').textContent = it.lapsed ? (it.noshow ? 'no-show' : 'dnf') : '';
     el.querySelector('.gw-hd b').textContent = mine ? '' : it.name;
     let sp = el.querySelector('.gw-hd span'), ps = el.querySelector('.gw-ps'), rows = [], letters = false, cur = '', sol = '';
@@ -5113,13 +5168,14 @@ body {
     let prev = function (day) { return !!(day && st.today && day < st.today); };
     let sc = function (lb, day) { return lb === '' ? '' : '<b class="gwp-sc">' + gwpEsc(lb) + (prev(day) ? '<sup>*</sup>' : '') + '</b>'; };
     let pill = function (name, lb, day) { return '<div class="gwp-nb"><span class="gwp-n">' + gwpEsc(name) + '</span>' + sc(lb, day) + '</div>'; };
+    let gonePill = function (it) { return '<div class="gwp-nb"><span class="gwp-n">' + gwpEsc(it.name + '   player seceded') + '</span>' + (st.me.gone ? '' : '<button type="button" class="gwp-x" data-x="' + it.n + '" aria-label="Remove player"></button>') + '</div>'; };
     let h = '<div class="gwp-top"><a href="#" data-a="newgroup">new group</a><a href="#" data-a="groups">my groups</a></div><div class="gwp-rows">';
     h += '<div class="gwp-row" data-a="card">' + pill('my card', '') + '</div>';
     let o = gwpOthers(st);
     for (let k = 0; k < 5; k++) {
       let it = o[k];
       if (!it) { h += '<div class="gwp-row"></div>'; continue; }
-      h += '<div class="gwp-row" data-n="' + it.n + '">' + pill(it.name, gwpLabel(it), it.day) + '</div>';
+      h += '<div class="gwp-row" data-n="' + it.n + '">' + (it.gone ? gonePill(it) : pill(it.name, gwpLabel(it), it.day)) + '</div>';
     }
     h += '<div class="gwp-row" data-a="tom">' + pill('Bear Bot Tom', gw.tomScore != null ? String(gw.tomScore) : '', st.me.day) + '</div>';
     h += '<div class="gwp-row" data-a="stats">' + pill('My Stats', '') + '</div></div>';
@@ -5145,7 +5201,7 @@ body {
     let me = st.me, title = gwpEsc(st.title || ''), top = function (left) { return '<div class="gwp-ft"><span>' + gwpEsc(left) + '</span><a href="#" data-a="back">' + title + '</a></div>'; };
     if (gw.pv === 'groups') {
       let h = top('');
-      h += '<div class="gwp-gl">' + (gw.pgl ? gw.pgl.map(function (g, i) { return '<a href="#" data-g="' + i + '"' + (g.gid === gw.gid ? ' class="cur"' : '') + '>' + gwpEsc(g.title) + '</a>'; }).join('') : '<p class="dim">&hellip;</p>') + '</div>';
+      h += '<div class="gwp-gl">' + (gw.pgl ? gw.pgl.map(function (g, i) { return gw.pgh[g.gid] ? '<div class="gwp-gr gwp-gh"><span>' + gwpEsc(g.title) + ' removed</span><a href="#" data-gu="' + i + '">undo</a></div>' : '<div class="gwp-gr"><a href="#" data-g="' + i + '"' + (g.gid === gw.gid ? ' class="cur"' : '') + '>' + gwpEsc(g.title) + '</a><button type="button" class="gwp-gx" data-gx="' + i + '" aria-label="Remove group"></button></div>'; }).join('') : '<p class="dim">&hellip;</p>') + '</div>';
       return h;
     }
     let t = gw.pt;
@@ -5180,8 +5236,8 @@ body {
     let g = $('gwp-face').querySelector('.gwp-gw');
     if (g) { let gap = 5, W = g.clientWidth, H = g.clientHeight, t = Math.floor(Math.min((W - 4 * gap) / 5, (H - 5 * gap) / 6, 66)); if (t > 10) g.style.setProperty('--t', t + 'px'); }
     Array.prototype.forEach.call($('gwp-back').querySelectorAll('.gwp-nb'), function (nb) {
-      let sp = nb.querySelector('.gwp-n'), sc = nb.querySelector('.gwp-sc'), fs = 22, W = nb.clientWidth, r = nb.offsetHeight / 2;
-      let room = sc ? 2 * (W / 2 - r - sc.offsetWidth - 6) : W - 20;   // the name is centered; with a score it must stop short of the score
+      let sp = nb.querySelector('.gwp-n'), sc = nb.querySelector('.gwp-sc'), xb = nb.querySelector('.gwp-x'), fs = 22, W = nb.clientWidth, r = nb.offsetHeight / 2;
+      let room = xb ? W - 2 * 46 : (sc ? 2 * (W / 2 - r - sc.offsetWidth - 6) : W - 20);   // the name is centered; with a score it must stop short of the score
       sp.style.fontSize = fs + 'px';
       while (fs > 9 && sp.offsetWidth > room) { fs--; sp.style.fontSize = fs + 'px'; }
     });
@@ -5191,7 +5247,9 @@ body {
     await Promise.all(Object.keys(ks).map(async function (gid) {
       let seats = gwSeatsOf(gid), sk = Object.keys(seats); if (!sk.length) return;
       let mine = sk.find(function (n) { return (seats[n].name || '').toLowerCase() === owner; }); if (mine === undefined) mine = sk[0];
+      if (hiddenGames()[gid] && !gw.pgh[gid]) return;
       let r = await gwApi('GET', 'status', null, gid, seats[mine].token);
+      if (r.s === 404) { gwPrune(gid); return; }
       if (r.s === 200 && r.j && r.j.title) out.push({ gid: gid, seat: +mine, token: seats[mine].token, title: r.j.title });
     }));
     out.sort(function (a, b) { return a.title.toLowerCase() < b.title.toLowerCase() ? -1 : 1; });
@@ -5199,13 +5257,16 @@ body {
   }
   async function gwpClick(e) {
     let k = e.target.closest('[data-k]'); if (k) { e.preventDefault(); gwpKey(k.getAttribute('data-k')); return; }
+    let dx = e.target.closest('[data-x]'); if (dx) { e.preventDefault(); e.stopPropagation(); let n = +dx.getAttribute('data-x'), it = gw.st && gw.st.seats.find(function (x) { return x.n === n; }); if (it) gwDropAsk(it); return; }
+    let gx = e.target.closest('[data-gx]'); if (gx) { e.preventDefault(); let x = (gw.pgl || [])[+gx.getAttribute('data-gx')]; if (x) { setHiddenGame(x.gid, true); gwLeaveMark(x.gid); gw.pgh[x.gid] = 1; gwpRender(); } return; }
+    let gu = e.target.closest('[data-gu]'); if (gu) { e.preventDefault(); let x = (gw.pgl || [])[+gu.getAttribute('data-gu')]; if (x) { setHiddenGame(x.gid, false); gwLeaveUnmark(x.gid); delete gw.pgh[x.gid]; gwpRender(); } return; }
     let g = e.target.closest('[data-g]'); if (g) { e.preventDefault(); let x = (gw.pgl || [])[+g.getAttribute('data-g')]; if (x) { if (x.gid === gw.gid) { gw.pv = 'face'; gw.pt = null; gwpRender(); gwpFlip(true); } else gwUse(x.gid, x.seat, x.token); } return; }
     let a = e.target.closest('[data-a]'), r = e.target.closest('[data-n]');
     if (a) {
       e.preventDefault(); let act = a.getAttribute('data-a');
       if (act === 'card') { gw.pv = 'face'; gw.pt = null; gwpRender(); gwpFlip(false); }
       else if (act === 'back') gwpFlip(true);
-      else if (act === 'groups') { gw.pv = 'groups'; gwpRender(); gwpFlip(false); gwpGroups(); }
+      else if (act === 'groups') { gw.pv = 'groups'; gw.pgh = {}; gwpRender(); gwpFlip(false); gwpGroups(); }
       else if (act === 'newgroup') entryGroupWords();
       else if (act === 'newword') gwNewDay();
       else if (act === 'stats') { gw.pv = 'face'; gw.pt = 'stats'; gwpRender(); gwpFlip(false); }
@@ -5236,6 +5297,7 @@ body {
   // Opening the app on a phone goes to the group used last, not the Foyer.
   async function gwpLaunch() {
     let ks = gwKeys(), ids = Object.keys(ks), owner = (getOwner() || '').toLowerCase(), last = null; try { last = localStorage.getItem('bt_gw_last'); } catch (e) { }
+    let hid = hiddenGames(); ids = ids.filter(function (g) { return !hid[g]; });
     let gid = ids.indexOf(last) >= 0 ? last : ids[ids.length - 1]; if (!gid) return false;
     let seats = gwSeatsOf(gid), sk = Object.keys(seats), mine = sk.find(function (n) { return (seats[n].name || '').toLowerCase() === owner; }); if (mine === undefined) mine = sk[0]; if (mine === undefined) return false;
     hideEntryPage(); await gwUse(gid, +mine, seats[mine].token); return true;
@@ -5261,6 +5323,7 @@ body {
     let owner = getOwner(); let hasState = false;
     
     let hoParam = params.get('handoff');
+    if (GW_PHONE && hoStandalone() && !owner && hoCookieGet()) { if (await gwpCookieHandoff()) return; }
     if (hoParam && hoStandalone()) { let hoErr = ''; try { hoErr = await hoEnter(hoParam); } catch (e) { hoErr = 'The hand-off failed.'; } if (!hoErr) return; try { message(hoErr); } catch (e) { } }
     if (GW_PHONE && (iid || gid) && kindParam !== 'groupwords') { gwpBigScreen(); return; }
     if (kindParam === 'cribbage') {
