@@ -3275,17 +3275,8 @@ body {
   // After registration: the player installs BearTracks before going on. Shown only where the browser can install it.
   async function installGate(inviteParam) {
     try {
-      if (/iPhone|iPod/.test(navigator.userAgent || '') && !(navigator.standalone === true)) {
-        let ua = navigator.userAgent, br = /CriOS/.test(ua) ? 'Chrome' : /FxiOS/.test(ua) ? 'Firefox' : /EdgiOS/.test(ua) ? 'Edge' : /OPiOS/.test(ua) ? 'Opera' : 'Safari';
-        $('install-line').textContent = 'Add BearTracks to your Home Screen';
-        $('install-msg').style.color = 'inherit';
-        let im = $('install-msg'); im.textContent = ''; im.appendChild(document.createTextNode('In ' + br + ', tap ')); im.appendChild(btIcon('more')); im.appendChild(document.createTextNode(', then ')); im.appendChild(btIcon('share')); im.appendChild(document.createTextNode(' Share, then ')); im.appendChild(btIcon('addhome')); im.appendChild(document.createTextNode(' Add to Home Screen. Then continue here.'));
-        let go = document.createElement('button'); go.type = 'button'; go.textContent = 'Continue'; $('install-msg').appendChild(document.createElement('br')); $('install-msg').appendChild(go);
-        $('box-register').hidden = true; $('box-install').hidden = false;
-        await new Promise(function (resolve) { go.onclick = resolve; });
-        $('box-install').hidden = true; $('box-register').hidden = false; $('install-msg').textContent = '';
-        return;
-      }
+      // iPhone: the one Add-to-Home-Screen panel is the hand-off panel, shown once the game is open (as on the desktop); this panel cannot carry the registration.
+      if (/iPhone|iPod/.test(navigator.userAgent || '')) return;
       if (!window.btInstall || !window.btInstall.can()) return;
       let withGame = false;
       if (inviteParam) { try { let inv = await (postRegisterTarget === 'cribbage' ? cribLoadInvite(inviteParam) : loadInvite(inviteParam)); withGame = !!(inv && inv.gameId); } catch (e) { } }
@@ -3537,7 +3528,7 @@ body {
       if (!ov) { ov = mk('div', '', 'position:fixed;inset:0;z-index:99990;background:#f6f0e4;color:#1f3b32;overflow:auto;display:flex;justify-content:center;padding:max(24px,env(safe-area-inset-top)) 24px 24px'); ov.id = 'bt-browser-lock'; document.body.appendChild(ov); }
       ov.textContent = '';
       let box = mk('div', '', 'max-width:520px;width:100%;margin-top:6vh'); ov.appendChild(box);
-      box.appendChild(mk('h1', 'Use this game in the BearTracks app', 'font-size:1.5em;margin:0 0 12px'));
+      box.appendChild(mk('h1', IOSP ? 'Add to Home Screen' : 'Use this game in the BearTracks app', 'font-size:1.5em;margin:0 0 12px'));
       let ol = mk('ol', '', 'line-height:1.55;padding-left:1.3em;margin:0 0 12px');
       let li1 = mk('li', '');
       if (IOSP) { li1.appendChild(document.createTextNode('Tap ')); li1.appendChild(btIcon('more')); li1.appendChild(document.createTextNode(', then ')); li1.appendChild(btIcon('share')); li1.appendChild(document.createTextNode(' Share, then ')); li1.appendChild(btIcon('addhome')); li1.appendChild(document.createTextNode(' Add to Home Screen.')); }
@@ -3563,7 +3554,7 @@ body {
       if (resumeCode) { cur = resumeCode; if (IOSP) hoCookieSet(cur); show(h, cur, 'Waiting for the app…', false); watch(h, cur); return; }
       show(h, null, 'Making a code…', false);
       try { cur = await hoCreate(h); } catch (e) { show(h, null, 'A code could not be made (' + (e && e.message) + '). This browser may not hold the key for this seat.', true); return; }
-      setUrl(cur); if (IOSP) hoCookieSet(cur); show(h, cur, IOSP ? 'Waiting for the app…' : 'Waiting for the app… BearTracks is played in the app. Use a browser such as Firefox or Opera for a browser game.', false); watch(h, cur);
+      setUrl(cur); if (IOSP) hoCookieSet(cur); show(h, cur, 'Waiting for the app…', false); watch(h, cur);
     }
     setInterval(function () {
       try {
