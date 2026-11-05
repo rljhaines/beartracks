@@ -4986,7 +4986,7 @@ body {
     if (ids !== gw.ids) { gw.ids = ids; items.forEach(function (i) { i.el = gwMakeCard(i); }); gw.items = items; gwLayout(); }
     else { items.forEach(function (i, k) { i.el = gw.items[k].el; }); gw.items = items; }
     items.forEach(gwFill);
-    gwStatsRecord(st.me); gwSideRender(); gwTomLabel(); gwTomScoreLoad();
+    gwStatsRecord(st.me); gwSideRender(); gwTomScoreSync(); gwTomLabel();
   }
   // Layout: the margin m on all four sides is 1/8 of today's gap between the screen edge and the six-player layout.
   // The Convo-Ursidae and My Stats cards (the six-player card size in every game) sit at the right with their right edges on the margin;
@@ -5036,7 +5036,7 @@ body {
     let v = $('gw-tom-v'); if (!v) return false;
     let r = await gwApi('POST', 'tom', {});
     if (r.s !== 200 || !r.j || !r.j.rows) { gwMsg(r.s === 404 ? 'Bear Bot Tom is not available until the worker is updated' : 'Bear Bot Tom could not play'); return false; }
-    let j = r.j, h = $('gw-stats').querySelector('.gw-sd-h');
+    let j = r.j, h = $('gw-stats').querySelector('.gw-sd-h'); gwTomUsed(j); gwTomLabel();
     h.textContent = 'Bear Bot Tom';
     v.innerHTML = '<div class="gw-rows">' + gwRowsHtml(j.rows, '', !!j.letters) + '</div><div>' + (j.status === 'won' ? 'solved in ' + j.score : 'not solved') + '</div>';
     v.hidden = false; $('gw-st-log').hidden = true;
@@ -5121,11 +5121,16 @@ body {
   }
   function gwpFlip(down) { gw.pdown = !!down; let c = $('gwp-card'); if (c) c.classList.toggle('down', gw.pdown); }
   function gwTomScoreOf(j) { return j && j.rows ? (j.status === 'won' ? j.score : 7) : null; }
-  // Bear Bot Tom's score for your day word is shown on the back of his card, once per group and day.
-  async function gwTomScoreLoad() {
-    let st = gw.st; if (!st) return; let key = gw.gid + ':' + st.me.day; if (gw.tomKey === key) return; gw.tomKey = key; gw.tomScore = null;
-    let r = await gwApi('POST', 'tom', {}); if (gw.tomKey !== key) return;
-    if (r.s === 200 && r.j && r.j.rows) { gw.tomScore = gwTomScoreOf(r.j); gwRender(); }
+  // Bear Bot Tom's score for your day word appears on the back of his card only once you have used him (opened his card) for that group and day; it is remembered here for the day.
+  function gwTomStore() { try { return JSON.parse(localStorage.getItem('bt_gw_tom') || '{}') || {}; } catch (e) { return {}; } }
+  function gwTomScoreSync() {
+    let st = gw.st; if (!st) return; let key = gw.gid + ':' + st.me.day; if (gw.tomKey === key) return;
+    gw.tomKey = key; let v = gwTomStore()[key]; gw.tomScore = (typeof v === 'number') ? v : null;
+  }
+  function gwTomUsed(j) {
+    let st = gw.st, sc = gwTomScoreOf(j); if (!st || sc == null) return;
+    let key = gw.gid + ':' + st.me.day; gw.tomKey = key; gw.tomScore = sc;
+    try { let m = gwTomStore(), o = {}; Object.keys(m).forEach(function (k) { if (k.split(':').pop() === st.me.day) o[k] = m[k]; }); o[key] = sc; localStorage.setItem('bt_gw_tom', JSON.stringify(o)); } catch (e) { }
   }
   function gwTomLabel() {
     let o = $('gw-opt-tom'); if (!o) return;
@@ -5212,14 +5217,14 @@ body {
   function gwpRender() {
     let st = gw.st; if (!st || !$('gwp')) return;
     let me = st.me;
-    gwStatsRecord(me);
+    gwStatsRecord(me); gwTomScoreSync();
     if (gw.pday !== me.day) { gw.pday = me.day; gw.ptom = null; if (gw.pt === 'tom') gw.pt = null; }
     if (typeof gw.pt === 'number' && !gw.shown[gw.pt]) gw.pt = null;
     let b = gwpBackHtml(st), f = gwpFaceHtml(st);
     if (b !== gw.phB) { gw.phB = b; $('gwp-back').innerHTML = b; }
     if (f !== gw.phF) { gw.phF = f; $('gwp-face').innerHTML = f; }
     $('gwp-card').classList.toggle('down', gw.pdown);
-    gwpLayout(); gwTomScoreLoad();
+    gwpLayout();
   }
   function gwpLayout() {
     let c = $('gwp-card'); if (!c || !gw.st) return;
@@ -5264,7 +5269,7 @@ body {
       else if (act === 'tom') {
         let r2 = await gwApi('POST', 'tom', {});
         if (r2.s !== 200 || !r2.j || !r2.j.rows) { gwMsg('Bear Bot Tom could not play'); return; }
-        gw.ptom = r2.j; gw.tomScore = gwTomScoreOf(r2.j); gw.pv = 'face'; gw.pt = 'tom'; gwpRender(); gwpFlip(false);
+        gw.ptom = r2.j; gwTomUsed(r2.j); gw.pv = 'face'; gw.pt = 'tom'; gwpRender(); gwpFlip(false);
       }
       return;
     }
