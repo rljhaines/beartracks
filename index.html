@@ -655,7 +655,11 @@ body {
 .gw-ps { position: absolute; left: calc(var(--gwcw) * .05); right: calc(var(--gwcw) * .05); bottom: calc(var(--gwcw) * .028); display: flex; justify-content: space-between; align-items: baseline; font-style: italic; font-size: calc(var(--gwcw) * .045); line-height: 1.1; text-transform: lowercase; }
 .gw-ps:empty { display: none; }
 .gw-hd span { line-height: 1; }
-.gw-az i.u { opacity: .28; }
+.gw-az i { box-sizing: border-box; border: 1px solid transparent; background-clip: padding-box; border-radius: 3px; }
+.gw-az i.k0 { background-color: #8d867a; color: #fff; }
+.gw-az i.k1 { background-color: #d6a33a; color: #fff; }
+.gw-az i.k2 { background-color: #5a8f5a; color: #fff; }
+.gw-lab sup, .gw-lapsed sup { font-size: .6em; line-height: 0; vertical-align: super; }
 .gw-rows { display: grid; gap: var(--g); }
 .gw-r { display: grid; grid-template-columns: repeat(5, var(--t)); gap: var(--g); }
 .gw-t { width: var(--t); height: var(--t); box-sizing: border-box; border: 2px solid #cfc4ad; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: calc(var(--gwcw) * .1); color: #fff; }
@@ -3529,12 +3533,13 @@ body {
       ov.textContent = '';
       let box = mk('div', '', 'max-width:520px;width:100%;margin-top:6vh'); ov.appendChild(box);
       box.appendChild(mk('h1', IOSP ? 'Add to Home Screen' : 'Use this game in the BearTracks app', 'font-size:1.5em;margin:0 0 12px'));
-      let ol = mk('ol', '', 'line-height:1.55;padding-left:1.3em;margin:0 0 12px');
-      let li1 = mk('li', '');
+      let ol = mk('ol', '', 'line-height:1.55;padding-left:1.3em;margin:0 0 12px'), gap = IOSP ? '' : 'margin-bottom:1em';
+      if (!IOSP) { ol.setAttribute('start', '0'); ol.appendChild(mk('li', 'Open BearTracks with the Open button on your screen if available. You may find it blue in the upper-righthand corner. Otherwise:', gap)); }
+      let li1 = mk('li', '', gap);
       if (IOSP) { li1.appendChild(document.createTextNode('Tap ')); li1.appendChild(btIcon('more')); li1.appendChild(document.createTextNode(', then ')); li1.appendChild(btIcon('share')); li1.appendChild(document.createTextNode(' Share, then ')); li1.appendChild(btIcon('addhome')); li1.appendChild(document.createTextNode(' Add to Home Screen.')); }
       else { li1.appendChild(document.createTextNode('In the top-right of Safari’s toolbar, click Share ')); li1.appendChild(btIcon('share')); li1.appendChild(document.createTextNode(', then choose Add to Dock.')); }
       ol.appendChild(li1);
-      (IOSP ? ['Open BearTracks from your Home Screen. The app registers you as ' + ((h && h.name) || 'this player') + ' and opens the game.'] : ['If the blue Open button does not appear beside the address, refresh this tab (⌘R).', 'Click Open. The app registers you as ' + ((h && h.name) || 'this player') + ' and opens the game.']).forEach(function (t) { ol.appendChild(mk('li', t)); });
+      (IOSP ? ['Open BearTracks from your Home Screen. The app registers you as ' + ((h && h.name) || 'this player') + ' and opens the game.'] : ['If the blue Open button does not appear beside the address, refresh this tab (⌘R).', 'Click Open. The app registers you as ' + ((h && h.name) || 'this player') + ' and opens the game.']).forEach(function (t) { ol.appendChild(mk('li', t, gap)); });
       box.appendChild(ol);
       box.appendChild(mk('p', note || '', 'font-weight:600;min-height:1.4em;margin:0 0 12px'));
       let row = mk('div', '', 'display:flex;gap:10px');
@@ -4805,7 +4810,7 @@ body {
   function gwClose() {
     clearInterval(gw.poll); gw.poll = null;
     btLink.close('gw');
-    gw.gid = null; gw.token = null; gw.seat = null; gw.st = null; gw.shown = {}; gw.cur = ''; gw.items = []; gw.ids = ''; gw.chatSig = ''; gw.chatSeenAt = null;
+    gw.gid = null; gw.token = null; gw.seat = null; gw.st = null; gw.up = false; gw.shown = {}; gw.cur = ''; gw.items = []; gw.ids = ''; gw.chatSig = ''; gw.chatSeenAt = null;
     let g = $('gw-game'); if (g) { g.hidden = true; let t = $('gw-area'); if (t) t.innerHTML = ''; gwSideReset(); let i = $('gw-inp'); if (i) i.value = ''; }
   }
   function gwLeave() { if (GW_PHONE) { gwClose(); gwNoticeClose(); $('setup').hidden = true; gwpLaunch().then(function (ok) { if (!ok) entryGroupWords(); }); return; } gwClose(); foyerUrl(); gwNoticeClose(); $('setup').hidden = true; showEntryPage(); try { initEntryPaws(); } catch (e) { } try { populateEntryGames(); } catch (e) { } }
@@ -4819,13 +4824,13 @@ body {
     $('gFoyer').onclick = gwLeave;
     let inp = $('gw-inp');
     if (GW_PHONE) { gwpShell(); inp.readOnly = true; inp.setAttribute('inputmode', 'none'); }
-    inp.addEventListener('input', function () { let me = gw.st && gw.st.me; if (!me || me.status !== 'playing' || me.canNewDay) { inp.value = ''; return; } inp.value = inp.value.replace(/[^a-z]/gi, '').toUpperCase().slice(0, 5); gw.cur = inp.value; gwRender(); });
+    inp.addEventListener('input', function () { let me = gw.st && gw.st.me; if (!me || me.status !== 'playing' || me.canNewDay || (!GW_PHONE && !gw.up)) { inp.value = ''; return; } inp.value = inp.value.replace(/[^a-z]/gi, '').toUpperCase().slice(0, 5); gw.cur = inp.value; gwRender(); });
     inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); gwGuess(); } });
     document.addEventListener('keydown', function (e) { if (!g.hidden && e.target.tagName !== 'INPUT') inp.focus({ preventScroll: true }); });
     addEventListener('resize', gwLayout); addEventListener('orientationchange', function () { setTimeout(gwLayout, 200); });
   }
   async function gwEnter(first) {
-    hideEntryPage(); $('setup').hidden = true; $('bt-headsup').hidden = true; gwNoticeClose(); gwBuild(); $('gw-game').hidden = false;
+    hideEntryPage(); $('setup').hidden = true; $('bt-headsup').hidden = true; gwNoticeClose(); gwBuild(); $('gw-game').hidden = false; gw.up = false;
     try { let u = new URL(location.href); u.searchParams.set('kind', 'groupwords'); u.searchParams.set('gw', gw.gid); u.searchParams.set('p', String(gw.seat)); u.searchParams.delete('invite'); history.replaceState(null, '', u.pathname + u.search + u.hash); } catch (e) { }
     if (first && first.me) { gw.st = first; gwRender(); }
     await gwRefresh(); if (!gw.gid) return; gwConnect();
@@ -4864,7 +4869,7 @@ body {
     gwRender();
   }
   async function gwGuess() {
-    let me = gw.st && gw.st.me; if (!me || me.status !== 'playing' || me.canNewDay || gw.cur.length < 5) return;
+    let me = gw.st && gw.st.me; if (!me || me.status !== 'playing' || me.canNewDay || (!GW_PHONE && !gw.up) || gw.cur.length < 5) return;
     let g = gw.cur; gw.cur = ''; $('gw-inp').value = '';
     let r = await gwApi('POST', 'guess', { guess: g, tz: GW_TZ() });
     if (r.s === 200) { gw.st = r.j; gwRender(); gwUpgradeShown(); return; }
@@ -4874,9 +4879,16 @@ body {
   async function gwNewDay() {
     let r = await gwApi('POST', 'newday', { tz: GW_TZ() }); if (r.s === 200) { gw.st = r.j; gw.cur = ''; gw.shown = {}; gwRender(); } else gwRefresh();
   }
+  // Your own card starts face-down; turning it up begins the day's word when a new day is waiting, and turning it down shows its back.
+  async function gwFlipOwn() {
+    let me = gw.st && gw.st.me; if (!me) return;
+    if (gw.up) { gw.up = false; gwRender(); return; }
+    if (me.canNewDay) await gwNewDay();
+    gw.up = true; gwRender(); $('gw-inp').focus({ preventScroll: true });
+  }
   async function gwClick(it) {
     let me = gw.st && gw.st.me; if (!me || it.empty) return;
-    if (it.n === me.n) { $('gw-inp').focus({ preventScroll: true }); return; }
+    if (it.n === me.n) { gwFlipOwn(); return; }
     if (gw.shown[it.n]) { delete gw.shown[it.n]; gwRender(); return; }
     if (!it.flip) { gwMsg(it.done ? "You can't flip a player who has moved on to a newer day" : 'That player has not finished yet'); return; }
     let r = await gwApi('POST', it.reveal ? 'reveal' : 'flip', { target: it.n, tz: GW_TZ() });
@@ -4910,12 +4922,13 @@ body {
     let me = gw.st.me, el = it.el;
     if (it.empty) { el.classList.add('down'); el.classList.remove('can', 'mine'); el.querySelector('.gw-lab').textContent = ''; el.querySelector('.gw-lapsed').textContent = ''; el.querySelector('.gw-bd').textContent = ''; el.querySelector('.gw-bn').textContent = ''; el.querySelector('.gw-ps').textContent = ''; return; }
     let mine = it.n === me.n, shown = gw.shown[it.n];
-    el.classList.toggle('down', !mine && !shown);
+    el.classList.toggle('down', mine ? !gw.up : !shown);
     el.classList.toggle('mine', mine && me.status === 'playing');
     el.classList.toggle('can', mine || !!it.flip);
-    el.querySelector('.gw-lab').textContent = it.name + (it.gone ? '   player seceded' : (it.score != null ? '   ' + it.score : ''));
+    let star = (it.day && gw.st.today && it.day < gw.st.today) ? '<sup>*</sup>' : '';   // a score from the previous secret word
+    el.querySelector('.gw-lab').innerHTML = gwpEsc(mine ? 'my card' : it.name) + (it.gone ? '   player seceded' : (it.score != null ? '   ' + gwpEsc(it.score) + star : ''));
     let xb = el.querySelector('.gw-x'); xb.hidden = !(it.gone && !mine && !me.gone); xb.onclick = function (e) { e.stopPropagation(); gwDropAsk(it); };
-        el.querySelector('.gw-lapsed').textContent = it.lapsed ? (it.noshow ? 'no-show' : 'dnf') : '';
+        el.querySelector('.gw-lapsed').innerHTML = it.lapsed ? (it.noshow ? 'no-show' : 'dnf') + star : '';
     el.querySelector('.gw-hd b').textContent = mine ? '' : it.name;
     let sp = el.querySelector('.gw-hd span'), ps = el.querySelector('.gw-ps'), rows = [], letters = false, cur = '', sol = '';
     sp.textContent = ''; ps.textContent = '';
@@ -4923,7 +4936,6 @@ body {
       rows = me.rows; letters = true;
       if (me.status === 'failed' && me.word) sol = me.word;
       if (me.status === 'playing') { cur = gw.cur; }
-      else { sp.appendChild(document.createTextNode((me.status === 'lapsed' ? (me.rows.length ? 'dnf' : 'no-show') : me.score) + ' ')); }
     } else if (shown) {
       letters = shown.word !== undefined;
       rows = shown.rows.map(function (x) { return Array.isArray(x) ? { g: '', c: x } : x; });
@@ -4935,9 +4947,9 @@ body {
     d1.textContent = dayTxt; ps.appendChild(d1); el.querySelector('.gw-bd').textContent = dayTxt; bn.textContent = '';
     if (canNew) { ps.appendChild(gwLink('new word', gwNewDay)); bn.appendChild(gwLink('new word', gwNewDay)); }
     el.querySelector('.gw-sol').textContent = sol ? 'solution: ' + sol : '';
-    let used = {}; if (letters) rows.forEach(function (x) { if (x && x.g) for (let q = 0; q < x.g.length; q++) used[x.g[q]] = 1; });
-    let az = el.querySelector('.gw-az'); az.style.visibility = (mine && me.status === 'playing') ? 'visible' : 'hidden';
-    Array.prototype.forEach.call(az.querySelectorAll('i'), function (c) { c.classList.toggle('u', !!used[c.textContent]); });
+    let best = {}; if (letters) rows.forEach(function (x) { if (x && x.g && x.c) for (let q = 0; q < x.g.length; q++) best[x.g[q]] = Math.max(best[x.g[q]] === undefined ? -1 : best[x.g[q]], x.c[q]); });   // each letter takes its best color so far, the tile colors
+    let az = el.querySelector('.gw-az'); az.style.visibility = mine ? 'visible' : 'hidden';
+    Array.prototype.forEach.call(az.querySelectorAll('i'), function (c) { let v = best[c.textContent]; c.className = v === undefined ? '' : 'k' + v; });
     el.querySelector('.gw-rows').innerHTML = gwRowsHtml(rows, cur, letters);
     gwFit(el);
   }
@@ -5166,7 +5178,8 @@ body {
     let pill = function (name, lb, day) { return '<div class="gwp-nb"><span class="gwp-n">' + gwpEsc(name) + '</span>' + sc(lb, day) + '</div>'; };
     let gonePill = function (it) { return '<div class="gwp-nb"><span class="gwp-n">' + gwpEsc(it.name + '   player seceded') + '</span>' + (st.me.gone ? '' : '<button type="button" class="gwp-x" data-x="' + it.n + '" aria-label="Remove player"></button>') + '</div>'; };
     let h = '<div class="gwp-top"><a href="#" data-a="newgroup">new group</a><a href="#" data-a="groups">my groups</a></div><div class="gwp-rows">';
-    h += '<div class="gwp-row" data-a="card">' + pill('my card', '') + '</div>';
+    let own = st.seats.find(function (s) { return s.n === st.me.n; });
+    h += '<div class="gwp-row" data-a="card">' + pill('my card', own ? gwpLabel(own) : '', own ? own.day : '') + '</div>';
     let o = gwpOthers(st);
     for (let k = 0; k < 5; k++) {
       let it = o[k];
@@ -5442,7 +5455,13 @@ body {
       box.appendChild(mk('h1', 'BearTracks is played in the app', 'font-size:1.5em;margin:0 0 12px'));
       var btn = mk('button', 'Install BearTracks', 'font-size:1.1em;padding:10px 20px'); box.appendChild(btn);
       btn.onclick = function () { if (window.btInstall && window.btInstall.can()) window.btInstall.prompt(); };
+      var note = mk('p', '', 'font-weight:600;min-height:1.4em;margin:14px 0 0'); box.appendChild(note);
       document.body.appendChild(ov); document.documentElement.style.overflow = 'hidden';
+      // Once installed, the browser turns this very tab into the app window; the page was loaded as a browser tab, so it starts again as the app (the address, and an invite in it, stay) and goes on to registration without a refresh by the player.
+      var inApp = function () { try { return !matchMedia('(display-mode: browser)').matches; } catch (e) { return false; } };
+      var restart = function () { if (inApp()) location.reload(); };
+      try { var mq = matchMedia('(display-mode: browser)'); if (mq.addEventListener) mq.addEventListener('change', restart); else if (mq.addListener) mq.addListener(restart); } catch (e) { }
+      window.addEventListener('appinstalled', function () { setTimeout(function () { if (inApp()) location.reload(); else note.textContent = 'BearTracks is installed. Open it from its icon.'; }, 1200); });
     };
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', build); else build();
   }
