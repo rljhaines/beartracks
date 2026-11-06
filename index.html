@@ -1086,7 +1086,7 @@ body {
   // The hand-off service's registry: each game adds its own adapter (see "hand-off" below).
   // BearTracks is played in the installed app. A Chromium browser tab (Chrome, Brave, Edge, Opera...) that is not the app is locked; Safari tabs are handled by the hand-off panel; Firefox is left alone.
   window.btBrowserLocked = (function () { try { let ua = navigator.userAgent || ''; let chromium = /Chrome\/|Chromium\/|Edg\/|OPR\//.test(ua) && !/Firefox\//.test(ua); let app = navigator.standalone === true || (window.matchMedia && !matchMedia('(display-mode: browser)').matches);
-      try { if (app) sessionStorage.setItem('bt_app', '1'); else if (sessionStorage.getItem('bt_app') === '1') app = true; } catch (e) { } let secure = location.protocol === 'https:' || location.hostname === 'localhost'; return chromium && !app && secure; } catch (e) { return false; } })();
+      try { if (app) sessionStorage.setItem('bt_app', '1'); else if (sessionStorage.getItem('bt_app') === '1') app = true; } catch (e) { } let secure = location.protocol === 'https:' || location.hostname === 'localhost'; window.btAndroidTab = chromium && !app && secure && /Android.*Mobile/.test(ua); return chromium && !app && secure && !window.btAndroidTab; } catch (e) { return false; } })();   // an Android phone's Chromium tab is not locked: it loads the game, and the install panel is put over it once a seat is held
   // Small drawings of the browser's own controls, so the steps can show what to look for.
   function btIcon(kind) {
     let d = { share: '<path d="M12 3v12M8 7l4-4 4 4M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/>', menu: '<circle cx="12" cy="5" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="19" r="1.6" fill="currentColor"/>', install: '<rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M12 7v6M9.5 10.5L12 13l2.5-2.5M8 20h8"/>', open: '<path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>', more: '<path d="M4 7h16M4 12h16M4 17h11"/>', addhome: '<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M12 8v8M8 12h8"/>' }[kind] || '';
@@ -3281,6 +3281,7 @@ body {
     try {
       // iPhone: the one Add-to-Home-Screen panel is the hand-off panel, shown once the game is open (as on the desktop); this panel cannot carry the registration.
       if (/iPhone|iPod/.test(navigator.userAgent || '')) return;
+      if (window.btAndroidTab) return;   // an Android phone's tab loads the game; the install panel comes over it
       if (!window.btInstall || !window.btInstall.can()) return;
       let withGame = false;
       if (inviteParam) { try { let inv = await (postRegisterTarget === 'cribbage' ? cribLoadInvite(inviteParam) : loadInvite(inviteParam)); withGame = !!(inv && inv.gameId); } catch (e) { } }
@@ -3488,6 +3489,9 @@ body {
   function hoCookieSet(code) { try { document.cookie = 'bt_ho=' + encodeURIComponent(code) + '; Max-Age=86400; Path=/; SameSite=Lax' + (location.protocol === 'https:' ? '; Secure' : ''); } catch (e) { } }
   function hoCookieGet() { try { let m = /(?:^|;\s*)bt_ho=([^;]*)/.exec(document.cookie || ''); return m ? decodeURIComponent(m[1]) : ''; } catch (e) { return ''; } }
   function hoCookieClear() { try { document.cookie = 'bt_ho=; Max-Age=0; Path=/; SameSite=Lax' + (location.protocol === 'https:' ? '; Secure' : ''); } catch (e) { } }
+  // iPhone / iPod, and iPadOS: an iPad that says "iPad" (a mobile-site request), or one whose Safari calls itself a Mac (only iPhone/iPad Safari has navigator.standalone, so a touchscreen Mac is not mistaken for one).
+  const BT_IPAD = (function () { try { let u = navigator.userAgent || ''; return /iPad/.test(u) || (/Macintosh/.test(u) && ('standalone' in navigator)); } catch (e) { return false; } })();
+  const BT_IOS = (function () { try { return /iPhone|iPod/.test(navigator.userAgent || '') || BT_IPAD; } catch (e) { return false; } })();
   async function hoCreate(h) {
     let r = await fetch(API + '/handoff', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Seat-Token': h.token }, body: JSON.stringify({ kind: h.kind, gameId: h.gid, pw: (h.name && pwRecord(h.name)) || '', mk: (h.name && getMk(h.name)) || '' }) });
     if (!r.ok) throw new Error(String(r.status));
@@ -3520,7 +3524,7 @@ body {
   }
   // ---- Safari side: the Add-to-Dock panel for whatever game is open, shown only in a Safari tab (not in the installed app) ----
   (function () {
-    const IOSP = /iPhone|iPod/.test(navigator.userAgent || '');
+    const IOSP = BT_IOS;
     function isSafari() { let ua = navigator.userAgent; return navigator.vendor === 'Apple Computer, Inc.' && !/CriOS|FxiOS|EdgiOS|OPiOS|Chrome|Chromium|Android/.test(ua); }
     let ov = null, poll = null, cur = null;
     function urlParam() { try { return new URLSearchParams(location.search).get('handoff'); } catch (e) { return null; } }
@@ -3536,7 +3540,7 @@ body {
       let ol = mk('ol', '', 'line-height:1.55;padding-left:1.3em;margin:0 0 12px'), gap = IOSP ? '' : 'margin-bottom:1em';
       if (!IOSP) { ol.setAttribute('start', '0'); ol.appendChild(mk('li', 'Open BearTracks with the Open button on your screen if available. You may find it blue in the upper-righthand corner. Otherwise:', gap)); }
       let li1 = mk('li', '', gap);
-      if (IOSP) { li1.appendChild(document.createTextNode('Tap ')); li1.appendChild(btIcon('more')); li1.appendChild(document.createTextNode(', then ')); li1.appendChild(btIcon('share')); li1.appendChild(document.createTextNode(' Share, then ')); li1.appendChild(btIcon('addhome')); li1.appendChild(document.createTextNode(' Add to Home Screen.')); }
+      if (IOSP) { li1.appendChild(document.createTextNode('Tap ')); if (!BT_IPAD) { li1.appendChild(btIcon('more')); li1.appendChild(document.createTextNode(', then ')); } li1.appendChild(btIcon('share')); li1.appendChild(document.createTextNode(' Share, then ')); li1.appendChild(btIcon('addhome')); li1.appendChild(document.createTextNode(' Add to Home Screen.')); }
       else { li1.appendChild(document.createTextNode('In the top-right of Safari’s toolbar, click Share ')); li1.appendChild(btIcon('share')); li1.appendChild(document.createTextNode(', then choose Add to Dock.')); }
       ol.appendChild(li1);
       (IOSP ? ['Open BearTracks from your Home Screen. The app registers you as ' + ((h && h.name) || 'this player') + ' and opens the game.'] : ['If the blue Open button does not appear beside the address, refresh this tab (⌘R).', 'Click Open. The app registers you as ' + ((h && h.name) || 'this player') + ' and opens the game.']).forEach(function (t) { ol.appendChild(mk('li', t, gap)); });
@@ -3561,8 +3565,21 @@ body {
       try { cur = await hoCreate(h); } catch (e) { show(h, null, 'A code could not be made (' + (e && e.message) + '). This browser may not hold the key for this seat.', true); return; }
       setUrl(cur); if (IOSP) hoCookieSet(cur); show(h, cur, 'Waiting for the app…', false); watch(h, cur);
     }
+    // Android phone, Chromium tab: the game loads here and the install panel is put over it once a seat is held. The browser shares its storage with the installed app, so the app opens already registered, in the game.
+    let aov = null;
+    function showAndroid() {
+      aov = mk('div', '', 'position:fixed;inset:0;z-index:99990;background:#f6f0e4;color:#1f3b32;overflow:auto;display:flex;justify-content:center;padding:24px'); aov.id = 'bt-browser-lock';
+      let box = mk('div', '', 'max-width:540px;width:100%;margin-top:6vh'); aov.appendChild(box);
+      box.appendChild(mk('h1', 'BearTracks is played in the app', 'font-size:1.5em;margin:0 0 12px'));
+      let btn = mk('button', 'Install BearTracks', 'font-size:1.1em;padding:10px 20px'); box.appendChild(btn);
+      let note = mk('p', '', 'font-weight:600;min-height:1.4em;margin:14px 0 0'); box.appendChild(note);
+      btn.onclick = function () { if (window.btInstall && window.btInstall.can()) window.btInstall.prompt(); };
+      window.addEventListener('appinstalled', function () { note.textContent = 'BearTracks is installed. Open it from its icon.'; });
+      document.body.appendChild(aov); document.documentElement.style.overflow = 'hidden';
+    }
     setInterval(function () {
       try {
+        if (window.btAndroidTab) { let a = btHand.here(); if (a && a.token && !aov) showAndroid(); else if (!(a && a.token) && aov) { aov.remove(); aov = null; document.documentElement.style.overflow = ''; } return; }
         let h = btHand.here(), ok = !!(h && h.token && (isSafari() || IOSP) && !hoStandalone());
         if (!ok && ov) close();
         let up = urlParam();
@@ -5332,7 +5349,7 @@ body {
     let owner = getOwner(); let hasState = false;
     
     let hoParam = params.get('handoff');
-    if (GW_PHONE && hoStandalone() && !owner && hoCookieGet()) { if (await gwpCookieHandoff()) return; }
+    if (BT_IOS && hoStandalone() && !owner && hoCookieGet()) { if (await gwpCookieHandoff()) return; }
     if (hoParam && hoStandalone()) { let hoErr = ''; try { hoErr = await hoEnter(hoParam); } catch (e) { hoErr = 'The hand-off failed.'; } if (!hoErr) return; try { message(hoErr); } catch (e) { } }
     if (GW_PHONE && (iid || gid) && kindParam !== 'groupwords') { gwpBigScreen(); return; }
     if (kindParam === 'cribbage') {
@@ -5400,7 +5417,7 @@ body {
           history.replaceState(null, '', url.pathname + url.search + location.hash);  
         } catch (e) { }  
       } else { pendingGameOnRegister = state; try { addGameId(state.id); } catch (e) { } $('setup').hidden = false; renderBoxes(); }  
-    } else if (!iid && !gid && !hasState) { if (!getOwner()) { if (!(GW_PHONE && hoStandalone() && await gwpCookieHandoff())) requireSignIn(); } else if (GW_PHONE) { if (!(await gwpLaunch())) entryGroupWords(); } else { showEntryPage(); initEntryPaws(); await populateEntryGames(); } }  
+    } else if (!iid && !gid && !hasState) { if (!getOwner()) { if (!(BT_IOS && hoStandalone() && await gwpCookieHandoff())) requireSignIn(); } else if (GW_PHONE) { if (!(await gwpLaunch())) entryGroupWords(); } else { showEntryPage(); initEntryPaws(); await populateEntryGames(); } }  
    
     if (gateFresh) gateFresh = false; else lockGate();  
   })();  
