@@ -590,6 +590,34 @@ body {
 #othChatLog { flex: 1; min-height: 60px; overflow: auto; font-size: 12px; border: 1px solid var(--line); border-radius: 8px; padding: 6px; background: #fff }
 .bt-phone #entry-othello { display: none; }
 
+/* ===== tablet: Othello (every rule is under html.bt-tab; landscape keeps the desktop layout, which suits it) ===== */
+html.bt-tab .oth-cell, html.bt-tab .oth-link, html.bt-tab #othInstrHead { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+html.bt-tab #othChatIn { font-size: 16px; }   /* 16px keeps iPadOS from zooming the page when the field is focused */
+html.bt-tab .oth-link { font-size: 15px; display: inline-block; padding: 10px 8px; }
+@media (orientation: landscape) {   /* the desktop arrangement, with wider side columns so touch-sized text fits */
+  html.bt-tab #othello-game { --oth-size: min(calc(100dvh - 40px), calc(100vw - 500px)); }
+  html.bt-tab #othello-game .left-col, html.bt-tab #othello-game .right-col { width: 100%; }
+  html.bt-tab #othello-game .status-panel, html.bt-tab #othello-game .instr-panel { flex: 0 0 auto; }
+  html.bt-tab #othello-game .instr-panel:not(.collapsed) { flex: 1 1 0; }
+  html.bt-tab #othello-game .panel h3 { font-size: 14px; padding: 9px 10px; }
+  html.bt-tab #othello-game .panel-body, html.bt-tab #othello-game .placement, html.bt-tab #othello-game .status { font-size: 14px; line-height: 1.4; }
+}
+@media (orientation: portrait) {
+  html.bt-tab #othello-game { display: block; overflow-x: hidden; overflow-y: auto; -webkit-overflow-scrolling: touch; --oth-size: min(calc(100vw - 16px), calc(100dvh - 392px)); }
+  html.bt-tab #othello-game .stage { display: grid; width: 100%; aspect-ratio: auto; height: auto; grid-template-columns: 1fr 1fr; gap: 8px; align-items: start; padding: 8px 8px 24px; box-sizing: border-box; }
+  html.bt-tab #othello-game .oth-board { grid-column: 1 / 3; grid-row: 1; }
+  html.bt-tab #othello-game .left-col, html.bt-tab #othello-game .right-col { display: flex; width: auto; height: auto; justify-self: stretch; align-self: start; grid-row: 2; }
+  html.bt-tab #othello-game .left-col { grid-column: 1; }
+  html.bt-tab #othello-game .right-col { grid-column: 2; }
+  html.bt-tab #othello-game .status-panel, html.bt-tab #othello-game .score-panel, html.bt-tab #othello-game .instr-panel { flex: 0 0 auto; }
+  html.bt-tab #othello-game .talk-panel { flex: 0 0 auto; min-height: 220px; }
+  html.bt-tab #othello-game .panel h3 { font-size: 15px; padding: 10px 12px; }
+  html.bt-tab #othello-game .panel-body { font-size: 15px; }
+  html.bt-tab #othello-game .placement, html.bt-tab #othello-game .status { font-size: 15px; line-height: 1.4; }
+  html.bt-tab #othello-game #othChatLog { min-height: 110px; max-height: 240px; }
+  html.bt-tab #othello-game #othHistory { max-height: 180px; overflow: auto; }
+}
+
 /* ===== Cribbage gameplay full-screen board ===== */
 #cribbage-game { position: fixed; inset: 0; z-index: 6; background: var(--paper); overflow: hidden; }
 #crib-board-wrap { position: absolute; inset: 0; z-index: 0; }
@@ -4256,11 +4284,10 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
 
   // ---- entering, leaving, creating, inviting ----
   async function othEnterGame(g, seat) {
-    if (BT_TAB) { btTabNoCrib('Othello'); return; }   // this first version is for desktop screens
     try { addGameId(g.id); } catch (e) { }
     othState = g; othNote = ''; othSeenChat = new Set(); setTabSeat(g.id, seat);
     wordageRemove(); hideEntryPage(); $('setup').hidden = true; $('bt-headsup').hidden = true;
-    $('othChatLog').innerHTML = ''; $('othello-game').hidden = false; othRender(); othChatInit(g.id);
+    $('othChatLog').innerHTML = ''; $('othello-game').hidden = false; if (BT_TAB) { try { $('othInstrPanel').classList.add('collapsed'); $('othInstrHead').setAttribute('aria-expanded', 'false'); } catch (e) { } } othRender(); othChatInit(g.id);
     try { mirrorPassword(gateName()); } catch (e) { }
     try { let url = new URL(location.href); url.searchParams.set('game', g.id); url.searchParams.set('kind', 'othello'); url.searchParams.delete('p'); url.searchParams.delete('invite'); history.replaceState(null, '', url.pathname + url.search + url.hash); } catch (e) { }
   }
@@ -4276,7 +4303,7 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     try { let url = new URL(location.href); url.searchParams.delete('game'); url.searchParams.delete('kind'); url.searchParams.delete('p'); history.replaceState(null, '', url.pathname + url.search + url.hash); } catch (_) { }
     showEntryPage(); try { initEntryPaws(); } catch (_) { } try { populateEntryGames(); } catch (_) { }
   }
-  function entryOthello() { if (BT_TAB) { btTabNoCrib('Othello'); return; } postRegisterTarget = 'othello'; hideEntryPage(); try { $('nameB').value = ''; } catch (e) { } $('setup').hidden = false; renderBoxes(); }
+  function entryOthello() { postRegisterTarget = 'othello'; hideEntryPage(); try { $('nameB').value = ''; } catch (e) { } $('setup').hidden = false; renderBoxes(); }
   function othShowHeadsUp(url, g) {
     let help = 'Join me for a game of Othello on BearTracks:', msg = help + ' ' + url;
     $('bt-headsup-input').value = msg; $('bt-headsup-help').textContent = help;
