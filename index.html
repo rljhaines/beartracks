@@ -604,7 +604,7 @@ body {
 #gw-game[hidden] { display: none; }
 #gw-msg { position: absolute; top: 6px; left: 0; right: 0; text-align: center; font-size: 14px; pointer-events: none; z-index: 2; }
 #gw-table { flex: 1; min-height: 0; display: flex; flex-direction: row; align-items: stretch; box-sizing: border-box; width: 100%; padding: 0; }
-#gw-area { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--gwgap, 10px); }
+#gw-area { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--gwvgap, var(--gwgap, 10px)); }
 #gw-side { flex: none; display: flex; flex-direction: column; justify-content: center; gap: var(--gwgap, 10px); width: var(--gwcw); }
 .gw-side .gw-front { padding: calc(var(--gwcw) * .05); display: flex; flex-direction: column; align-items: stretch; }
 .gw-sd-h { font-size: calc(var(--gwcw) * .07); letter-spacing: .04em; font-weight: 700; cursor: pointer; margin-bottom: calc(var(--gwcw) * .03); }
@@ -615,7 +615,7 @@ body {
 .gw-cv-in { display: flex; align-items: baseline; gap: .4em; margin-top: calc(var(--gwcw) * .02); font-size: calc(var(--gwcw) * .055); }
 .gw-cv-in input { flex: 1; min-width: 0; font: inherit; border: 0; border-bottom: 2px solid #2b2620; background: transparent; color: inherit; outline: none; }
 .gw-row { display: flex; justify-content: center; gap: var(--gwgap, 10px); }
-.gw-card { width: var(--gwcw); height: calc(var(--gwcw) * 1.4); perspective: 1200px; --t: calc(var(--gwcw) * .165); --g: calc(var(--gwcw) * .015); user-select: none; -webkit-user-select: none; }
+.gw-card { width: var(--gwcw); height: calc(var(--gwcw) * var(--gwr, 1.4)); perspective: 1200px; --t: calc(var(--gwcw) * .165); --g: calc(var(--gwcw) * .015); user-select: none; -webkit-user-select: none; }
 .gw-card.can { cursor: pointer; }
 .gw-inner { position: relative; width: 100%; height: 100%; transition: transform .6s; transform-style: preserve-3d; }
 .gw-card.down .gw-inner { transform: rotateY(180deg); }
@@ -721,6 +721,25 @@ html.bt-tab.tab-flip .two-letter { font-size: 14px }
 html.bt-tab.tab-flip .status-panel { flex: 0 0 auto }
 html.bt-tab.tab-flip .score-panel { flex: 0 0 auto; max-height: 40% }
 html.bt-tab.tab-flip #tabBack { display: inline-flex; position: fixed; top: 6px; right: 12px; z-index: 10; width: 44px; height: 44px }
+}
+
+/* ===== tablet: groupWords (every rule is under html.bt-tab; the desktop card layout is untouched) ===== */
+html.bt-tab .gw-card.own { --tkh: 34px; --g: 3px; --t: calc((var(--gwcw) * (var(--gwr, 1.4) - .05) - 3 * var(--tkh) - 51px) / 6) }
+html.bt-tab .gw-card.own .gw-t { font-size: calc(var(--t) * .62) }
+html.bt-tab .gw-card.own .gw-hd { height: 0; min-height: 0 }
+html.bt-tab .gw-card.own .gw-nm { position: absolute; left: 32%; right: 32%; bottom: calc(var(--gwcw) * .028); text-align: center }
+html.bt-tab .gw-rw { position: static }
+html.bt-tab .gw-card .gw-az { left: 6px; right: 6px; bottom: 22px; margin: 0; transform: none; align-items: stretch; pointer-events: auto; font-size: 15px; gap: 4px; z-index: 3 }
+html.bt-tab .gw-card.down .gw-az { pointer-events: none }
+html.bt-tab .gw-azr, html.bt-tab .gw-azr.r2, html.bt-tab .gw-azr.r3 { margin-left: 0; justify-content: center; gap: 2px }
+html.bt-tab .gw-az i { flex: 1 1 0; width: auto; max-width: 27px; height: var(--tkh); display: flex; align-items: center; justify-content: center; background-color: #e3dac6; border-radius: 5px; touch-action: manipulation; cursor: pointer; -webkit-tap-highlight-color: transparent }
+html.bt-tab .gw-az i[data-act] { flex: 1.6 1 0; max-width: 42px; font-size: 9px }
+html.bt-tab .gw-az i.k0 { background-color: #8d867a; color: #fff }
+html.bt-tab .gw-az i.k1 { background-color: #d6a33a; color: #fff }
+html.bt-tab .gw-az i.k2 { background-color: #5a8f5a; color: #fff }
+@media (orientation: landscape) {
+html.bt-tab .gw-card.own { --tkh: 40px }
+html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; padding: 0; border-radius: 50%; font-size: 0; text-decoration: none; background: #f8d5d5 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b2a2a' stroke-width='2' stroke-linejoin='round' stroke-linecap='round'%3E%3Cpath d='M3 11.5 12 4l9 7.5'/%3E%3Cpath d='M5.5 10v10h13V10'/%3E%3Cpath d='M10 20v-6h4v6'/%3E%3C/svg%3E") center / 26px no-repeat; border: 1px solid #c87a7a }
 }
 .bt-phone #gw-pick { display: none; }
 .bt-phone #bt-headsup.gw-pick #gw-pick { display: flex; flex-direction: column; gap: 10px; }
@@ -4937,6 +4956,7 @@ html.bt-tab.tab-flip #tabBack { display: inline-flex; position: fixed; top: 6px;
     $('gFoyer').onclick = gwLeave;
     let inp = $('gw-inp');
     if (GW_PHONE) { gwpShell(); inp.readOnly = true; inp.setAttribute('inputmode', 'none'); }
+    if (BT_TAB) inp.setAttribute('inputmode', 'none');   // the on-card keyboard replaces the system one; a hardware keyboard still types
     inp.addEventListener('input', function () { let me = gw.st && gw.st.me; if (!me || me.status !== 'playing' || me.canNewDay || (!GW_PHONE && !gw.up)) { inp.value = ''; return; } inp.value = inp.value.replace(/[^a-z]/gi, '').toUpperCase().slice(0, 5); gw.cur = inp.value; gwRender(); });
     inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); gwGuess(); } });
     document.addEventListener('keydown', function (e) { if (!g.hidden && e.target.tagName !== 'INPUT') inp.focus({ preventScroll: true }); });
@@ -5020,7 +5040,19 @@ html.bt-tab.tab-flip #tabBack { display: inline-flex; position: fixed; top: 6px;
     let c = document.createElement('div'); c.className = 'gw-card';
     c.innerHTML = '<div class="gw-inner"><div class="gw-face gw-front"><div class="gw-hd"><div class="gw-nm"><b></b><i class="gw-sol"></i></div><span></span></div><div class="gw-rw"><div class="gw-az">' + GW_KB.map(function (r, i) { return '<div class="gw-azr r' + (i + 1) + '">' + r.split('').map(function (L) { return '<i>' + L + '</i>'; }).join('') + '</div>'; }).join('') + '</div><div class="gw-rows"></div></div><div class="gw-ps"></div></div><div class="gw-face gw-back"><div class="gw-lab"></div><div class="gw-lapsed"></div><button type="button" class="gw-x" hidden aria-label="Remove player"></button><div class="gw-bd"></div><div class="gw-bn"></div></div></div>';
     c.onclick = function () { let cur = gw.items.find(function (x) { return x.n === it.n; }); if (cur) gwClick(cur); };
+    if (BT_TAB) {   // tablet: the keys on your card are tappable, with enter and backspace; a tap on the keyboard never flips the card
+      let az = c.querySelector('.gw-az'), rs = az.querySelectorAll('.gw-azr'), r3 = rs[rs.length - 1], e = document.createElement('i'), b = document.createElement('i');
+      e.textContent = 'enter'; e.dataset.act = 'enter'; b.textContent = '\u232b'; b.dataset.act = 'bsp'; r3.insertBefore(e, r3.firstChild); r3.appendChild(b);
+      az.addEventListener('click', function (ev) { if (!gw.up) return; ev.stopPropagation(); let k = ev.target.closest ? ev.target.closest('i') : null; if (k) gwKey(k); });
+    }
     return c;
+  }
+  function gwKey(k) {
+    let me = gw.st && gw.st.me; if (!me || me.status !== 'playing' || me.canNewDay || !gw.up) return;
+    let inp = $('gw-inp'), a = k.dataset.act;
+    if (a === 'enter') { gwGuess(); return; }
+    inp.value = a === 'bsp' ? inp.value.slice(0, -1) : (inp.value + k.textContent).slice(0, 5);
+    inp.dispatchEvent(new Event('input'));
   }
   function gwRowsHtml(rows, cur, letters) {
     let h = '';
@@ -5037,7 +5069,7 @@ html.bt-tab.tab-flip #tabBack { display: inline-flex; position: fixed; top: 6px;
     if (it.empty) { el.classList.add('down'); el.classList.remove('can', 'mine'); el.querySelector('.gw-lab').textContent = ''; el.querySelector('.gw-lapsed').textContent = ''; el.querySelector('.gw-bd').textContent = ''; el.querySelector('.gw-bn').textContent = ''; el.querySelector('.gw-ps').textContent = ''; return; }
     let mine = it.n === me.n, shown = gw.shown[it.n];
     el.classList.toggle('down', mine ? !gw.up : !shown);
-    el.classList.toggle('mine', mine && me.status === 'playing');
+    el.classList.toggle('mine', mine && me.status === 'playing'); el.classList.toggle('own', mine);
     el.classList.toggle('can', mine || !!it.flip);
     let star = (it.day && gw.st.today && it.day < gw.st.today) ? '<sup>*</sup>' : '';   // a score from the previous secret word
     el.querySelector('.gw-lab').innerHTML = gwpEsc(mine ? 'my card' : it.name) + (it.gone ? '   player seceded' : (it.score != null ? '   ' + gwpEsc(it.score) + star : ''));
@@ -5063,7 +5095,7 @@ html.bt-tab.tab-flip #tabBack { display: inline-flex; position: fixed; top: 6px;
     el.querySelector('.gw-sol').textContent = sol ? 'solution: ' + sol : '';
     let best = {}; if (letters) rows.forEach(function (x) { if (x && x.g && x.c) for (let q = 0; q < x.g.length; q++) best[x.g[q]] = Math.max(best[x.g[q]] === undefined ? -1 : best[x.g[q]], x.c[q]); });   // each letter takes its best color so far, the tile colors
     let az = el.querySelector('.gw-az'); az.style.visibility = mine ? 'visible' : 'hidden';
-    Array.prototype.forEach.call(az.querySelectorAll('i'), function (c) { let v = best[c.textContent]; c.className = v === undefined ? '' : 'k' + v; });
+    Array.prototype.forEach.call(az.querySelectorAll('i'), function (c) { if (c.dataset.act) return; let v = best[c.textContent]; c.className = v === undefined ? '' : 'k' + v; });
     el.querySelector('.gw-rows').innerHTML = gwRowsHtml(rows, cur, letters);
     gwFit(el);
   }
@@ -5129,6 +5161,20 @@ html.bt-tab.tab-flip #tabBack { display: inline-flex; position: fixed; top: 6px;
   function gwLayout() {
     let t = $('gw-table'), a = $('gw-area'), sd = $('gw-side'); if (!t || !a || !sd || !gw.items.length) return;
     let n = gw.items.length, W = t.clientWidth, H = t.clientHeight; if (!W || !H) return;
+    let gm = $('gw-game'); gm.style.removeProperty('--gwr'); a.style.removeProperty('--gwvgap');
+    if (BT_TAB && W > H) {   // tablet, landscape: room for the home icon at the left, snug top, bottom and right, slightly taller cards, a wider gap before the side cards
+      const L = 60, R = 12, MV = 13, HG = 10, VG = 9, SG = 14, RT = 1.46;
+      let aw = W - L - R, ah = H - 2 * MV;
+      let fit = function (m, fw, fh) { let b = { w: 0, c: 1 }; for (let c = 1; c <= m; c++) { if (m === 5 && c !== 2 && c !== 3) continue; let r = Math.ceil(m / c), w = Math.min((fw - HG * (c - 1)) / c, (fh - VG * (r - 1)) / r / RT); if (w > b.w) b = { w: w, c: c }; } return b; };
+      let lo = 40, hi = Math.max(41, H); for (let k = 0; k < 40; k++) { let mid = (lo + hi) / 2; if (fit(6, aw - SG - mid, ah).w >= mid) lo = mid; else hi = mid; }
+      let s2 = lo, bt = fit(n, aw - SG - s2, ah), w2 = Math.max(40, bt.w);
+      t.style.padding = MV + 'px ' + R + 'px ' + MV + 'px ' + L + 'px'; t.style.gap = SG + 'px'; t.style.setProperty('--gwgap', HG + 'px'); a.style.setProperty('--gwvgap', VG + 'px'); gm.style.setProperty('--gwr', String(RT));
+      a.style.setProperty('--gwcw', w2 + 'px'); sd.style.setProperty('--gwcw', s2 + 'px');
+      a.innerHTML = '';
+      for (let i = 0; i < n; i += bt.c) { let row = document.createElement('div'); row.className = 'gw-row'; gw.items.slice(i, i + bt.c).forEach(function (it) { row.appendChild(it.el); }); a.appendChild(row); }
+      gwRefit(); clearTimeout(gwRefitT); gwRefitT = setTimeout(gwRefit, 400); setTimeout(gwRefit, 1500);
+      return;
+    }
     let Wd = W - 16, Ht = H - 16, gap = Math.max(8, Math.min(Wd, Ht) * 0.02);
     let b6 = gwFitCards(6, Wd, Ht, gap), s = Math.max(60, b6.w * 0.9);                  // the six-player card today
     let edge = (W - (b6.c * s + (b6.c - 1) * gap)) / 2, m = Math.max(0, edge / 8);      // an eighth of today's edge gap
