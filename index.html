@@ -780,7 +780,9 @@ html.bt-tab .gw-card.own .gw-hd { height: 0; min-height: 0 }
 html.bt-tab .gw-card.own .gw-nm { position: absolute; left: 32%; right: 32%; bottom: calc(var(--gwcw) * .028); text-align: center }
 html.bt-tab .gw-rw { position: static }
 html.bt-tab .gw-card .gw-az { left: 6px; right: 6px; bottom: 22px; margin: 0; transform: none; align-items: stretch; pointer-events: auto; font-size: 15px; gap: 4px; z-index: 3 }
-html.bt-tab .gw-card.down .gw-az { pointer-events: none }
+html.bt-tab .gw-card:not(.own) .gw-az { display: none !important }   /* only your own card has keys */
+html.bt-tab .gw-card .gw-az { -webkit-backface-visibility: hidden; backface-visibility: hidden; transition: visibility 0s linear .3s }
+html.bt-tab .gw-card.down .gw-az, html.bt-tab .gw-card.down .gw-az i { visibility: hidden !important; pointer-events: none }   /* the keys are the front's: no mirrored copy on the back (the delay lets the card turn first) */
 html.bt-tab .gw-azr, html.bt-tab .gw-azr.r2, html.bt-tab .gw-azr.r3 { margin-left: 0; justify-content: center; gap: 2px }
 html.bt-tab .gw-az i { flex: 1 1 0; width: auto; max-width: 27px; height: var(--tkh); display: flex; align-items: center; justify-content: center; background-color: #e3dac6; border-radius: 5px; touch-action: manipulation; cursor: pointer; -webkit-tap-highlight-color: transparent }
 html.bt-tab .gw-az i[data-act] { flex: 1.6 1 0; max-width: 42px; font-size: 9px }
@@ -788,9 +790,10 @@ html.bt-tab .gw-az i.k0 { background-color: #8d867a; color: #fff }
 html.bt-tab .gw-az i.k1 { background-color: #d6a33a; color: #fff }
 html.bt-tab .gw-az i.k2 { background-color: #5a8f5a; color: #fff }
 @media (orientation: landscape) {
+html.bt-tab #tabFlip, html.bt-tab #tabBack, html.bt-tab #tabVal { display: none !important }   /* Wordage held landscape is the desktop layout: no Flip */
 html.bt-tab .gw-card.own { --tkh: 40px }
-html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; padding: 0; border-radius: 50%; font-size: 0; text-decoration: none; background: #f8d5d5 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b2a2a' stroke-width='2' stroke-linejoin='round' stroke-linecap='round'%3E%3Cpath d='M3 11.5 12 4l9 7.5'/%3E%3Cpath d='M5.5 10v10h13V10'/%3E%3Cpath d='M10 20v-6h4v6'/%3E%3C/svg%3E") center / 26px no-repeat; border: 1px solid #c87a7a }
 }
+html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; padding: 0; border-radius: 50%; font-size: 0; text-decoration: none; background: #f8d5d5 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b2a2a' stroke-width='2' stroke-linejoin='round' stroke-linecap='round'%3E%3Cpath d='M3 11.5 12 4l9 7.5'/%3E%3Cpath d='M5.5 10v10h13V10'/%3E%3Cpath d='M10 20v-6h4v6'/%3E%3C/svg%3E") center / 26px no-repeat; border: 1px solid #c87a7a }
 .bt-phone #gw-pick { display: none; }
 .bt-phone #bt-headsup.gw-pick #gw-pick { display: flex; flex-direction: column; gap: 10px; }
 .bt-phone #gw-t, .bt-phone #gw-n { width: 100%; max-width: none; margin: 0; min-height: 44px; font-size: 16px; text-align: left; box-sizing: border-box; }
@@ -5491,13 +5494,15 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     let t = $('gw-table'), a = $('gw-area'), sd = $('gw-side'); if (!t || !a || !sd || !gw.items.length) return;
     let n = gw.items.length, W = t.clientWidth, H = t.clientHeight; if (!W || !H) return;
     let gm = $('gw-game'); gm.style.removeProperty('--gwr'); a.style.removeProperty('--gwvgap');
-    if (BT_TAB && W > H) {   // tablet, landscape: room for the home icon at the left, snug top, bottom and right, slightly taller cards, a wider gap before the side cards
-      const L = 60, R = 12, MV = 13, HG = 10, VG = 9, SG = 14, RT = 1.46;
-      let aw = W - L - R, ah = H - 2 * MV;
-      let fit = function (m, fw, fh) { let b = { w: 0, c: 1 }; for (let c = 1; c <= m; c++) { if (m === 5 && c !== 2 && c !== 3) continue; let r = Math.ceil(m / c), w = Math.min((fw - HG * (c - 1)) / c, (fh - VG * (r - 1)) / r / RT); if (w > b.w) b = { w: w, c: c }; } return b; };
+    if (BT_TAB) {   // tablet (either way up): room for the home icon at the left, snug top, bottom and right, the player cards close to the side cards, and the cards as tall as the space allows (a larger guess board)
+      const portrait = H > W, L = 60, R = 12, MT = portrait ? 18 : 14, MB = 8, HG = 10, VG = 8, SG = 14, RT0 = 1.4, RTX = 1.7, TKH = portrait ? 34 : 40;
+      let aw = W - L - R, ah = H - MT - MB;
+      let fit = function (m, fw, fh) { let b = { w: 0, c: 1 }; for (let c = 1; c <= m; c++) { if (m === 5 && c !== 2 && c !== 3) continue; let r = Math.ceil(m / c), w = Math.min((fw - HG * (c - 1)) / c, (fh - VG * (r - 1)) / r / RT0); if (w > b.w) b = { w: w, c: c }; } return b; };
       let lo = 40, hi = Math.max(41, H); for (let k = 0; k < 40; k++) { let mid = (lo + hi) / 2; if (fit(6, aw - SG - mid, ah).w >= mid) lo = mid; else hi = mid; }
-      let s2 = lo, bt = fit(n, aw - SG - s2, ah), w2 = Math.max(40, bt.w);
-      t.style.padding = MV + 'px ' + R + 'px ' + MV + 'px ' + L + 'px'; t.style.gap = SG + 'px'; t.style.setProperty('--gwgap', HG + 'px'); a.style.setProperty('--gwvgap', VG + 'px'); gm.style.setProperty('--gwr', String(RT));
+      let s2 = lo, bt = fit(n, aw - SG - s2, ah), w2 = Math.max(40, bt.w), rows = Math.ceil(n / bt.c);
+      // the height left over goes into the cards' height, up to what the guess board's width can use
+      let RT = Math.min(RTX, (ah - (rows - 1) * VG) / (rows * w2), (ah - HG) / (2 * s2), (6 * ((w2 * 0.9 - 12) / 5) + 3 * TKH + 51) / w2 + 0.05); RT = Math.max(RT0, RT);
+      t.style.padding = MT + 'px ' + R + 'px ' + MB + 'px ' + L + 'px'; t.style.gap = SG + 'px'; t.style.setProperty('--gwgap', HG + 'px'); a.style.setProperty('--gwvgap', VG + 'px'); gm.style.setProperty('--gwr', String(RT));
       a.style.setProperty('--gwcw', w2 + 'px'); sd.style.setProperty('--gwcw', s2 + 'px');
       a.innerHTML = '';
       for (let i = 0; i < n; i += bt.c) { let row = document.createElement('div'); row.className = 'gw-row'; gw.items.slice(i, i + bt.c).forEach(function (it) { row.appendChild(it.el); }); a.appendChild(row); }
