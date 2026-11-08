@@ -67,10 +67,20 @@ body {
 .panel { background: #fffef6; border: 1px solid var(--tile-edge); border-radius: calc(8 * var(--u)); box-shadow: 2px 2px 0 rgba(0, 0, 0, .06); display: flex; flex-direction: column; overflow: hidden }  
 .panel h3 { font-size: max(9px, calc(12 * var(--u))); font-weight: 700; letter-spacing: .06em; padding: calc(7 * var(--u)) calc(10 * var(--u)); background: var(--cell-bg); color: #274336; border-bottom: 1px solid var(--tile-edge); flex: 0 0 auto; margin: 0 }  
 .panel-body { padding: calc(10 * var(--u)); font-size: max(10px, calc(12.5 * var(--u))); line-height: 1.4; color: #3a2f20; flex: 1; overflow-y: auto }  
-.left-col { height: calc(var(--board-size) + var(--board-size)/15 + 50 * var(--u)); width: 60%; justify-self: start; align-self: center; display: flex; flex-direction: column; gap: calc(10 * var(--u)) }  
-.right-col { height: calc(var(--board-size) + var(--board-size)/15 + 50 * var(--u)); width: 60%; justify-self: end; display: flex; flex-direction: column; gap: calc(10 * var(--u)); align-self: center }  
+.left-col { height: calc(var(--board-size) + var(--board-size)/15 + 50 * var(--u)); width: 72%; justify-self: start; align-self: center; display: flex; flex-direction: column; gap: calc(10 * var(--u)) }  
+.right-col { height: calc(var(--board-size) + var(--board-size)/15 + 50 * var(--u)); width: 72%; justify-self: end; display: flex; flex-direction: column; gap: calc(10 * var(--u)); align-self: center }  
 .score-panel { flex: 0 0 36% }  
-.talk-panel { flex: 1; min-height: 0 }  
+.talk-panel { flex: 1; min-height: 0 }
+.talk-panel > h3 { display: flex; align-items: center; justify-content: space-between; gap: 6px }
+.cv-btns { display: inline-flex; gap: calc(4 * var(--u)); flex: 0 0 auto }
+.cv-b { appearance: none; -webkit-appearance: none; border: 1px solid var(--tile-edge); background: #fffef6; color: #274336; border-radius: 6px; width: max(20px, calc(24 * var(--u))); height: max(20px, calc(22 * var(--u))); display: inline-grid; place-items: center; padding: 0; margin: 0; cursor: pointer; line-height: 1; font: inherit; letter-spacing: 0 }
+.cv-b:hover { background: #fff; border-color: #274336 }
+.cv-b svg { width: 56%; height: 56%; pointer-events: none }
+.talk-panel[data-cv="min"] { flex: 0 0 auto }
+.talk-panel[data-cv="min"] > :not(h3) { display: none }
+.talk-panel[data-cv="min"] > h3 { border-bottom: 0 }
+.talk-panel[data-cv="max"] { z-index: 80; box-shadow: 0 12px 44px rgba(0, 0, 0, .3) }
+@media (orientation: portrait) { html.bt-tab .cv-btns { display: none } }   /* the iPad's portrait flip view keeps its own layout */  
 .status-panel { flex: 0 0 20% }  
 .instr-panel { flex: 1 1 0; min-height: 0 }  
 .instr-panel.collapsed { flex: 0 0 auto }  
@@ -306,6 +316,7 @@ body {
   margin: 13px 0  
 }
 
+.dialog select { display: block; width: 100%; margin-top: 5px; border: 1px solid #b7bcad; border-radius: 8px; padding: 9px; font: inherit; background: #fff; color: inherit }
 .dialog input {  
   display: block;  
   width: 100%;  
@@ -956,7 +967,7 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     </div>
 
     <div       class="modal"       id="setup"       hidden     >       <section class="dialog">         <div           id="box-register"           class="start-game-box"         >           <h1>BearTracks Registration</h1>           <p>Register to play.</p><label>Username<input               id="reg-user"               placeholder="Username"               autofocus               autocomplete="username"             ></label><label>Password<input               id="reg-pass"               type="password"               autocomplete="new-password"             ></label><label>Confirm password<input               id="reg-pass2"               type="password"               autocomplete="new-password"             ></label><button id="btn-register">Register</button>           <div             id="reg-error"             class="error"           ></div>
-                   </div>         <div           id="box-start"           class="start-game-box"           hidden         ><button id="btn-cancel-start" class="bt-cancel" type="button">Cancel</button>           <h1>Start a game</h1>           <div><strong id="owner-name"></strong></div><label>Opponent's name (optional)<input               id="nameB"               maxlength="28"               placeholder="Opponent username"             ></label>           <div style="display:flex;gap:8px;margin-top:10px"><button id="btn-begin">Begin Game</button><button               id="btn-invite"               class="action alt"             >Create Invitation</button></div>         </div>
+                   </div>         <div           id="box-start"           class="start-game-box"           hidden         ><button id="btn-cancel-start" class="bt-cancel" type="button">Cancel</button>           <h1>Start a game</h1>           <div><strong id="owner-name"></strong></div><label>Opponent (optional)<select id="nameB"><option value="">No one yet: make an invitation link</option></select></label>           <div style="display:flex;gap:8px;margin-top:10px"><button id="btn-begin">Begin Game</button><button               id="btn-invite"               class="action alt"             >Create Invitation</button></div>         </div>
         <div id="box-login" class="start-game-box" hidden>
           <h1>Log in</h1>
           <label>Username<input id="login-user" autocomplete="username"></label>
@@ -1226,7 +1237,8 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
   // END FIX  
   function getOwner() { return localStorage.getItem("bt_owner") }  
   function getOpponents() { try { return JSON.parse(localStorage.getItem("bt_opponents") || "[]") } catch (e) { return [] } }  
-  function addOpponent(n) { if (!n) return; let o = getOpponents(); if (o.indexOf(n) === -1) { o.push(n); localStorage.setItem("bt_opponents", JSON.stringify(o)) } }  
+  function btFillOpponents() { let sel = document.getElementById('nameB'); if (!sel || sel.tagName !== 'SELECT') return; let me = (getOwner() || '').toLowerCase(), cur = sel.value; sel.innerHTML = ''; let o0 = document.createElement('option'); o0.value = ''; o0.textContent = 'No one yet: make an invitation link'; sel.appendChild(o0); getOpponents().filter(function (n) { return n && n.toLowerCase() !== me && n !== 'Opponent'; }).sort(function (a, b) { return a.toLowerCase() < b.toLowerCase() ? -1 : 1; }).forEach(function (n) { let o = document.createElement('option'); o.value = n; o.textContent = n; sel.appendChild(o); }); try { sel.value = cur; } catch (e) { } if (sel.selectedIndex < 0) sel.selectedIndex = 0; }
+  function addOpponent(n) { if (!n || n === 'Opponent' || n.toLowerCase() === (getOwner() || '').toLowerCase()) return; let o = getOpponents(); if (o.indexOf(n) === -1) { o.push(n); localStorage.setItem("bt_opponents", JSON.stringify(o)) } }  
   function getAllGameIds() { try { return JSON.parse(localStorage.getItem("bt_all_game_ids") || "[]") } catch (e) { return [] } }  
   // The hand-off service's registry: each game adds its own adapter (see "hand-off" below).
   // BearTracks is played in the installed app. A Chromium browser tab (Chrome, Brave, Edge, Opera...) that is not the app is locked; Safari tabs are handled by the hand-off panel; Firefox is left alone.
@@ -2937,8 +2949,8 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
   function updateBackupVisibility() { try { let b = $('entry-backup'); if (b) b.hidden = !getOwner(); } catch (e) { } }
   function showEntryPage() { wordageRemove(); let el = $('entry-home'); if (!el) return; updateBackupVisibility(); try { $('bt-headsup').classList.remove('gw-pick'); $('setup').classList.remove('gw-nodlg'); } catch (e) { } el.hidden = false; $('setup').hidden = true; $('bt-headsup').hidden = true; let owner = getOwner(); $('entry-welcome').textContent = owner ? 'Welcome, ' + owner : 'Welcome'; }
   function hideEntryPage() { let el = $('entry-home'); if (el) el.hidden = true; }
-  function entryWordage() { postRegisterTarget = 'wordage'; hideEntryPage(); try { $('nameB').value = ''; } catch (e) { } $('setup').hidden = false; renderBoxes(); }
-  function entryCribbage() { if (BT_TAB) { btTabNoCrib(); return; } postRegisterTarget = 'cribbage'; hideEntryPage(); try { $('nameB').value = ''; } catch (e) { } $('setup').hidden = false; renderBoxes(); }
+  function entryWordage() { postRegisterTarget = 'wordage'; hideEntryPage(); try { btFillOpponents(); $('nameB').value = ''; } catch (e) { } $('setup').hidden = false; renderBoxes(); }
+  function entryCribbage() { if (BT_TAB) { btTabNoCrib(); return; } postRegisterTarget = 'cribbage'; hideEntryPage(); try { btFillOpponents(); $('nameB').value = ''; } catch (e) { } $('setup').hidden = false; renderBoxes(); }
   async function enterGameDirect(gameObj, playerIndex) { if (!gameObj) return false; let g = cloneRacks(gameObj); try { addGameId(g.id); } catch (e) { } let li = (playerIndex === 0 || playerIndex === 1) ? playerIndex : null; if (li === null) { li = 0; let owner = (getOwner() || '').toLowerCase(); for (let i = 0; i < g.players.length; i++) if ((g.players[i].name || '').toLowerCase() === owner) li = i; } $('bt-headsup').hidden = true; state = g; setTabSeat(g.id, li); mirrorPassword(gateName()); initBroadcastChannel(g.id); initComm(g.id); $('setup').hidden = true; hideEntryPage(); render(); ensureCommPanel(); pendingGameForHeadsUp = null; try { let url = new URL(location.href); url.searchParams.set('game', g.id); url.searchParams.delete('p'); url.searchParams.delete('invite'); history.replaceState(null, '', url.pathname + url.search + url.hash); } catch (e) { } return true; }
   btHand.register('wordage', {
     current: function () { if (!(state && state.id && state.players && $('game') && $('setup').hidden && $('bt-headsup').hidden)) return null; let sw = getLocalIdx(); return { gid: state.id, seat: sw, name: (state.players[sw] || {}).name || '', token: getSeatToken(state.id, sw) || '' }; },
@@ -2991,8 +3003,9 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
   async function populateEntryGames() { updateBackupVisibility(); let owner = getOwner(), underwayEl = $('underway-games'), pendingEl = $('pending-games'), playedEl = $('played-games'); if (!underwayEl || !pendingEl) return; underwayEl.innerHTML = ''; pendingEl.innerHTML = ''; if (!owner) { underwayEl.innerHTML = '<div class="entry-empty">No underway games.</div>'; if (playedEl) playedEl.innerHTML = '<div class="entry-empty">No played games.</div>'; } else { let ids = getAllGameIds(), items = [], played = [];
       for (let i = 0; i < ids.length; i++) { try { let g = await loadGame(ids[i]); if (!g || !g.players) continue; let my = g.players.findIndex(p => (p.name || '').toLowerCase() === owner.toLowerCase()); if (my < 0) continue; let oth = g.kind === 'othello', crib = !oth && g.phase !== undefined, done = crib ? g.phase === 'done' : !!g.over; (done ? played : items).push({ id: g.id, who: g.players[1 - my]?.name || 'Opponent', game: oth ? 'Othello' : (crib ? 'Cribbage' : 'Wordage'), open: oth ? (() => othOpenFromFoyer(g, my)) : (crib ? (() => cribOpenFromFoyer(g, my)) : (() => enterGameDirect(g, my))) }); } catch (e) { } }
       try { let gk = gwKeys(); for (const gid of Object.keys(gk)) { let seats = gwSeatsOf(gid), sk = Object.keys(seats); if (!sk.length) continue; let mine = sk.find(n => (seats[n].name || '').toLowerCase() === owner.toLowerCase()); if (mine == null) continue; let r = await gwApi('GET', 'status', null, gid, seats[mine].token); if (r.s === 404) { gwPrune(gid); continue; } if (r.s !== 200 || !r.j || !r.j.seats) continue; let others = r.j.seats.filter(x => String(x.n) !== String(mine) && x.name).map(x => x.name); items.push({ id: gid, who: r.j.title || 'Group', game: 'groupWords', open: (() => gwUse(gid, mine, seats[mine].token)) }); } } catch (e) { }
+      try { items.concat(played).forEach(function (x) { if (x.game !== 'groupWords') addOpponent(x.who); }); } catch (e) { }
       renderEntryGames(underwayEl, items); if (playedEl) renderEntryGames(playedEl, played, { empty: 'No played games.' }); }
-    let pids = getPendingInviteIds(); if (!pids.length) renderEntryGames(pendingEl, [], { empty: 'No pending games.', expanded: true }); else { let pitems = []; for (let i = 0; i < pids.length; i++) { try { let inv = await loadInvite(pids[i]); if (!inv) { forgetPendingInvite(pids[i]); continue; } pitems.push({ id: inv.id, who: inv.invitedBy || 'Opponent', game: inv.kind === 'othello' ? 'Othello' : (inv.kind === 'cribbage' ? 'Cribbage' : 'Wordage'), open: (function (v) { return function () { openPendingInvite(v); }; })(inv) }); } catch (e) { } } renderEntryGames(pendingEl, pitems, { empty: 'No pending games.', expanded: true }); }
+    let pids = getPendingInviteIds(); if (!pids.length) renderEntryGames(pendingEl, [], { empty: 'No pending games.', expanded: true }); else { let pitems = []; for (let i = 0; i < pids.length; i++) { try { let inv = await loadInvite(pids[i]); if (!inv) { forgetPendingInvite(pids[i]); continue; } try { addOpponent(inv.invitedBy); } catch (e) { } pitems.push({ id: inv.id, who: inv.invitedBy || 'Opponent', game: inv.kind === 'othello' ? 'Othello' : (inv.kind === 'cribbage' ? 'Cribbage' : 'Wordage'), open: (function (v) { return function () { openPendingInvite(v); }; })(inv) }); } catch (e) { } } renderEntryGames(pendingEl, pitems, { empty: 'No pending games.', expanded: true }); }
   }
   function initEntryPaws() { let canvas = $('entry-paws'); if (!canvas) return; if (canvas.dataset.ready) { if (canvas._start) canvas._start(); return; } canvas.dataset.ready = '1'; let ctx = canvas.getContext('2d'); const colors = ['#c94a3c','#e68a82','#2e8aa8','#86c2cc']; const pad = new Path2D('M 20 56 C 20 46 35 42 50 42 C 65 42 80 46 80 56 C 84 70 78 86 50 92 C 22 86 16 70 20 56 Z'); const toes = [[23,28,14],[50,15,16],[77,28,14]]; let W=0,H=0; const walkers = Array.from({length:61}, () => ({nx:Math.random(),ny:Math.random(),ang:Math.random()*Math.PI*2,speed:.4+Math.random()*.9,color:colors[Math.floor(Math.random()*colors.length)]})); function resize(){let dpr=window.devicePixelRatio||1;if(!canvas.clientWidth||!canvas.clientHeight)return;W=canvas.clientWidth;H=canvas.clientHeight;canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);ctx.setTransform(dpr,0,0,dpr,0,0)} function drawPaw(w){let k=Math.min(W,H)/15*.6/100;ctx.save();ctx.translate(w.nx*W,w.ny*H);ctx.rotate(w.ang+Math.PI/2);ctx.scale(k,k);ctx.translate(-50,-50);ctx.fillStyle=w.color;toes.forEach(([x,y,r])=>{ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill()});ctx.fill(pad);ctx.restore()} let last=performance.now(); function tick(now){ctx.globalAlpha=.85;let dt=Math.min((now-last)/1000,.05);last=now;ctx.clearRect(0,0,W,H);walkers.forEach(w=>{w.ang+=(Math.random()-.5)*.15*(dt*60);let x=w.nx*W+Math.cos(w.ang)*w.speed*Math.min(W,H)/15*dt;let y=w.ny*H+Math.sin(w.ang)*w.speed*Math.min(W,H)/15*dt;let m=Math.min(W,H)*.01;if(x<m||x>W-m){w.ang=Math.PI-w.ang;x=Math.min(W-m,Math.max(m,x))}if(y<m||y>H-m){w.ang=-w.ang;y=Math.min(H-m,Math.max(m,y))}w.nx=x/W;w.ny=y/H;drawPaw(w)});ctx.globalAlpha=1;if($('entry-home').hidden){running=false;return}requestAnimationFrame(tick)} let running=true; canvas._start=function(){if(running)return;running=true;last=performance.now();requestAnimationFrame(tick)}; new ResizeObserver(resize).observe(canvas);resize();requestAnimationFrame(tick); }
   function $(id) { return document.getElementById(id) }  
@@ -3563,6 +3576,7 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     if ($('game')) return $('game');
     document.body.insertAdjacentHTML('afterbegin', WORDAGE_HTML);
     if (BT_TAB) wordageTabBuild();
+    try { cvScan(); } catch (e) { }
     wordageWire();
     if (commHost.wantSeatLink) { let sl = $('seatLink'); if (sl) sl.hidden = false; }
     if (wordageShare) showShare(wordageShare.url, wordageShare.isGameState);
@@ -3784,7 +3798,7 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
       box.appendChild(mk('h1', 'BearTracks is played in the app', 'font-size:1.5em;margin:0 0 12px'));
       let btn = mk('button', 'Install BearTracks', 'font-size:1.1em;padding:10px 20px'); box.appendChild(btn);
       let note = mk('p', '', 'font-weight:600;min-height:1.4em;margin:14px 0 0'); box.appendChild(note);
-      btn.onclick = function () { if (window.btInstall && window.btInstall.can()) window.btInstall.prompt(); };
+      btn.onclick = function () { if (window.btInstall && window.btInstall.can()) window.btInstall.prompt(); else note.textContent = "Open your browser's menu and choose Install BearTracks."; };   // with no install offer from the browser the button used to do nothing
       window.addEventListener('appinstalled', function () { note.textContent = 'BearTracks is installed. Open it from its icon.'; });
       document.body.appendChild(aov); document.documentElement.style.overflow = 'hidden';
     }
@@ -4158,6 +4172,45 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     return true;
   }
 
+  // ================= CONVO-URSIDAE: minimize / expand =================
+  // Open (the starting state, the normal size), Minimized (the title bar alone; a count shows what arrived meanwhile) and
+  // Expanded (half the screen wide, anchored at the box's own right edge, as tall as its column, over whatever is beside it).
+  const CV_SVG = {
+    min: '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 9.5h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/></svg>',
+    open: '<svg viewBox="0 0 12 12" aria-hidden="true"><rect x="2.2" y="2.4" width="7.6" height="7.2" rx="1" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M2.2 4.4h7.6" stroke="currentColor" stroke-width="1.6"/></svg>',
+    max: '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M7.2 1.8h3v3M4.8 10.2h-3v-3M10.2 1.8L6.8 5.2M1.8 10.2l3.4-3.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>',
+    restore: '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M10.2 4.8h-3v-3M1.8 7.2h3v3M7.2 4.8l3-3M4.8 7.2l-3 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>'
+  };
+  function cvScan() {
+    document.querySelectorAll('.talk-panel').forEach(function (p) {
+      let h = p.querySelector(':scope > h3'); if (!h || h.querySelector('.cv-btns')) return;
+      let t = document.createElement('span'); t.className = 'cv-t'; t.textContent = (h.textContent || '').trim() || 'Convo-Ursidae'; h.textContent = ''; h.appendChild(t);
+      let bx = document.createElement('span'); bx.className = 'cv-btns'; bx.innerHTML = '<button type="button" class="cv-b" data-cv="min"></button><button type="button" class="cv-b" data-cv="max"></button>'; h.appendChild(bx);
+      p._cvUnread = 0; cvSet(p, 'open');
+      try { new MutationObserver(function (ms) { if (p.getAttribute('data-cv') !== 'min') return; let n = 0; ms.forEach(function (m) { if (m.target && (m.target.id === 'comm-log' || m.target.id === 'othChatLog')) n += m.addedNodes.length; }); if (n) { p._cvUnread += n; cvLabel(p); } }).observe(p, { childList: true, subtree: true }); } catch (e) { }
+    });
+  }
+  function cvLabel(p) { let t = p.querySelector('.cv-t'); if (t) t.textContent = 'Convo-Ursidae' + (p.getAttribute('data-cv') === 'min' && p._cvUnread ? '  (' + p._cvUnread + ')' : ''); }
+  function cvPlace(p) {
+    let col = p.parentElement; if (!col) return; let r = col.getBoundingClientRect(), vw = document.documentElement.clientWidth;
+    p.style.cssText = 'position:fixed;top:' + Math.round(r.top) + 'px;height:' + Math.round(r.height) + 'px;right:' + Math.round(vw - r.right) + 'px;left:auto;width:' + Math.round(Math.min(vw * 0.5, r.right - 8)) + 'px;margin:0;flex:none;';
+  }
+  function cvSet(p, st) {
+    p.setAttribute('data-cv', st); if (st === 'max') cvPlace(p); else p.style.cssText = '';
+    if (st !== 'min') p._cvUnread = 0; cvLabel(p);
+    let bn = p.querySelector('.cv-b[data-cv="min"]'), bx = p.querySelector('.cv-b[data-cv="max"]');
+    if (bn) { bn.innerHTML = st === 'min' ? CV_SVG.open : CV_SVG.min; bn.title = st === 'min' ? 'Open Convo-Ursidae' : 'Minimize Convo-Ursidae'; bn.setAttribute('aria-label', bn.title); }
+    if (bx) { bx.innerHTML = st === 'max' ? CV_SVG.restore : CV_SVG.max; bx.title = st === 'max' ? 'Restore Convo-Ursidae to its normal size' : 'Expand Convo-Ursidae'; bx.setAttribute('aria-label', bx.title); }
+  }
+  document.addEventListener('click', function (e) {
+    let b = e.target && e.target.closest && e.target.closest('.cv-b'); if (!b) return; let p = b.closest('.talk-panel'); if (!p) return;
+    let cur = p.getAttribute('data-cv') || 'open', want = b.getAttribute('data-cv');
+    cvSet(p, want === 'min' ? (cur === 'min' ? 'open' : 'min') : (cur === 'max' ? 'open' : 'max'));
+  });
+  document.addEventListener('keydown', function (e) { if (e.key !== 'Escape') return; let p = document.querySelector('.talk-panel[data-cv="max"]'); if (p) cvSet(p, 'open'); });
+  window.addEventListener('resize', function () { let p = document.querySelector('.talk-panel[data-cv="max"]'); if (p) cvPlace(p); });
+  // ================= END CONVO-URSIDAE =================
+
   // ================= OTHELLO MODULE =================
   // Game object: { kind:'othello', version:1, id, players:[{name},{name}], board:[64] (0 empty, 1 red = seat 0, 2 blue = seat 1),
   //   turn, moveCount, history:[], last, flipped, over, winner }.  The worker stores it like any other game
@@ -4306,7 +4359,7 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     try { let url = new URL(location.href); url.searchParams.delete('game'); url.searchParams.delete('kind'); url.searchParams.delete('p'); history.replaceState(null, '', url.pathname + url.search + url.hash); } catch (_) { }
     showEntryPage(); try { initEntryPaws(); } catch (_) { } try { populateEntryGames(); } catch (_) { }
   }
-  function entryOthello() { postRegisterTarget = 'othello'; hideEntryPage(); try { $('nameB').value = ''; } catch (e) { } $('setup').hidden = false; renderBoxes(); }
+  function entryOthello() { postRegisterTarget = 'othello'; hideEntryPage(); try { btFillOpponents(); $('nameB').value = ''; } catch (e) { } $('setup').hidden = false; renderBoxes(); }
   function othShowHeadsUp(url, g) {
     let help = 'Join me for a game of Othello on BearTracks:', msg = help + ' ' + url;
     $('bt-headsup-input').value = msg; $('bt-headsup-help').textContent = help;
@@ -4379,6 +4432,7 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     }
   });
   // ---- wiring ----
+  cvScan();
   $('othBoard').onclick = function (e) { let c = e.target.closest('.oth-cell'); if (c) othPlay(Number(c.getAttribute('data-i'))); };
   $('othBack').onclick = othBackToFoyer;
   $('othSeatLink').onclick = function (e) {
@@ -5949,7 +6003,7 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
       var box = mk('div', '', 'max-width:540px;width:100%;margin-top:6vh'); ov.appendChild(box);
       box.appendChild(mk('h1', 'BearTracks is played in the app', 'font-size:1.5em;margin:0 0 12px'));
       var btn = mk('button', 'Install BearTracks', 'font-size:1.1em;padding:10px 20px'); box.appendChild(btn);
-      btn.onclick = function () { if (window.btInstall && window.btInstall.can()) window.btInstall.prompt(); };
+      btn.onclick = function () { if (window.btInstall && window.btInstall.can()) window.btInstall.prompt(); else note.textContent = "Open your browser's menu and choose Install BearTracks."; };   // with no install offer from the browser the button used to do nothing
       var note = mk('p', '', 'font-weight:600;min-height:1.4em;margin:14px 0 0'); box.appendChild(note);
       document.body.appendChild(ov); document.documentElement.style.overflow = 'hidden';
       // Once installed, the browser turns this very tab into the app window; the page was loaded as a browser tab, so it starts again as the app (the address, and an invite in it, stay) and goes on to registration without a refresh by the player.
