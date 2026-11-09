@@ -1,0 +1,61 @@
+# Publishes BearTracks to GitHub Pages on every push to main, stamps the build id into index.html,
+# then tells the worker the new build is live so every open page is told about it.
+name: Publish BearTracks
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Stamp the build id into index.html
+        run: |
+          ID="${GITHUB_SHA::12}"
+          grep -q '<meta name="bt-build" content="__BT_BUILD__">' index.html
+          mkdir _site
+          tar -cf - --exclude=./.git --exclude=./.github --exclude=./_site --exclude=./worker --exclude=./node_modules --exclude='./wrangler.*' . | tar -xf - -C _site
+          sed -i "s|<meta name=\"bt-build\" content=\"__BT_BUILD__\">|<meta name=\"bt-build\" content=\"${ID}\">|" _site/index.html
+          grep -q "<meta name=\"bt-build\" content=\"${ID}\">" _site/index.html
+          echo "BT_BUILD=${ID}" >> "$GITHUB_ENV"
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Tell the worker the new build is live
+        env:
+          RELEASE_KEY: ${{ secrets.RELEASE_KEY }}
+          SITE: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          # The worker announces the build only after it has read the stamp from the live site, so it may answer "not live yet" for a little while.
+          for i in $(seq 1 24); do
+            code=$(curl -s -o out.json -w '%{http_code}' -X POST "https://beartracks-cfdurable-tt.beartracksgames.workers.dev/release" \
+              -H "Authorization: Bearer ${RELEASE_KEY}" -H 'Content-Type: application/json' \
+              -d "{\"build\":\"${BT_BUILD}\",\"site\":\"${SITE}\"}")
+            echo "attempt $i: HTTP $code $(cat out.json)"
+            if [ "$code" = "200" ]; then exit 0; fi
+            if [ "$code" = "401" ] || [ "$code" = "400" ]; then echo "The worker refused the announcement: check the RELEASE_KEY secret."; exit 1; fi
+            sleep 15
+          done
+          echo "The site was published, but the worker never saw the new build live."
+          exit 1
