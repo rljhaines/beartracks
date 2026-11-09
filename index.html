@@ -856,6 +856,13 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
 .gwp-kr { display: flex; justify-content: center; gap: 4px; }
 .gwp-kb button { flex: 1; max-width: 40px; height: 48px; border: 0; border-radius: 6px; background: #e3dac6; color: #2b2620; font: 600 15px Georgia, serif; padding: 0; margin: 0; touch-action: manipulation; }
 .gwp-kb button.w { flex: 1.6; max-width: 62px; font-size: 12px; }
+.gwp-cv { flex: 1; min-height: 0; overflow-y: auto; padding-top: 8px; font-size: 17px; line-height: 1.35; }
+.gwp-cv p { margin: 0 0 .4em; overflow-wrap: anywhere; }
+.gwp-cv p.me b { color: #8a3b2e; }
+.gwp-cv p.dim { opacity: .6; }
+.gwp-cvf { flex: none; display: flex; align-items: center; gap: 10px; min-height: 48px; border-top: 1px solid #e6dcc6; }
+#gwp .gwp-cvf input { flex: 1; min-width: 0; font: inherit; font-size: 16px; border: 0; border-bottom: 2px solid #2b2620; background: transparent; color: inherit; outline: none; border-radius: 0; padding: 6px 0; -webkit-user-select: text; user-select: text; }
+.gwp-cvf a { flex: none; color: #8a3b2e; text-decoration: underline; min-height: 44px; display: flex; align-items: center; padding: 0 4px; font-style: italic; font-size: 15px; }
 .gwp-sb { flex: 1; min-height: 0; overflow: auto; padding-top: 8px; }
 .gwp-gl { flex: 1; min-height: 0; overflow: auto; }
 .gwp-gl a { display: flex; align-items: center; min-height: 44px; font-size: 20px; color: #2b2620; text-decoration: none; border-bottom: 1px solid #e6dcc6; padding: 0 6px; }
@@ -5765,6 +5772,7 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     p.innerHTML = '<div class="gwp-card down" id="gwp-card"><div class="gw-inner"><div class="gw-face gw-front gwp-face" id="gwp-face"></div><div class="gw-face gw-back gwp-back" id="gwp-back"></div></div></div>';
     $('gw-game').appendChild(p);
     p.addEventListener('click', gwpClick);
+    p.addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target && e.target.id === 'gwp-cvin') { e.preventDefault(); gwpSendChat(); } });
     addEventListener('resize', gwpLayout); addEventListener('orientationchange', function () { setTimeout(gwpLayout, 250); });
   }
   function gwpFlip(down) { gw.pdown = !!down; let c = $('gwp-card'); if (c) c.classList.toggle('down', gw.pdown); }
@@ -5813,7 +5821,7 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     let sc = function (lb, day) { return lb === '' ? '' : '<b class="gwp-sc">' + gwpEsc(lb) + (prev(day) ? '<sup>*</sup>' : '') + '</b>'; };
     let pill = function (name, lb, day) { return '<div class="gwp-nb"><span class="gwp-n">' + gwpEsc(name) + '</span>' + sc(lb, day) + '</div>'; };
     let gonePill = function (it) { return '<div class="gwp-nb"><span class="gwp-n">' + gwpEsc(it.name + '   player seceded') + '</span>' + (st.me.gone ? '' : '<button type="button" class="gwp-x" data-x="' + it.n + '" aria-label="Remove player"></button>') + '</div>'; };
-    let h = '<div class="gwp-top"><a href="#" data-a="newgroup">new group</a><a href="#" data-a="groups">my groups</a></div><div class="gwp-rows">';
+    let h = '<div class="gwp-top"><a href="#" data-a="newgroup">new group</a><a href="#" data-a="chat">chat</a><a href="#" data-a="groups">my groups</a></div><div class="gwp-rows">';
     let own = st.seats.find(function (s) { return s.n === st.me.n; });
     h += '<div class="gwp-row" data-a="card">' + pill('my card', own ? gwpLabel(own) : '', own ? own.day : '') + '</div>';
     let o = gwpOthers(st);
@@ -5850,6 +5858,7 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
       return h;
     }
     let t = gw.pt;
+    if (t === 'chat') return top('Convo-Ursidae') + '<div class="gwp-cv" id="gwp-cvlog"></div><div class="gwp-cvf"><input id="gwp-cvin" maxlength="300" autocomplete="off" enterkeyhint="send" placeholder="say something" aria-label="Message"><a href="#" data-a="cvsend">send</a></div>';
     if (t === 'stats') return top('My Stats') + '<div class="gwp-sb">' + gwpStatsHtml(me, st) + '</div>';
     if (t === 'tom' && gw.ptom) {
       let j = gw.ptom;
@@ -5871,7 +5880,17 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     if (typeof gw.pt === 'number' && !gw.shown[gw.pt]) gw.pt = null;
     let b = gwpBackHtml(st), f = gwpFaceHtml(st);
     if (b !== gw.phB) { gw.phB = b; $('gwp-back').innerHTML = b; }
-    if (f !== gw.phF) { gw.phF = f; $('gwp-face').innerHTML = f; }
+    if (gw.pt === 'chat') {   // the shell is built once; messages are filled in without touching the box being typed in
+      if (!$('gwp-cvin')) { gw.phF = f; $('gwp-face').innerHTML = f; gw.phCv = ''; }
+      let ch = st.chat || [], lastAt = ch.length ? ch[ch.length - 1].at : 0, sig = gw.gid + ':' + ch.length + ':' + lastAt;
+      gw.chatSeenAt = lastAt;
+      if (sig !== gw.phCv) {
+        gw.phCv = sig; let log = $('gwp-cvlog'); log.innerHTML = '';
+        if (!ch.length) { let p = document.createElement('p'); p.className = 'dim'; p.textContent = 'No messages yet.'; log.appendChild(p); }
+        ch.forEach(function (m) { let p = document.createElement('p'), b = document.createElement('b'); if (m.n === me.n) p.className = 'me'; b.textContent = m.name + ': '; p.appendChild(b); p.appendChild(document.createTextNode(btEmoji(m.text))); log.appendChild(p); });
+        log.scrollTop = log.scrollHeight;
+      }
+    } else if (f !== gw.phF) { gw.phF = f; $('gwp-face').innerHTML = f; }
     $('gwp-card').classList.toggle('down', gw.pdown);
     gwpLayout();
   }
@@ -5913,6 +5932,8 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
       else if (act === 'back') gwpFlip(true);
       else if (act === 'groups') { gw.pv = 'groups'; gw.pgh = {}; gwpRender(); gwpFlip(false); gwpGroups(); }
       else if (act === 'newgroup') entryGroupWords();
+      else if (act === 'chat') { gw.pv = 'face'; gw.pt = 'chat'; gwpRender(); gwpFlip(false); }
+      else if (act === 'cvsend') gwpSendChat();
       else if (act === 'newword') gwNewDay();
       else if (act === 'stats') { gw.pv = 'face'; gw.pt = 'stats'; gwpRender(); gwpFlip(false); }
       else if (act === 'tom') {
@@ -5932,6 +5953,12 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
       }
       gw.pv = 'face'; gw.pt = n; gwpRender(); gwpFlip(false);
     }
+  }
+  async function gwpSendChat() {
+    let i = $('gwp-cvin'); if (!i) return; let tx = i.value.trim(); if (!tx) return; i.value = '';
+    let r = await gwApi('POST', 'chat', { text: tx });
+    if (r.s === 200 && r.j && r.j.me) { gw.st = r.j; gwRender(); return; }
+    i.value = tx; gwMsg(r.s === 404 ? 'Chat is not available until the worker is updated' : 'That message could not be sent');
   }
   function gwpKey(k) {
     let me = gw.st && gw.st.me; if (!me || me.status !== 'playing' || me.canNewDay || gw.pdown || gw.pv !== 'face' || gw.pt != null) return;
