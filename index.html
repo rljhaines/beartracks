@@ -5675,7 +5675,7 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     if (canNew) { ps.insertBefore(gwLink('new word', gwNewDay), ps.querySelector('[data-cs]')); let l2 = gwLink('new word', gwNewDay); l2.style.marginLeft = '.6em'; bd.appendChild(l2); }
     el.querySelector('.gw-sol').textContent = sol ? 'solution: ' + sol : '';
     let best = {}; if (letters) rows.forEach(function (x) { if (x && x.g && x.c) for (let q = 0; q < x.g.length; q++) best[x.g[q]] = Math.max(best[x.g[q]] === undefined ? -1 : best[x.g[q]], x.c[q]); });   // each letter takes its best color so far, the tile colors
-    let az = el.querySelector('.gw-az'); az.style.visibility = mine ? 'visible' : 'hidden';
+    let az = el.querySelector('.gw-az'); az.style.visibility = (mine && me.status === 'playing') ? 'visible' : 'hidden';   // letters/keys only while your own card is in play
     Array.prototype.forEach.call(az.querySelectorAll('i'), function (c) { if (c.dataset.act) return; let v = best[c.textContent]; c.className = v === undefined ? '' : 'k' + v; });
     el.querySelector('.gw-rows').innerHTML = gwRowsHtml(rows, cur, letters);
     gwFit(el);
