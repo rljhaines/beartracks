@@ -864,6 +864,11 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
 .gwp-gw .gw-rows { --g: 5px; }
 .gwp-gw .gw-t { font-size: calc(var(--t) * .55); }
 .gwp-slim { display: flex; justify-content: space-between; align-items: center; min-height: 44px; flex: none; font-style: italic; font-size: 15px; }
+.gwp-own2 { align-items: flex-start; }
+.gwp-own2 .gwp-l, .gwp-own2 .gwp-r { display: flex; flex-direction: column; }
+.gwp-own2 .gwp-r { align-items: center; }
+.gwp-own2 .gwp-l > span, .gwp-own2 .gwp-r > span { min-height: 28px; display: flex; align-items: center; }
+.gwp-own2 a { min-height: 28px; padding: 0 3px; }
 .gwp-slim a { color: #8a3b2e; text-decoration: underline; min-height: 44px; display: inline-flex; align-items: center; }
 .gwp-kb { flex: none; display: flex; flex-direction: column; gap: 6px; padding-bottom: 2px; }
 .gwp-kr { display: flex; justify-content: center; gap: 4px; }
@@ -5620,7 +5625,7 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
       l.appendChild(cont); d.appendChild(l); document.body.appendChild(d); return;
     }
     p.textContent = 'cardShare link and message copied to your clipboard. Paste it into a message to your seatMate to share your card. Your seatMate can "Join with link" in BearTracks Foyer on their device if already registered or follow the link to registration on their device if not.'; d.appendChild(p);
-    let P = gwApi('POST', 'share', {}).then(function (r) { if (r.s !== 200 || !r.j.code) throw new Error('share'); let url = LIVE_SITE + '?kind=groupwords&gw=' + encodeURIComponent(gw.gid) + '&share=' + encodeURIComponent(r.j.code); return { url: url, msg: 'Be my seatMate on my groupWords card on BearTracks: ' + url }; });
+    let P = gwApi('POST', 'share', {}).then(function (r) { if (r.s !== 200 || !r.j.code) throw new Error('share'); let url = LIVE_SITE + '?kind=groupwords&gw=' + encodeURIComponent(gw.gid) + '&share=' + encodeURIComponent(r.j.code); return { url: url, msg: GW_PHONE ? 'Become my seatMate in groupWords! Copy the link and click "join" on the face of your playing card. If you don\'t have BearTracks, click the link to register: ' + url : 'Become my seatMate in groupWords! Copy the link and use Join With Link in the BearTracks Foyer. If you don\'t have BearTracks, click the link to register: ' + url }; });
     P.catch(function () { p.textContent = 'The cardShare link could not be made just now. Please try again.'; a1.className = 'off'; a2.className = 'off'; });
     let a1, a2;
     a1 = mk('message copied', function () { gwClip(P.then(function (x) { return x.msg; })).catch(function () { }); a1.textContent = 'message copied'; a1.className = 'off'; a2.textContent = 'copy link only'; a2.className = ''; }, true);
@@ -5965,7 +5970,7 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     }
     let playing = me.status === 'playing' && !me.canNewDay;
     let own = st.seats.find(function (x) { return x.n === me.n; }) || {};
-    return top(gwPairHtml(me.mate ? me.owner : me.name, me.mate, me.solver, me.status === 'failed' && me.word ? '   solution: ' + me.word : ''), true) + '<div class="gwp-gw"><div class="gw-rows">' + gwRowsHtml(me.rows, me.status === 'playing' ? gw.cur : '', true) + '</div></div><div class="gwp-slim"><span>' + gwpEsc(me.day || '') + (me.canNewDay ? '&nbsp;&nbsp;<a href="#" data-a="newword">new word</a>' : '') + '</span><span><a href="#" data-a="cardshare">cardShare</a></span></div>' + (playing ? gwpKbHtml(me.rows) : '');
+    return top(gwPairHtml(me.mate ? me.owner : me.name, me.mate, me.solver, me.status === 'failed' && me.word ? '   solution: ' + me.word : ''), true) + '<div class="gwp-gw"><div class="gw-rows">' + gwRowsHtml(me.rows, me.status === 'playing' ? gw.cur : '', true) + '</div></div><div class="gwp-slim gwp-own2"><span class="gwp-l"><span>' + gwpEsc(me.day || '') + '</span><span>' + (me.canNewDay ? '<a href="#" data-a="newword">new word</a>' : '') + '</span></span><span class="gwp-r"><span class="gwp-cs">cardShare</span><span><a href="#" data-a="cardshare">invite</a>&nbsp;&nbsp;<a href="#" data-a="joinlink">join</a></span></span></div>' + (playing ? gwpKbHtml(me.rows) : '');
   }
   function gwpRender() {
     let st = gw.st; if (!st || !$('gwp')) return;
@@ -6031,6 +6036,7 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
       else if (act === 'cvsend') gwpSendChat();
       else if (act === 'newword') gwNewDay();
       else if (act === 'cardshare') gwCardShare();
+      else if (act === 'joinlink') handleJoinWithLink(e);
       else if (act === 'stats') { gw.pv = 'face'; gw.pt = 'stats'; gwpRender(); gwpFlip(false); }
       else if (act === 'tom') {
         let r2 = await gwApi('POST', 'tom', {});
