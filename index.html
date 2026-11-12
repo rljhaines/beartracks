@@ -889,8 +889,12 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
 .gwp-gl a.cur { font-weight: 700; }
 .gwp-gl .dim { opacity: .6; }
 .gw-back.gwp-back { display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; }
+.gwp-top a sup.gwp-un { position: absolute; top: calc(50% - 1.15em); right: -.55em; font-style: inherit; font-size: .8em; line-height: 1; color: #86c2cc; font-weight: 700; text-decoration: none; }
+/* Only the side of the card that is showing takes taps: the hidden side is still laid out behind it, and a browser that hit-tests through a flipped card can send a tap to it. */
+.gwp-card.down .gwp-face, .gwp-card:not(.down) .gwp-back { pointer-events: none; }
 .gwp-top { position: relative; z-index: 1; flex: none; display: flex; justify-content: space-between; align-items: center; padding: calc(var(--gwcw) * .06) calc(var(--gwcw) * .1) 0; color: #f6f0e4; font-style: italic; font-size: 16px; }
-.gwp-top a { color: inherit; text-decoration: underline; min-height: 44px; display: flex; align-items: center; padding: 0 4px; }
+.gwp-top a { position: relative; color: inherit; text-decoration: underline; min-height: 44px; display: flex; align-items: center; padding: 0 4px; }
+.gwp-notify { position: absolute; left: 0; right: 0; bottom: calc(var(--gwcw) * .065); height: calc(var(--gwcw) * .08); min-height: 26px; display: flex; align-items: center; justify-content: center; color: #f6f0e4; font-style: italic; font-size: 13px; text-decoration: underline; }
 .gwp-rows { position: relative; z-index: 1; flex: 1; min-height: 0; display: flex; flex-direction: column; padding-bottom: calc(var(--gwcw) * .08); }
 .gwp-row { position: relative; flex: 1; min-height: 44px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
 .gwp-sc { position: absolute; top: 50%; transform: translateY(-50%); right: 22px; font-weight: 400; font-size: 17px; line-height: 1; white-space: nowrap; }
@@ -5355,6 +5359,54 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     try { let r = await fetch(url, { method: method, headers: h, body: body ? JSON.stringify(body) : undefined, cache: 'no-store' }); return { s: r.status, j: await r.json().catch(function () { return {}; }) }; }
     catch (e) { return { s: 0, j: { error: 'offline' } }; }
   }
+  // ---- web push: "notify me" (iPhone Home Screen app) ----
+  // The worker keeps this device's push address on the player's seat in each group and sends when another player chats or finishes a card.
+  // The icon shows a dot (no number) for anything that arrived while the app was closed; opening the app clears it.
+  let gwPushAll = false;
+  function gwPushCan() { return ('serviceWorker' in navigator) && ('PushManager' in window) && ('Notification' in window) && hoStandalone(); }
+  function gwPushOn() { try { return localStorage.getItem('bt_push') === '1' && Notification.permission === 'granted'; } catch (e) { return false; } }
+  function gwPushFlag(v) { try { if (v) localStorage.setItem('bt_push', '1'); else localStorage.removeItem('bt_push'); } catch (e) { } }
+  function gwB64uBytes(t) { let b = atob(t.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((t.length + 3) % 4)), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; }
+  function gwPushBase() { return location.origin + location.pathname.replace(/[^\/]*$/, ''); }
+  function gwClearBadge() { try { if (navigator.clearAppBadge) navigator.clearAppBadge().catch(function () { }); } catch (e) { } }
+  function gwMySeatIn(gid) { let seats = gwSeatsOf(gid), sk = Object.keys(seats), owner = (getOwner() || '').toLowerCase(); if (!sk.length) return null; let mine = sk.find(function (n) { return (seats[n].name || '').toLowerCase() === owner; }); if (mine === undefined) mine = sk[0]; return seats[mine]; }
+  async function gwPushReg() { let reg = await navigator.serviceWorker.register(gwPushBase() + 'sw.js', { scope: gwPushBase() }); await navigator.serviceWorker.ready; return reg; }
+  /** Makes sure this device is subscribed with the worker's key and told to the groups: the current one, or all of them. */
+  async function gwPushSync(all, gid) {
+    if (!gwPushCan() || !gwPushOn()) return false;
+    try {
+      let kr = await fetch(API + '/push/key', { cache: 'no-store' }), key = (await kr.json()).key; if (!key) return false;
+      let reg = await gwPushReg(), sub = await reg.pushManager.getSubscription(), old = ''; try { old = localStorage.getItem('bt_push_key') || ''; } catch (e) { }
+      if (sub && old !== key) { await sub.unsubscribe(); sub = null; }
+      if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: gwB64uBytes(key) });
+      try { localStorage.setItem('bt_push_key', key); } catch (e) { }
+      let ids = all ? Object.keys(gwKeys()) : (gid ? [gid] : []), j = sub.toJSON();
+      await Promise.all(ids.map(function (g) { let s = gwMySeatIn(g); return s && s.token ? gwApi('POST', 'push', { sub: j }, g, s.token) : null; }));
+      if (all) gwPushAll = true;
+      return true;
+    } catch (e) { return false; }
+  }
+  function gwPushHook(gid) { if (!gwPushCan() || !gwPushOn()) return; setTimeout(function () { gwPushSync(!gwPushAll, gid); }, 1500); }
+  async function gwPushEnable() {
+    if (!gwPushCan()) { gwMsg('Open BearTracks from its Home Screen icon to turn on notifications'); return; }
+    let perm = Notification.permission;
+    if (perm === 'default') perm = await Notification.requestPermission(); // asked straight from the tap, as iOS requires
+    if (perm !== 'granted') { gwMsg('Notifications are off for BearTracks: allow them in Settings > Notifications'); gwpRender(); return; }
+    gwPushFlag(true);
+    let ok = await gwPushSync(true, gw.gid);
+    gwMsg(ok ? 'Notifications are on' : 'Could not turn notifications on. Please try again.'); if (!ok) gwPushFlag(false);
+    gwpRender();
+  }
+  async function gwPushDisable() {
+    if (!confirm('Stop BearTracks notifications on this iPhone?')) return;
+    try {
+      let reg = await navigator.serviceWorker.getRegistration(gwPushBase()), sub = reg && await reg.pushManager.getSubscription();
+      if (sub) { let j = sub.toJSON(); await Promise.all(Object.keys(gwKeys()).map(function (g) { let s = gwMySeatIn(g); return s && s.token ? gwApi('POST', 'push', { sub: j, off: true }, g, s.token) : null; })); await sub.unsubscribe(); }
+    } catch (e) { }
+    gwPushFlag(false); gwClearBadge(); gwpRender();
+  }
+  gwClearBadge();
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') gwClearBadge(); });
   function gwMsg(t) { let m = $('gw-msg'); if (!m) return; m.textContent = t; clearTimeout(gwMsgTimer); gwMsgTimer = setTimeout(function () { m.textContent = ''; }, 3500); }
 
   // ---- Foyer -> registration (groupWords background) -> HeadsUp with the player-count picker ----
@@ -5410,7 +5462,7 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     if (!owner) { postRegisterTarget = 'groupwords'; $('setup').hidden = false; renderBoxes(); return; }
     return gwJoin(gid, owner, false);
   }
-  function gwUse(gid, seat, token) { gwFreshReg = null; gwLoginGid = null; gw.chatSig = ''; gw.chatSeenAt = null; gw.st = null; gw.shown = {}; gw.ids = ''; gw.items = []; gw.cur = ''; gw.gid = gid; gw.token = token; gw.seat = +seat; gwSetTabSeat(gid, +seat, token); try { setHiddenGame(gid, false); } catch (e) { } gwLeaveUnmark(gid); if (GW_PHONE) { gw.pv = 'face'; gw.pt = null; gw.pdown = true; gw.ptom = null; try { localStorage.setItem('bt_gw_last', gid); } catch (e) { } } return gwEnter(); }
+  function gwUse(gid, seat, token) { gwPushHook(gid); gwFreshReg = null; gwLoginGid = null; gw.chatSig = ''; gw.chatSeenAt = null; gw.st = null; gw.shown = {}; gw.ids = ''; gw.items = []; gw.cur = ''; gw.gid = gid; gw.token = token; gw.seat = +seat; gwSetTabSeat(gid, +seat, token); try { setHiddenGame(gid, false); } catch (e) { } gwLeaveUnmark(gid); if (GW_PHONE) { gw.pv = 'face'; gw.pt = null; gw.pdown = true; gw.ptom = null; try { localStorage.setItem('bt_gw_last', gid); } catch (e) { } } return gwEnter(); }
   btHand.register('groupwords', {
     current: function () { let gg = $('gw-game'); if (!(gg && !gg.hidden && gw && gw.gid && gw.token)) return null; return { gid: gw.gid, seat: gw.seat, name: (gwSeatsOf(gw.gid)[gw.seat] || {}).name || getOwner() || '', token: gw.token }; },
     adopt: async function (b) { gwSaveKey(b.gameId, b.token, b.seat, b.name); await gwUse(b.gameId, b.seat, b.token); return ''; }
@@ -5944,7 +5996,7 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     let sc = function (lb, day) { return lb === '' ? '' : '<b class="gwp-sc">' + gwpEsc(lb) + (prev(day) ? '<sup>*</sup>' : '') + '</b>'; };
     let pill = function (name, lb, day, html) { return '<div class="gwp-nb"><span class="gwp-n">' + (html || gwpEsc(name)) + '</span>' + sc(lb, day) + '</div>'; };
     let gonePill = function (it) { return '<div class="gwp-nb"><span class="gwp-n">' + gwpEsc(it.name + '   player seceded') + '</span>' + (st.me.gone ? '' : '<button type="button" class="gwp-x" data-x="' + it.n + '" aria-label="Remove player"></button>') + '</div>'; };
-    let h = '<div class="gwp-top"><a href="#" data-a="newgroup">new group</a><a href="#" data-a="chat">chat</a><a href="#" data-a="groups">my groups</a></div><div class="gwp-rows">';
+    let h = '<div class="gwp-top"><a href="#" data-a="newgroup">new group</a><a href="#" data-a="chat">chat' + (gwpUnread(st) ? '<sup class="gwp-un">' + gwpUnread(st) + '</sup>' : '') + '</a><a href="#" data-a="groups">my groups</a></div><div class="gwp-rows">';
     let own = st.seats.find(function (s) { return s.n === st.me.n; });
     h += '<div class="gwp-row" data-a="card">' + pill('my card', own ? gwpLabel(own) : '', own ? own.day : '') + '</div>';
     let o = gwpOthers(st);
@@ -5954,8 +6006,9 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
       h += '<div class="gwp-row" data-n="' + it.n + '">' + (it.gone ? gonePill(it) : pill(it.name, gwpLabel(it), it.day, gwNameBack(it))) + '</div>';
     }
     h += '<div class="gwp-row" data-a="tom">' + pill('Bear Bot Tom', gw.tomScore != null ? String(gw.tomScore) : '', st.me.day) + '</div>';
-    h += '<div class="gwp-row" data-a="stats">' + pill('My Stats', '') + '</div></div>';
-    return h;
+    h += '<div class="gwp-row" data-a="stats">' + pill('My Stats', '') + '</div>';
+    if (gwPushCan()) h += '<a href="#" class="gwp-notify" data-a="notify">' + (gwPushOn() ? 'notifications on' : 'notify me') + '</a>';
+    return h + '</div>';
   }
   function gwpKbHtml(rows) {
     let used = {}; (rows || []).forEach(function (x) { if (x && x.g && x.c) for (let q = 0; q < x.g.length; q++) used[x.g[q]] = Math.max(used[x.g[q]] === undefined ? -1 : used[x.g[q]], x.c[q]); });   // each letter takes its best color so far, the same colors as the tiles
@@ -6004,10 +6057,10 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     if (typeof gw.pt === 'number' && !gw.shown[gw.pt]) gw.pt = null;
     let b = gwpBackHtml(st), f = gwpFaceHtml(st);
     if (b !== gw.phB) { gw.phB = b; $('gwp-back').innerHTML = b; }
-    if (gw.pt === 'chat') {   // the shell is built once; messages are filled in without touching the box being typed in
+    if (gw.pv !== 'groups' && gw.pt === 'chat') {   // the shell is built once; messages are filled in without touching the box being typed in
       if (!$('gwp-cvin')) { gw.phF = f; $('gwp-face').innerHTML = f; gw.phCv = ''; }
       let ch = st.chat || [], lastAt = ch.length ? ch[ch.length - 1].at : 0, sig = gw.gid + ':' + ch.length + ':' + lastAt;
-      gw.chatSeenAt = lastAt;
+      gw.chatSeenAt = lastAt; if (!gw.pdown) { gwpSeenSet(gw.gid, lastAt); let b2 = gwpBackHtml(st); if (b2 !== gw.phB) { gw.phB = b2; $('gwp-back').innerHTML = b2; } }   // on screen: read, so the count on the back goes
       if (sig !== gw.phCv) {
         gw.phCv = sig; let log = $('gwp-cvlog'); log.innerHTML = '';
         if (!ch.length) { let p = document.createElement('p'); p.className = 'dim'; p.textContent = 'No messages yet.'; log.appendChild(p); }
@@ -6029,6 +6082,14 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
       sp.style.fontSize = fs + 'px';
       while (fs > 9 && sp.offsetWidth > room) { fs--; sp.style.fontSize = fs + 'px'; }
     });
+  }
+  // Phone chat: how many messages from others have come since this group's chat was last on screen (remembered per group on this device).
+  function gwpSeenGet(gid) { try { let v = JSON.parse(localStorage.getItem('bt_gw_seen') || '{}')[gid]; return typeof v === 'number' ? v : null; } catch (e) { return null; } }
+  function gwpSeenSet(gid, at) { try { let m = JSON.parse(localStorage.getItem('bt_gw_seen') || '{}') || {}; if (m[gid] === at) return; m[gid] = at; localStorage.setItem('bt_gw_seen', JSON.stringify(m)); } catch (e) { } }
+  function gwpUnread(st) {
+    let ch = st.chat || [], last = ch.length ? ch[ch.length - 1].at : 0, seen = gwpSeenGet(gw.gid);
+    if (seen === null) { gwpSeenSet(gw.gid, last); return 0; }   // a group opened for the first time starts with nothing unread
+    return ch.filter(function (m) { return m.at > seen && m.name !== st.me.name; }).length;
   }
   async function gwpGroups() {
     let owner = (getOwner() || '').toLowerCase(), ks = gwKeys(), out = [];
@@ -6054,12 +6115,13 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
       e.preventDefault(); let act = a.getAttribute('data-a');
       if (act === 'card') { gw.pv = 'face'; gw.pt = null; gwpRender(); gwpFlip(false); }
       else if (act === 'back') gwpFlip(true);
-      else if (act === 'groups') { gw.pv = 'groups'; gw.pgh = {}; gwpRender(); gwpFlip(false); gwpGroups(); }
+      else if (act === 'groups') { gw.pv = 'groups'; gw.pt = null; gw.pgh = {}; gwpRender(); gwpFlip(false); gwpGroups(); }
       else if (act === 'newgroup') entryGroupWords();
-      else if (act === 'chat') { gw.pv = 'face'; gw.pt = 'chat'; gwpRender(); gwpFlip(false); }
+      else if (act === 'chat') { gw.pv = 'face'; gw.pt = 'chat'; gwpFlip(false); gwpRender(); }
       else if (act === 'cvsend') gwpSendChat();
       else if (act === 'newword') gwNewDay();
       else if (act === 'cardshare') gwCardShare();
+      else if (act === 'notify') { if (gwPushOn()) gwPushDisable(); else gwPushEnable(); }
       else if (act === 'joinlink') handleJoinWithLink(e);
       else if (act === 'stats') { gw.pv = 'face'; gw.pt = 'stats'; gwpRender(); gwpFlip(false); }
       else if (act === 'tom') {
