@@ -894,7 +894,7 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
 .gwp-card.down .gwp-face, .gwp-card:not(.down) .gwp-back { pointer-events: none; }
 .gwp-top { position: relative; z-index: 1; flex: none; display: flex; justify-content: space-between; align-items: center; padding: calc(var(--gwcw) * .06) calc(var(--gwcw) * .1) 0; color: #f6f0e4; font-style: italic; font-size: 16px; }
 .gwp-top a { position: relative; color: inherit; text-decoration: underline; min-height: 44px; display: flex; align-items: center; padding: 0 4px; }
-.gwp-notify { position: absolute; left: 0; right: 0; bottom: calc(var(--gwcw) * .065); height: calc(var(--gwcw) * .08); min-height: 26px; display: flex; align-items: center; justify-content: center; color: #f6f0e4; font-style: italic; font-size: 13px; text-decoration: underline; }
+.gwp-notify { position: absolute; left: 0; right: 0; bottom: calc(var(--gwcw) * .065 - 8.5px); height: calc(var(--gwcw) * .08); min-height: 26px; display: flex; align-items: center; justify-content: center; color: #f6f0e4; font-style: italic; font-size: 13px; text-decoration: underline; }
 .gwp-rows { position: relative; z-index: 1; flex: 1; min-height: 0; display: flex; flex-direction: column; padding-bottom: calc(var(--gwcw) * .08); }
 .gwp-row { position: relative; flex: 1; min-height: 44px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
 .gwp-sc { position: absolute; top: 50%; transform: translateY(-50%); right: 22px; font-weight: 400; font-size: 17px; line-height: 1; white-space: nowrap; }
@@ -6007,7 +6007,7 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     }
     h += '<div class="gwp-row" data-a="tom">' + pill('Bear Bot Tom', gw.tomScore != null ? String(gw.tomScore) : '', st.me.day) + '</div>';
     h += '<div class="gwp-row" data-a="stats">' + pill('My Stats', '') + '</div>';
-    if (gwPushCan()) h += '<a href="#" class="gwp-notify" data-a="notify">' + (gwPushOn() ? 'notifications on' : 'notify me') + '</a>';
+    if (gwPushCan() && !gwPushOn()) h += '<a href="#" class="gwp-notify" data-a="notify">enable notifications</a>';
     return h + '</div>';
   }
   function gwpKbHtml(rows) {
@@ -6121,7 +6121,7 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
       else if (act === 'cvsend') gwpSendChat();
       else if (act === 'newword') gwNewDay();
       else if (act === 'cardshare') gwCardShare();
-      else if (act === 'notify') { if (gwPushOn()) gwPushDisable(); else gwPushEnable(); }
+      else if (act === 'notify') gwPushEnable();
       else if (act === 'joinlink') handleJoinWithLink(e);
       else if (act === 'stats') { gw.pv = 'face'; gw.pt = 'stats'; gwpRender(); gwpFlip(false); }
       else if (act === 'tom') {
