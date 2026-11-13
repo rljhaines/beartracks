@@ -25,11 +25,11 @@ self.addEventListener('push', function (e) {
 self.addEventListener('notificationclick', function (e) {
   e.notification.close();
   var gid = (e.notification.data && e.notification.data.g) || '';
-  var url = self.registration.scope + (gid ? '?kind=groupwords&gw=' + encodeURIComponent(gid) : '');
+  var url = self.registration.scope + (gid ? '?kind=groupwords&push=1&gw=' + encodeURIComponent(gid) : '');
   e.waitUntil((async function () {
     var wins = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
     for (var i = 0; i < wins.length; i++) {
-      if (wins[i].url.indexOf(self.registration.scope) === 0) { try { await wins[i].focus(); return; } catch (x) {} }
+      if (wins[i].url.indexOf(self.registration.scope) === 0) { try { var w = await wins[i].focus(); (w || wins[i]).postMessage({ t: 'open', g: gid }); return; } catch (x) {} }
     }
     if (self.clients.openWindow) await self.clients.openWindow(url);
   })());

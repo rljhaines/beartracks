@@ -5369,6 +5369,9 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
   function gwB64uBytes(t) { let b = atob(t.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((t.length + 3) % 4)), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; }
   function gwPushBase() { return location.origin + location.pathname.replace(/[^\/]*$/, ''); }
   function gwClearBadge() { try { if (navigator.clearAppBadge) navigator.clearAppBadge().catch(function () { }); } catch (e) { } }
+  function gwMySeatKey(gid) { let seats = gwSeatsOf(gid), sk = Object.keys(seats), owner = (getOwner() || '').toLowerCase(); if (!sk.length) return null; let mine = sk.find(function (n) { return (seats[n].name || '').toLowerCase() === owner; }); if (mine === undefined) mine = sk[0]; return { n: +mine, token: seats[mine].token }; }
+  // The service worker tells an already-open app which group a tapped notification belongs to.
+  try { if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', function (e) { let d = e.data; if (!d || d.t !== 'open' || typeof d.g !== 'string') return; if (d.g === gw.gid && $('gw-game') && !$('gw-game').hidden) { if (GW_PHONE && gw.st) { gw.pv = 'face'; gw.pt = null; gwpRender(); gwpFlip(false); } return; } let pk = gwMySeatKey(d.g); if (pk) gwUse(d.g, pk.n, pk.token); }); } catch (e) { }
   function gwMySeatIn(gid) { let seats = gwSeatsOf(gid), sk = Object.keys(seats), owner = (getOwner() || '').toLowerCase(); if (!sk.length) return null; let mine = sk.find(function (n) { return (seats[n].name || '').toLowerCase() === owner; }); if (mine === undefined) mine = sk[0]; return seats[mine]; }
   async function gwPushReg() { let reg = await navigator.serviceWorker.register(gwPushBase() + 'sw.js', { scope: gwPushBase() }); await navigator.serviceWorker.ready; return reg; }
   /** Makes sure this device is subscribed with the worker's key and told to the groups: the current one, or all of them. */
@@ -5456,6 +5459,8 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     hideEntryPage(); $('bt-headsup').hidden = true;
     if (tab) return gwUse(gid, tab.seat, tab.token);                                   // this tab already has a seat (e.g. a reload)
     if (hint != null && seats[hint]) return gwUse(gid, hint, seats[hint].token);       // reopened tab: p= says which seat
+    let pushed = false; try { pushed = new URLSearchParams(location.search).get('push') === '1'; } catch (e) { }
+    if (pushed && Object.keys(seats).length) { let pk = gwMySeatKey(gid); if (pk) return gwUse(gid, pk.n, pk.token); }   // a tapped notification: straight into the game as this player, no question asked
     let share = ''; try { share = new URLSearchParams(location.search).get('share') || ''; } catch (e) { }
     if (share) { if (!owner) { postRegisterTarget = 'groupwords'; $('setup').hidden = false; renderBoxes(); return; } return gwJoinShare(gid, owner, share); }   // a cardShare link: join as the seatMate of a card
     if (Object.keys(seats).length) return gwChoose(gid, seats);                        // this browser already holds seat(s): ask which one this tab is
