@@ -703,6 +703,16 @@ html.bt-tab .oth-link { font-size: 15px; display: inline-block; padding: 10px 8p
 #gw-share .gws-l { display: flex; gap: 22px; justify-content: center; flex-wrap: wrap; margin-top: 12px; }
 #gw-share .gws-l a { color: var(--green); text-decoration: underline; cursor: pointer; font-weight: 700; }
 #gw-share .gws-l a.off { text-decoration: none; color: #8a857a; cursor: default; }
+/* iPhone held sideways in groupWords: a still-life of the Foyer, no controls, taps do nothing */
+#gw-land { display: none; position: fixed; inset: 0; z-index: 60; background: var(--paper); overflow: hidden; touch-action: none; -webkit-user-select: none; user-select: none; }
+#gw-land-paws { position: absolute; inset: 0; width: 100%; height: 100%; }
+#gw-land .gl-c { position: relative; z-index: 1; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 max(4vw, env(safe-area-inset-right)) 0 max(4vw, env(safe-area-inset-left)); color: var(--ink); }
+#gw-land .gl-t { font-size: 15vh; line-height: 1; font-weight: 800; letter-spacing: -.028em; text-align: center; }
+#gw-land .gl-b { margin: 2.4vh 0 6vh; font-size: 5.2vh; font-style: italic; color: #5a4630; text-align: center; }
+#gw-land .gl-g { width: 100%; max-width: 900px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 3vw; }
+#gw-land .gl-x { height: 34vh; border: 2px solid #b9a98d; border-radius: 12px; background: rgba(255,253,248,.82); box-shadow: 0 7px 18px rgba(64,48,28,.10); padding: 2.6vh 1vw; }
+#gw-land .gl-x h2 { margin: 0; text-align: center; font-size: 4.4vh; line-height: 1.1; white-space: nowrap; }
+@media (orientation: landscape) and (max-height: 520px) { html.bt-phone body:has(#gw-game:not([hidden])) #gw-land { display: block; } }
 .bt-phone #gw-share { top: calc(env(safe-area-inset-top, 0px) + 10px); width: calc(100vw - 20px); font-size: 16px; }
 .bt-phone #gw-share .gws-l a { min-height: 44px; display: inline-flex; align-items: center; }
 .gw-hd span { white-space: nowrap; }
@@ -913,6 +923,15 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-title" content="BearTracks">
 </head> <body>          <iframe       id="screenSplash"       title="Background"       aria-hidden="true"       tabindex="-1"     ></iframe>
+
+    <div id="gw-land" aria-hidden="true">
+      <canvas id="gw-land-paws"></canvas>
+      <div class="gl-c">
+        <div class="gl-t">BearTracks</div>
+        <div class="gl-b">Destination unknown, but we'll get there together.</div>
+        <div class="gl-g"><div class="gl-x"><h2>Underway-Games</h2></div><div class="gl-x"><h2>Pending-Games</h2></div><div class="gl-x"><h2>Start-a-Game</h2></div><div class="gl-x"><h2>Played-Games</h2></div></div>
+      </div>
+    </div>
 
     <div id="entry-home" hidden>
       <canvas id="entry-paws" aria-hidden="true"></canvas>
@@ -5408,7 +5427,30 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     } catch (e) { }
     gwPushFlag(false); gwClearBadge(); gwpRender();
   }
+  // The sideways cover's paws: the Foyer's walkers, running only while the cover is showing.
+  (function () {
+    let cv = $('gw-land-paws'); if (!cv || !GW_PHONE) return;
+    let ctx = cv.getContext('2d'), W = 0, H = 0, run = false, last = 0;
+    const colors = ['#c94a3c', '#e68a82', '#2e8aa8', '#86c2cc'], pad = new Path2D('M 20 56 C 20 46 35 42 50 42 C 65 42 80 46 80 56 C 84 70 78 86 50 92 C 22 86 16 70 20 56 Z'), toes = [[23, 28, 14], [50, 15, 16], [77, 28, 14]];
+    const ws = Array.from({ length: 34 }, function () { return { nx: Math.random(), ny: Math.random(), ang: Math.random() * Math.PI * 2, sp: .4 + Math.random() * .9, c: colors[Math.floor(Math.random() * 4)] }; });
+    function size() { let d = window.devicePixelRatio || 1; W = cv.clientWidth; H = cv.clientHeight; if (!W || !H) return false; cv.width = Math.round(W * d); cv.height = Math.round(H * d); ctx.setTransform(d, 0, 0, d, 0, 0); return true; }
+    function tick(now) {
+      if (!cv.offsetParent) { run = false; return; }
+      let dt = Math.min((now - last) / 1000, .05); last = now; ctx.clearRect(0, 0, W, H); ctx.globalAlpha = .85;
+      let u = Math.min(W, H) / 15;
+      ws.forEach(function (w) {
+        w.ang += (Math.random() - .5) * .15 * (dt * 60); let x = w.nx * W + Math.cos(w.ang) * w.sp * u * dt, y = w.ny * H + Math.sin(w.ang) * w.sp * u * dt, m = Math.min(W, H) * .01;
+        if (x < m || x > W - m) { w.ang = Math.PI - w.ang; x = Math.min(W - m, Math.max(m, x)); } if (y < m || y > H - m) { w.ang = -w.ang; y = Math.min(H - m, Math.max(m, y)); }
+        w.nx = x / W; w.ny = y / H; let k = u * .6 / 100; ctx.save(); ctx.translate(x, y); ctx.rotate(w.ang + Math.PI / 2); ctx.scale(k, k); ctx.translate(-50, -50); ctx.fillStyle = w.c; toes.forEach(function (t) { ctx.beginPath(); ctx.arc(t[0], t[1], t[2], 0, Math.PI * 2); ctx.fill(); }); ctx.fill(pad); ctx.restore();
+      });
+      ctx.globalAlpha = 1; requestAnimationFrame(tick);
+    }
+    function go() { if (run || !cv.offsetParent || !size()) return; run = true; last = performance.now(); requestAnimationFrame(tick); }
+    addEventListener('resize', function () { setTimeout(go, 50); }); addEventListener('orientationchange', function () { setTimeout(go, 300); }); setInterval(go, 1000);
+  })();
   gwClearBadge();
+  // Phone: portrait only where the browser allows a lock (Android installed app; iOS offers none to web apps, so it is silently skipped).
+  try { if (GW_PHONE && screen.orientation && screen.orientation.lock) screen.orientation.lock('portrait').catch(function () { }); } catch (e) { }
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') gwClearBadge(); });
   function gwMsg(t) { let m = $('gw-msg'); if (!m) return; m.textContent = t; clearTimeout(gwMsgTimer); gwMsgTimer = setTimeout(function () { m.textContent = ''; }, 3500); }
 
@@ -6286,7 +6328,7 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
   }
   try {
     var base = location.origin + location.pathname.replace(/[^\/]*$/, '');
-    var manifest = { id: base, name: 'BearTracks', short_name: 'BearTracks', description: 'Wordage, Cribbage and groupWords.', start_url: base, scope: base, display: 'standalone', background_color: '#f6f0e4', theme_color: '#28604b',
+    var manifest = { id: base, name: 'BearTracks', short_name: 'BearTracks', description: 'Wordage, Cribbage and groupWords.', start_url: base, scope: base, display: 'standalone', orientation: 'portrait', background_color: '#f6f0e4', theme_color: '#28604b',
       icons: [{ src: paw(192, 1, true), sizes: '192x192', type: 'image/png', purpose: 'any' }, { src: paw(512, 1, true), sizes: '512x512', type: 'image/png', purpose: 'any' }, { src: paw(512, 0.62, false), sizes: '512x512', type: 'image/png', purpose: 'maskable' }] };
     var l = document.createElement('link'); l.rel = 'manifest'; l.href = URL.createObjectURL(new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' })); document.head.appendChild(l);
   } catch (e) { }
