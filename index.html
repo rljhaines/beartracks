@@ -753,7 +753,7 @@ html.bt-tab .oth-link { font-size: 15px; display: inline-block; padding: 10px 8p
 .gw-lab sup, .gw-lapsed sup { font-size: .6em; line-height: 0; vertical-align: super; }
 .gw-rows { display: grid; gap: var(--g); }
 .gw-r { display: grid; grid-template-columns: repeat(5, var(--t)); gap: var(--g); position: relative; }
-.gw-wd { position: absolute; left: 50%; margin-left: calc((var(--t) + var(--g)) * -2.5); top: 0; bottom: 0; display: flex; align-items: center; white-space: pre; font: bold calc((var(--t) + var(--g)) / .6) Menlo, "Courier New", monospace; line-height: var(--t); color: transparent; -webkit-text-fill-color: transparent; z-index: 1; cursor: text; }   /* each letter's cell is exactly a tile plus its gap, and the line is a tile tall: the selection highlight is the row's shape */
+.gw-wd { position: absolute; left: 50%; margin-left: calc((var(--t) + var(--g)) * -2.5); top: 0; bottom: 0; display: flex; align-items: center; white-space: pre; font: bold calc(var(--t) * .86) Menlo, "Courier New", monospace; line-height: var(--t); letter-spacing: calc(var(--t) * .484 + var(--g)); color: transparent; -webkit-text-fill-color: transparent; z-index: 1; cursor: text; }   /* each letter's cell is exactly a tile plus its gap (glyph plus letter-spacing), and the type is sized so its box is a tile tall: the selection highlight is the row's shape */
 .gw-card.down .gw-front { pointer-events: none; }   /* whichever side is turned away takes no touches, so the visible side's words can be selected */
 .gw-card:not(.down) .gw-back { pointer-events: none; }
 .gw-wd, .gw-sw, #gwp .gw-wd, #gwp .gw-sw { -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
