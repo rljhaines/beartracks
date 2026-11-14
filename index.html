@@ -711,7 +711,8 @@ html.bt-tab .oth-link { font-size: 15px; display: inline-block; padding: 10px 8p
 #gw-land .gl-b { margin: 2.4vh 0 6vh; font-size: 5.2vh; font-style: italic; color: #5a4630; text-align: center; }
 #gw-land .gl-g { width: 100%; max-width: 900px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 3vw; }
 #gw-land .gl-x { height: 34vh; border: 2px solid #b9a98d; border-radius: 12px; background: rgba(255,253,248,.82); box-shadow: 0 7px 18px rgba(64,48,28,.10); padding: 2.6vh 1vw; }
-#gw-land .gl-x h2 { margin: 0; text-align: center; font-size: 4.4vh; line-height: 1.1; white-space: nowrap; }
+#gw-land .gl-x { container-type: inline-size; }
+#gw-land .gl-x h2 { margin: 0; text-align: center; font-size: min(4.4vh, 10.4cqw); line-height: 1.1; white-space: nowrap; }   /* the longest heading, Underway-Games, always fits its box */
 @media (orientation: landscape) and (max-height: 520px) { html.bt-phone body:has(#gw-game:not([hidden])) #gw-land { display: block; } }
 .bt-phone #gw-share { top: calc(env(safe-area-inset-top, 0px) + 10px); width: calc(100vw - 20px); font-size: 16px; }
 .bt-phone #gw-share .gws-l a { min-height: 44px; display: inline-flex; align-items: center; }
@@ -1304,8 +1305,10 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
   function getAllGameIds() { try { return JSON.parse(localStorage.getItem("bt_all_game_ids") || "[]") } catch (e) { return [] } }  
   // The hand-off service's registry: each game adds its own adapter (see "hand-off" below).
   // BearTracks is played in the installed app. A Chromium browser tab (Chrome, Brave, Edge, Opera...) that is not the app is locked; Safari tabs are handled by the hand-off panel; Firefox is left alone.
+  // An Android phone: says "Mobile" and its screen is under 600 dp across. A tablet whose browser also says "Mobile" (some do, emulators included) is still a tablet.
+  window.btAndroidPhone = function (u) { try { let m = Math.min(screen.width || 0, screen.height || 0); return /Android.*Mobile/.test(u) && (!m || m < 600); } catch (e) { return /Android.*Mobile/.test(u); } };
   window.btBrowserLocked = (function () { try { let ua = navigator.userAgent || ''; let chromium = /Chrome\/|Chromium\/|Edg\/|OPR\//.test(ua) && !/Firefox\//.test(ua); let app = navigator.standalone === true || (window.matchMedia && !matchMedia('(display-mode: browser)').matches);
-      try { if (app) sessionStorage.setItem('bt_app', '1'); else if (sessionStorage.getItem('bt_app') === '1') app = true; } catch (e) { } let secure = location.protocol === 'https:' || location.hostname === 'localhost'; window.btAndroidTab = chromium && !app && secure && /Android.*Mobile/.test(ua); return chromium && !app && secure && !window.btAndroidTab; } catch (e) { return false; } })();   // an Android phone's Chromium tab is not locked: it loads the game, and the install panel is put over it once a seat is held
+      try { if (app) sessionStorage.setItem('bt_app', '1'); else if (sessionStorage.getItem('bt_app') === '1') app = true; } catch (e) { } let secure = location.protocol === 'https:' || location.hostname === 'localhost'; window.btAndroidTab = chromium && !app && secure && window.btAndroidPhone(ua); return chromium && !app && secure && !window.btAndroidTab; } catch (e) { return false; } })();   // an Android phone's Chromium tab is not locked: it loads the game, and the install panel is put over it once a seat is held
   // Small drawings of the browser's own controls, so the steps can show what to look for.
   function btIcon(kind) {
     let d = { share: '<path d="M12 3v12M8 7l4-4 4 4M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/>', menu: '<circle cx="12" cy="5" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="19" r="1.6" fill="currentColor"/>', install: '<rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M12 7v6M9.5 10.5L12 13l2.5-2.5M8 20h8"/>', open: '<path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>', more: '<path d="M4 7h16M4 12h16M4 17h11"/>', addhome: '<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M12 8v8M8 12h8"/>' }[kind] || '';
@@ -3592,8 +3595,8 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
   let wordageShare = null;   // the invite/backup link shown in the Share panel; the HeadsUp dialog sets it before the screen exists
   // Build the Wordage screen (once per open). Called by render(), which only runs while a Wordage game (state) is open.
 
-  // A tablet: an iPad (it may call itself a Mac; only iPhone/iPad Safari has navigator.standalone) or an Android device that does not say "Mobile". Held in portrait it gets its own Wordage layout.
-  const BT_TAB = (function () { try { let u = navigator.userAgent || ''; return /iPad/.test(u) || (/Macintosh/.test(u) && ('standalone' in navigator) && navigator.maxTouchPoints > 1) || (/Android/.test(u) && !/Mobile/.test(u)); } catch (e) { return false; } })();
+  // A tablet: an iPad (it may call itself a Mac; only iPhone/iPad Safari has navigator.standalone) or an Android device that is not a phone (no "Mobile" in its browser's name, or a screen 600 dp or wider). Held in portrait it gets its own Wordage layout.
+  const BT_TAB = (function () { try { let u = navigator.userAgent || ''; return /iPad/.test(u) || (/Macintosh/.test(u) && ('standalone' in navigator) && navigator.maxTouchPoints > 1) || (/Android/.test(u) && !window.btAndroidPhone(u)); } catch (e) { return false; } })();
   if (BT_TAB) { try { document.documentElement.classList.add('bt-tab'); } catch (e) { } }
   // ---- Tablet (portrait) Wordage: the extra circles, the flip side, and touch dragging ----
   function wordageTabBuild() {
@@ -5322,7 +5325,7 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
   // ================= groupWords MODULE (additive) =================
   let gw = { gid: null, token: null, seat: null, st: null, shown: {}, cur: '', items: [], ids: '', poll: null, chatSig: '', chatSeenAt: null };
   let gwMsgTimer = null;
-  const GW_PHONE = (function () { try { let u = navigator.userAgent || ''; return /iPhone|iPod/.test(u) || /Android.*Mobile/.test(u); } catch (e) { return false; } })();
+  const GW_PHONE = (function () { try { let u = navigator.userAgent || ''; return /iPhone|iPod/.test(u) || window.btAndroidPhone(u); } catch (e) { return false; } })();
   if (GW_PHONE) { try { document.documentElement.classList.add('bt-phone'); } catch (e) { } }
   gw.pdown = true; gw.pv = 'face'; gw.pt = null; gw.ptom = null; gw.pgl = null; gw.pday = null; gw.pgh = {};
   function GW_TZ() { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; } catch (e) { return 'UTC'; } }
