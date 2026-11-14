@@ -8,16 +8,17 @@ self.addEventListener('push', function (e) {
   var d = {};
   try { d = e.data ? e.data.json() : {}; } catch (x) { try { d = { b: e.data.text() }; } catch (y) {} }
   var title = d.t || 'BearTracks', body = d.b || '', gid = d.g || '';
+  var tag = d.e ? 'ev-' + d.e : (gid ? 'gw-' + gid : 'bt'); // a finished card sent from two of your groups carries the same tag, so it shows once
   e.waitUntil((async function () {
     var wins = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
     var seen = wins.some(function (c) { return c.visibilityState === 'visible'; });
-    await self.registration.showNotification(title, { body: body, tag: gid ? 'gw-' + gid : 'bt', renotify: true, silent: seen, data: { g: gid } });
+    await self.registration.showNotification(title, { body: body, tag: tag, renotify: !d.e, silent: seen, data: { g: gid } });
     if (seen) {
       await new Promise(function (r) { setTimeout(r, 4000); });
-      var list = await self.registration.getNotifications(gid ? { tag: 'gw-' + gid } : {});
+      var list = await self.registration.getNotifications({ tag: tag });
       list.forEach(function (n) { n.close(); });
     } else if (self.navigator && self.navigator.setAppBadge) {
-      try { await self.navigator.setAppBadge(); } catch (x) {} // a dot: no number
+      try { await self.navigator.setAppBadge(555); } catch (x) {}
     }
   })());
 });
