@@ -752,7 +752,10 @@ html.bt-tab .oth-link { font-size: 15px; display: inline-block; padding: 10px 8p
 .gw-az i.k2 { background-color: #5a8f5a; color: #fff; }
 .gw-lab sup, .gw-lapsed sup { font-size: .6em; line-height: 0; vertical-align: super; }
 .gw-rows { display: grid; gap: var(--g); }
-.gw-r { display: grid; grid-template-columns: repeat(5, var(--t)); gap: var(--g); }
+.gw-r { display: grid; grid-template-columns: repeat(5, var(--t)); gap: var(--g); position: relative; }
+.gw-wd { position: absolute; left: 50%; margin-left: calc(var(--t) * -2.5 - var(--g) * 2); top: 0; bottom: 0; display: flex; align-items: center; white-space: pre; font: bold calc(var(--t) * .6) Menlo, "Courier New", monospace; letter-spacing: calc(var(--t) * .64 + var(--g)); padding-left: calc(var(--t) * .32); color: transparent; -webkit-text-fill-color: transparent; z-index: 1; cursor: text; }
+.gw-wd, .gw-sw, #gwp .gw-wd, #gwp .gw-sw { -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
+.gw-wd::selection { background: rgba(46,138,168,.35); }
 .gw-t { width: var(--t); height: var(--t); box-sizing: border-box; border: 2px solid #cfc4ad; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: calc(var(--gwcw) * .1); color: #fff; }
 .gw-t.f { border-color: #2b2620; color: #2b2620; }
 .gw-t.c0 { background: #8d867a; border-color: #8d867a; }
@@ -5715,6 +5718,7 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
       let x = rows[r], cr = (!x && r === rows.length) ? cur : '';
       h += '<div class="gw-r">';
       for (let k = 0; k < 5; k++) { let ch = x ? (x.g ? x.g[k] : '') : (cr[k] || ''), cl = x ? ' c' + x.c[k] : (cr[k] ? ' f' : ''); h += '<div class="gw-t' + cl + '">' + (letters ? ch : '') + '</div>'; }
+      if (letters && x && x.g && /^[A-Za-z]{5}$/.test(x.g)) h += '<span class="gw-wd">' + x.g.toLowerCase() + '</span>';   // the guess as one real word, unseen, laid over its tiles: a long-press selects it and iOS offers Look Up
       h += '</div>';
     }
     return h;
@@ -5727,8 +5731,9 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     return '<span class="gw-split" style="--sa:' + (first ? '#2e8aa8' : '#c94a3c') + ';--sb:' + (first ? '#c94a3c' : '#2e8aa8') + '">' + gwpEsc(nm) + '</span>';
   }
   // Names on a card face: the first player's, the added player's beneath it, an asterisk beside whoever made the winning guess.
+  function gwSolHtml(w) { return '   solution: <span class="gw-sw">' + gwpEsc(String(w).toLowerCase()) + '</span>'; }   // the secret word, when nobody guessed it: selectable, so a long-press can look it up
   function gwPairHtml(name, mate, solver, extra) {
-    return gwpEsc(name) + (mate && solver === 0 ? '<sup>*</sup>' : '') + (extra ? gwpEsc(extra) : '') + (mate ? '<br>' + gwpEsc(mate) + (solver === 1 ? '<sup>*</sup>' : '') : '');
+    return gwpEsc(name) + (mate && solver === 0 ? '<sup>*</sup>' : '') + (extra || '') + (mate ? '<br>' + gwpEsc(mate) + (solver === 1 ? '<sup>*</sup>' : '') : '');
   }
   function gwShareClose() { let d = $('gw-share'); if (d) d.remove(); }
   // Copies text that is still being fetched (the click's permission to copy would be spent by waiting for it first).
@@ -5775,8 +5780,8 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
         el.querySelector('.gw-lapsed').innerHTML = it.lapsed ? (it.noshow ? 'no-show' : 'dnf') + star : '';
     let finT = BT_TAB && mine && (me.status !== 'playing' || !!me.canNewDay);   // tablet: a finished card of yours is laid out like the others
     let showNm = !(mine && !finT) || (!!it.mate && me.status !== 'playing');   // your own card shows no name while in play; a shared card, once finished, shows both
-    el.querySelector('.gw-hd b').innerHTML = showNm ? gwpEsc(it.name) + (it.mate && it.solver === 0 ? '<sup>*</sup>' : '') : '';
-    el.querySelector('.gw-mn').innerHTML = (showNm && it.mate) ? gwpEsc(it.mate) + (it.solver === 1 ? '<sup>*</sup>' : '') : '';
+    el.querySelector('.gw-hd b').innerHTML = showNm ? gwpEsc(it.name) + (it.mate && it.solver === 0 ? '<sup>*</sup>' : '') + (it.mate ? '-' + gwpEsc(it.mate) + (it.solver === 1 ? '<sup>*</sup>' : '') : '') : '';   // inviter-invitee on one line, Bogart-Bergman
+    el.querySelector('.gw-mn').innerHTML = '';
     let sp = el.querySelector('.gw-hd span'), ps = el.querySelector('.gw-ps'), rows = [], letters = false, cur = '', sol = '';
     sp.textContent = ''; ps.textContent = '';
     if (mine) {
@@ -5795,7 +5800,7 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     d1.textContent = dayTxt; ps.appendChild(d1); let bd = el.querySelector('.gw-bd'); bd.textContent = dayTxt; bn.textContent = '';
     if (mine) { let cs = gwLink('cardShare', gwCardShare); cs.style.marginLeft = 'auto'; cs.dataset.cs = '1'; ps.appendChild(cs); }
     if (canNew) { ps.insertBefore(gwLink('new word', gwNewDay), ps.querySelector('[data-cs]')); let l2 = gwLink('new word', gwNewDay); l2.style.marginLeft = '.6em'; bd.appendChild(l2); }
-    el.querySelector('.gw-sol').textContent = sol ? 'solution: ' + sol : '';
+    el.querySelector('.gw-sol').innerHTML = sol ? gwSolHtml(sol).trim() : '';
     let best = {}; if (letters) rows.forEach(function (x) { if (x && x.g && x.c) for (let q = 0; q < x.g.length; q++) best[x.g[q]] = Math.max(best[x.g[q]] === undefined ? -1 : best[x.g[q]], x.c[q]); });   // each letter takes its best color so far, the tile colors
     let az = el.querySelector('.gw-az'); az.style.visibility = (mine && me.status === 'playing') ? 'visible' : 'hidden';   // letters/keys only while your own card is in play
     Array.prototype.forEach.call(az.querySelectorAll('i'), function (c) { if (c.dataset.act) return; let v = best[c.textContent]; c.className = v === undefined ? '' : 'k' + v; });
@@ -6090,11 +6095,11 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     let it = typeof t === 'number' ? st.seats.find(function (x) { return x.n === t; }) : null, shown = it ? gw.shown[it.n] : null;
     if (it && shown) {
       let letters = shown.word !== undefined, rows = shown.rows.map(function (x) { return Array.isArray(x) ? { g: '', c: x } : x; }), sol = (letters && it.score === 7) ? shown.word : '';
-      return top(gwPairHtml(it.name, it.mate, it.solver, sol ? '   solution: ' + sol : ''), true) + '<div class="gwp-gw"><div class="gw-rows">' + gwRowsHtml(rows, '', letters) + '</div></div><div class="gwp-slim"><span>' + gwpEsc(it.day || '') + '</span><span></span></div>';
+      return top(gwPairHtml(it.name, it.mate, it.solver, sol ? gwSolHtml(sol) : ''), true) + '<div class="gwp-gw"><div class="gw-rows">' + gwRowsHtml(rows, '', letters) + '</div></div><div class="gwp-slim"><span>' + gwpEsc(it.day || '') + '</span><span></span></div>';
     }
     let playing = me.status === 'playing' && !me.canNewDay;
     let own = st.seats.find(function (x) { return x.n === me.n; }) || {};
-    return top(gwPairHtml(me.mate ? me.owner : me.name, me.mate, me.solver, me.status === 'failed' && me.word ? '   solution: ' + me.word : ''), true) + '<div class="gwp-gw"><div class="gw-rows">' + gwRowsHtml(me.rows, me.status === 'playing' ? gw.cur : '', true) + '</div></div><div class="gwp-slim gwp-own2"><span class="gwp-l"><span>' + gwpEsc(me.day || '') + '</span><span>' + (me.canNewDay ? '<a href="#" data-a="newword">new word</a>' : '') + '</span></span><span class="gwp-r"><span class="gwp-cs">cardShare</span><span><a href="#" data-a="cardshare">invite</a>&nbsp;&nbsp;<a href="#" data-a="joinlink">join</a></span></span></div>' + (playing ? gwpKbHtml(me.rows) : '');
+    return top(gwPairHtml(me.mate ? me.owner : me.name, me.mate, me.solver, me.status === 'failed' && me.word ? gwSolHtml(me.word) : ''), true) + '<div class="gwp-gw"><div class="gw-rows">' + gwRowsHtml(me.rows, me.status === 'playing' ? gw.cur : '', true) + '</div></div><div class="gwp-slim gwp-own2"><span class="gwp-l"><span>' + gwpEsc(me.day || '') + '</span><span>' + (me.canNewDay ? '<a href="#" data-a="newword">new word</a>' : '') + '</span></span><span class="gwp-r"><span class="gwp-cs">cardShare</span><span><a href="#" data-a="cardshare">invite</a>&nbsp;&nbsp;<a href="#" data-a="joinlink">join</a></span></span></div>' + (playing ? gwpKbHtml(me.rows) : '');
   }
   function gwpRender() {
     let st = gw.st; if (!st || !$('gwp')) return;
