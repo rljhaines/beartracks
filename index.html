@@ -4259,6 +4259,7 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
   // The worker tells every open page when a release goes live (a socket), and every worker reply carries the newest id, so a page that is
   // talking to the worker anyway learns of it. Either way the page confirms against the live site itself before acting. Where it is
   // safe (the Foyer) it reloads by itself; anywhere else a pink button appears, at a spot that covers nothing you can press.
+  try { let u = new URL(location.href); if (u.searchParams.has('btv')) { u.searchParams.delete('btv'); history.replaceState(history.state, '', u.pathname + u.search + u.hash); } } catch (e) { }   // the one-time address an update reload used
   const BT_BUILD = (function () { try { let m = document.querySelector('meta[name="bt-build"]'), v = m ? m.getAttribute('content') : ''; return /^[0-9a-f]{7,40}$/.test(v) ? v : ''; } catch (e) { return ''; } })();
   const btUpd = { target: '', busy: false, last: 0, tt: 0, slot: '', heard: 0 };
   async function btUpdLive() {
@@ -4281,7 +4282,9 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
   function btUpdTryReload(force) {
     let now = Date.now(), k = 'bt_upd_try';
     try { let m = (sessionStorage.getItem(k) || '').split('|'); if (!force && m[0] === btUpd.target && now - Number(m[1] || 0) < 90000) return false; sessionStorage.setItem(k, btUpd.target + '|' + now); } catch (e) { }
-    (async function () { try { await Promise.race([fetch(location.href, { cache: 'reload' }), new Promise(function (r) { setTimeout(r, 4000); })]); } catch (e) { } location.reload(); })();
+    // Reload through an address nobody has asked for before, so neither this browser's saved copy nor the site's cache (which can hold the old page for
+    // minutes after a release) can answer: one tap always lands on the newest build. The extra part is removed from the address once the page is up.
+    try { let u = new URL(location.href); u.searchParams.set('btv', (btUpd.target || 'x') + '-' + now); location.replace(u.toString()); } catch (e) { location.reload(); }
     return true;
   }
   function btUpdTick() {
