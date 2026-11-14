@@ -5327,6 +5327,12 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
   let gwMsgTimer = null;
   const GW_PHONE = (function () { try { let u = navigator.userAgent || ''; return /iPhone|iPod/.test(u) || window.btAndroidPhone(u); } catch (e) { return false; } })();
   if (GW_PHONE) { try { document.documentElement.classList.add('bt-phone'); } catch (e) { } }
+  // ?diag=1 shows what this browser reports, for working out why a device is taken for a phone or a tablet.
+  try { if (/[?&]diag=1(&|$)/.test(location.search)) addEventListener('load', function () {
+    let d = document.createElement('pre'); d.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:2147483647;margin:0;padding:12px;background:#fff;color:#000;font:13px/1.35 monospace;white-space:pre-wrap;word-break:break-all;border-bottom:3px solid #c00;user-select:text;-webkit-user-select:text';
+    let c = document.documentElement.classList;
+    d.textContent = ['userAgent: ' + navigator.userAgent, 'screen: ' + screen.width + ' x ' + screen.height, 'window: ' + innerWidth + ' x ' + innerHeight, 'pixelRatio: ' + devicePixelRatio, 'touchPoints: ' + navigator.maxTouchPoints, 'btAndroidPhone: ' + (window.btAndroidPhone ? window.btAndroidPhone(navigator.userAgent) : 'missing'), 'treated as phone: ' + c.contains('bt-phone'), 'treated as tablet: ' + c.contains('bt-tab'), 'build: ' + ((document.querySelector('meta[name=bt-build]') || {}).content || '?')].join('\n');
+    d.onclick = function () { d.remove(); }; document.body.appendChild(d); }); } catch (e) { }
   gw.pdown = true; gw.pv = 'face'; gw.pt = null; gw.ptom = null; gw.pgl = null; gw.pday = null; gw.pgh = {};
   function GW_TZ() { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; } catch (e) { return 'UTC'; } }
   function gwKeys() { try { return JSON.parse(localStorage.getItem('bt_gw') || '{}'); } catch (e) { return {}; } }
