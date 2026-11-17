@@ -657,9 +657,6 @@ html.bt-tab .oth-link { font-size: 15px; display: inline-block; padding: 10px 8p
 /* ===== groupWords ===== */
 #setup.gw-bg { background-color: #f6f0e4; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 600' preserveAspectRatio='xMidYMid slice'%3E%3Cdefs%3E%3Cpattern id='p' width='14' height='14' patternUnits='userSpaceOnUse' patternTransform='rotate(45)'%3E%3Crect width='14' height='14' fill='%237b3a2e'/%3E%3Crect width='7' height='14' fill='%238f4636'/%3E%3C/pattern%3E%3C/defs%3E%3Crect x='185' y='40' width='170' height='238' rx='12' fill='url(%23p)' stroke='%23f6f0e4' stroke-width='3'/%3E%3Crect x='195' y='50' width='150' height='218' rx='8' fill='none' stroke='%23f6f0e4' stroke-width='2' opacity='.8'/%3E%3Crect x='415' y='40' width='170' height='238' rx='12' fill='url(%23p)' stroke='%23f6f0e4' stroke-width='3'/%3E%3Crect x='425' y='50' width='150' height='218' rx='8' fill='none' stroke='%23f6f0e4' stroke-width='2' opacity='.8'/%3E%3Crect x='645' y='40' width='170' height='238' rx='12' fill='url(%23p)' stroke='%23f6f0e4' stroke-width='3'/%3E%3Crect x='655' y='50' width='150' height='218' rx='8' fill='none' stroke='%23f6f0e4' stroke-width='2' opacity='.8'/%3E%3Crect x='185' y='322' width='170' height='238' rx='12' fill='url(%23p)' stroke='%23f6f0e4' stroke-width='3'/%3E%3Crect x='195' y='332' width='150' height='218' rx='8' fill='none' stroke='%23f6f0e4' stroke-width='2' opacity='.8'/%3E%3Crect x='415' y='322' width='170' height='238' rx='12' fill='url(%23p)' stroke='%23f6f0e4' stroke-width='3'/%3E%3Crect x='425' y='332' width='150' height='218' rx='8' fill='none' stroke='%23f6f0e4' stroke-width='2' opacity='.8'/%3E%3Crect x='645' y='322' width='170' height='238' rx='12' fill='url(%23p)' stroke='%23f6f0e4' stroke-width='3'/%3E%3Crect x='655' y='332' width='150' height='218' rx='8' fill='none' stroke='%23f6f0e4' stroke-width='2' opacity='.8'/%3E%3C/svg%3E"); background-size: cover; background-position: center; background-repeat: no-repeat; }
 #setup.gw-nodlg .dialog { display: none; }
-#gw-pick { display: none; margin: 6px 0; }
-#bt-headsup.gw-pick #gw-pick { display: block; }
-#bt-headsup.gw-pick #bt-headsup-input { display: none; }
 #gw-t { width: 11em; max-width: 60vw; border: 0; border-bottom: 2px solid currentColor; background: transparent; font: inherit; color: inherit; outline: none; margin-right: 10px; }
 #gw-t::placeholder, #gw-n::placeholder { color: inherit; opacity: .45; }
 #gw-n { width: 1.3em; border: 0; border-bottom: 2px solid currentColor; background: transparent; font: inherit; text-align: center; color: inherit; outline: none; }
@@ -713,7 +710,7 @@ html.bt-tab .oth-link { font-size: 15px; display: inline-block; padding: 10px 8p
 #gw-land .gl-x { height: 34vh; border: 2px solid #b9a98d; border-radius: 12px; background: rgba(255,253,248,.82); box-shadow: 0 7px 18px rgba(64,48,28,.10); padding: 2.6vh 1vw; }
 #gw-land .gl-x { container-type: inline-size; }
 #gw-land .gl-x h2 { margin: 0; text-align: center; font-size: min(4.4vh, 10.4cqw); line-height: 1.1; white-space: nowrap; }   /* the longest heading, Underway-Games, always fits its box */
-@media (orientation: landscape) and (max-height: 520px) { html.bt-phone body:has(#gw-game:not([hidden])) #gw-land { display: block; } }
+@media (orientation: landscape) and (max-height: 520px) { html.bt-phone body:has(.bt-gamescreen:not([hidden])) #gw-land, html.bt-phone body:has(#bt-foyer:not([hidden])) #gw-land { display: block; } }
 .bt-phone #gw-share { top: calc(env(safe-area-inset-top, 0px) + 10px); width: calc(100vw - 20px); font-size: 16px; }
 .bt-phone #gw-share .gws-l a { min-height: 44px; display: inline-flex; align-items: center; }
 .gw-hd span { white-space: nowrap; }
@@ -841,26 +838,17 @@ html.bt-tab #tabFlip, html.bt-tab #tabBack, html.bt-tab #tabVal { display: none 
 html.bt-tab .gw-card.own:not(.fin) { --tkh: 40px }
 }
 html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; padding: 0; border-radius: 50%; font-size: 0; text-decoration: none; background: #f8d5d5 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b2a2a' stroke-width='2' stroke-linejoin='round' stroke-linecap='round'%3E%3Cpath d='M3 11.5 12 4l9 7.5'/%3E%3Cpath d='M5.5 10v10h13V10'/%3E%3Cpath d='M10 20v-6h4v6'/%3E%3C/svg%3E") center / 26px no-repeat; border: 1px solid #c87a7a }
-.bt-phone #gw-pick { display: none; }
-.bt-phone #bt-headsup.gw-pick #gw-pick { display: flex; flex-direction: column; gap: 10px; }
-.bt-phone #gw-t, .bt-phone #gw-n { width: 100%; max-width: none; margin: 0; min-height: 44px; font-size: 16px; text-align: left; box-sizing: border-box; }
-.bt-phone #gw-save { display: flex; align-items: center; min-height: 44px; }
 .bt-phone #btn-cancel-headsup { bottom: 0; left: 8px; min-height: 44px; font-size: 16px; display: flex; align-items: center; }
 #gw-notice button { min-height: 44px; min-width: 44px; }
 #gwp { display: none; }
 .gw-x { position: absolute; left: calc(var(--gwcw) * .065 + 2px); top: calc(var(--gwcw) * .05 + 2px); width: 30px; height: 30px; padding: 0; margin: 0; background: none; border: 0; border-radius: 6px; color: #f6f0e4; cursor: pointer; z-index: 2; }
 .gw-x[hidden] { display: none; }
-.gw-x::before, .gw-x::after, .gwp-x::before, .gwp-x::after, .gwp-gx::before, .gwp-gx::after { content: ''; position: absolute; left: 50%; top: 50%; width: 14px; height: 2px; border-radius: 1px; background: currentColor; }
-.gw-x::before, .gwp-x::before, .gwp-gx::before { transform: translate(-50%, -50%) rotate(45deg); }
-.gw-x::after, .gwp-x::after, .gwp-gx::after { transform: translate(-50%, -50%) rotate(-45deg); }
+.gw-x::before, .gw-x::after, .gwp-x::before, .gwp-x::after, .btg-gx::before, .btg-gx::after, .bmp-x::before, .bmp-x::after { content: ''; position: absolute; left: 50%; top: 50%; width: 14px; height: 2px; border-radius: 1px; background: currentColor; }
+.gw-x::before, .gwp-x::before, .btg-gx::before, .bmp-x::before { transform: translate(-50%, -50%) rotate(45deg); }
+.gw-x::after, .gwp-x::after, .btg-gx::after, .bmp-x::after { transform: translate(-50%, -50%) rotate(-45deg); }
 .gw-x:hover { color: #fff; background: rgba(0,0,0,.18); }
-.gw-x:focus-visible, .gwp-x:focus-visible, .gwp-gx:focus-visible { outline: 2px solid #f6f0e4; outline-offset: 1px; }
+.gw-x:focus-visible, .gwp-x:focus-visible, .btg-gx:focus-visible { outline: 2px solid #f6f0e4; outline-offset: 1px; }
 .gwp-x { position: absolute; right: 0; top: 0; width: 44px; height: 44px; padding: 0; margin: 0; background: none; border: 0; border-radius: 22px; color: #2b2620; }
-.gwp-gr { display: flex; align-items: center; min-height: 44px; border-bottom: 1px solid #e6dcc6; }
-.gwp-gr a[data-g] { flex: 1; min-width: 0; border-bottom: 0; }
-.gwp-gx { position: relative; flex: none; width: 44px; height: 44px; padding: 0; margin: 0; background: none; border: 0; color: #8a7a62; }
-.gwp-gh { justify-content: space-between; padding: 0 6px; font-size: 18px; color: #6b6455; }
-.gwp-gh a { color: #8a3b2e; text-decoration: underline; min-height: 44px; display: flex; align-items: center; padding: 0 6px; }
 #gwp, #gwp * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
 .gwp-kb button.k0 { background: #8d867a; color: #fff; }
 .gwp-kb button.k1 { background: #d6a33a; color: #fff; }
@@ -900,19 +888,16 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
 .gwp-cvf a { flex: none; color: #8a3b2e; text-decoration: underline; min-height: 44px; display: flex; align-items: center; padding: 0 4px; font-style: italic; font-size: 15px; }
 .cv-a { color: #2457a6; text-decoration: underline; overflow-wrap: anywhere; }
 .gwp-sb { flex: 1; min-height: 0; overflow: auto; padding-top: 8px; }
-.gwp-gl { flex: 1; min-height: 0; overflow: auto; }
-.gwp-gl a { display: flex; align-items: center; min-height: 44px; font-size: 20px; color: #2b2620; text-decoration: none; border-bottom: 1px solid #e6dcc6; padding: 0 6px; }
-.gwp-gl a.cur { font-weight: 700; }
-.gwp-gl .dim { opacity: .6; }
 .gw-back.gwp-back { display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; }
 .gwp-top a sup.gwp-un { position: absolute; top: calc(50% - 1.15em); right: -.55em; font-style: inherit; font-size: .8em; line-height: 1; color: #86c2cc; font-weight: 700; text-decoration: none; }
 /* Only the side of the card that is showing takes taps: the hidden side is still laid out behind it, and a browser that hit-tests through a flipped card can send a tap to it. */
 .gwp-card.down .gwp-face, .gwp-card:not(.down) .gwp-back { pointer-events: none; }
 .gwp-top { position: relative; z-index: 1; flex: none; display: flex; justify-content: space-between; align-items: center; padding: calc(var(--gwcw) * .06) calc(var(--gwcw) * .1) 0; color: #f6f0e4; font-style: italic; font-size: 16px; }
 .gwp-top a { position: relative; color: inherit; text-decoration: underline; min-height: 44px; display: flex; align-items: center; padding: 0 4px; }
-.gwp-notify { position: absolute; left: 0; right: 0; bottom: calc(var(--gwcw) * .065 - 8.5px); height: calc(var(--gwcw) * .08); min-height: 26px; display: flex; align-items: center; justify-content: center; color: #f6f0e4; font-style: italic; font-size: 13px; text-decoration: underline; }
+.gwp-rows::after, .bmp-rows::after { content: ''; flex: .8 1 0; }
+.gwp-rows, .bmp-rows { top: -1.4px; }   /* the first pillbox's distance from the links is 90% of what it was (the link text sits 14px above its box, hence 1.4px) */
 .gwp-rows { position: relative; z-index: 1; flex: 1; min-height: 0; display: flex; flex-direction: column; padding-bottom: calc(var(--gwcw) * .08); }
-.gwp-row { position: relative; flex: 1; min-height: 44px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.gwp-row { position: relative; flex: .9 1 44px; min-height: 44px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
 .gwp-sc { position: absolute; top: 50%; transform: translateY(-50%); right: 22px; font-weight: 400; font-size: 17px; line-height: 1; white-space: nowrap; }
 .gwp-sc sup { font-size: .7em; line-height: 0; vertical-align: baseline; position: relative; top: -.5em; }
 .gwp-nb { position: relative; width: 66%; height: 44px; box-sizing: border-box; background: #f6f0e4; color: #2b2620; border-radius: 99px; display: flex; align-items: center; justify-content: center; overflow: hidden; white-space: pre; padding: 0 10px; }
@@ -921,6 +906,100 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
 #gw-notice { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 30; background: #f6f0e4; border: 1px solid #cfc4ad; border-radius: 10px; padding: 18px 22px; text-align: center; box-shadow: 0 6px 24px rgba(0,0,0,.3); color: #2b2620; max-width: 86vw; }
 #gw-notice p { margin: 0 0 12px; }
 #gw-notice button { margin: 0 4px; }
+/* ===== bearMaze (its own module): forest-green cards; the back shows an overhead hedge maze ===== */
+:root { --bm-art: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 90 140' preserveAspectRatio='xMidYMid slice'%3E%3Crect width='90' height='140' fill='%235dba74'/%3E%3Cpath d='M10 0L10 10M10 10L20 10M40 0L40 10M30 10L40 10M60 10L70 10M70 10L80 10M0 20L10 20M20 10L20 20M30 20L40 20M50 10L50 20M40 20L50 20M60 10L60 20M60 20L70 20M80 20L90 20M20 20L20 30M10 30L20 30M30 20L30 30M30 30L40 30M50 20L50 30M50 30L60 30M70 20L70 30M70 30L80 30M80 30L90 30M10 30L10 40M30 30L30 40M20 40L30 40M50 30L50 40M60 30L60 40M60 40L70 40M70 40L80 40M10 40L10 50M10 50L20 50M20 50L30 50M40 40L40 50M30 50L40 50M40 50L50 50M50 50L60 50M80 40L80 50M70 50L80 50M10 50L10 60M20 60L30 60M40 50L40 60M60 50L60 60M70 50L70 60M60 60L70 60M10 60L10 70M20 60L20 70M40 60L40 70M30 70L40 70M50 60L50 70M50 70L60 70M60 70L70 70M80 60L80 70M70 70L80 70M0 80L10 80M20 70L20 80M10 80L20 80M20 80L30 80M40 70L40 80M50 70L50 80M60 70L60 80M80 70L80 80M20 80L20 90M40 80L40 90M30 90L40 90M50 80L50 90M50 90L60 90M70 80L70 90M60 90L70 90M80 80L80 90M10 90L10 100M0 100L10 100M20 90L20 100M30 90L30 100M30 100L40 100M40 100L50 100M60 90L60 100M80 90L80 100M20 100L20 110M10 110L20 110M20 110L30 110M30 110L40 110M40 110L50 110M60 100L60 110M50 110L60 110M70 100L70 110M80 100L80 110M20 120L30 120M30 120L40 120M50 120L60 120M70 110L70 120M60 120L70 120M80 110L80 120M10 120L10 130M10 130L20 130M20 130L30 130M40 120L40 130M50 120L50 130M40 130L50 130M70 120L70 130M80 120L80 130M70 130L80 130M30 130L30 140M60 130L60 140M10 0L90 0L90 130M90 140L0 140L0 0' fill='none' stroke='%230f5427' stroke-width='4.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M10 0L10 10M10 10L20 10M40 0L40 10M30 10L40 10M60 10L70 10M70 10L80 10M0 20L10 20M20 10L20 20M30 20L40 20M50 10L50 20M40 20L50 20M60 10L60 20M60 20L70 20M80 20L90 20M20 20L20 30M10 30L20 30M30 20L30 30M30 30L40 30M50 20L50 30M50 30L60 30M70 20L70 30M70 30L80 30M80 30L90 30M10 30L10 40M30 30L30 40M20 40L30 40M50 30L50 40M60 30L60 40M60 40L70 40M70 40L80 40M10 40L10 50M10 50L20 50M20 50L30 50M40 40L40 50M30 50L40 50M40 50L50 50M50 50L60 50M80 40L80 50M70 50L80 50M10 50L10 60M20 60L30 60M40 50L40 60M60 50L60 60M70 50L70 60M60 60L70 60M10 60L10 70M20 60L20 70M40 60L40 70M30 70L40 70M50 60L50 70M50 70L60 70M60 70L70 70M80 60L80 70M70 70L80 70M0 80L10 80M20 70L20 80M10 80L20 80M20 80L30 80M40 70L40 80M50 70L50 80M60 70L60 80M80 70L80 80M20 80L20 90M40 80L40 90M30 90L40 90M50 80L50 90M50 90L60 90M70 80L70 90M60 90L70 90M80 80L80 90M10 90L10 100M0 100L10 100M20 90L20 100M30 90L30 100M30 100L40 100M40 100L50 100M60 90L60 100M80 90L80 100M20 100L20 110M10 110L20 110M20 110L30 110M30 110L40 110M40 110L50 110M60 100L60 110M50 110L60 110M70 100L70 110M80 100L80 110M20 120L30 120M30 120L40 120M50 120L60 120M70 110L70 120M60 120L70 120M80 110L80 120M10 120L10 130M10 130L20 130M20 130L30 130M40 120L40 130M50 120L50 130M40 130L50 130M70 120L70 130M80 120L80 130M70 130L80 130M30 130L30 140M60 130L60 140M10 0L90 0L90 130M90 140L0 140L0 0' fill='none' stroke='%23238a40' stroke-width='3.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M10 0L10 10M10 10L20 10M40 0L40 10M30 10L40 10M60 10L70 10M70 10L80 10M0 20L10 20M20 10L20 20M30 20L40 20M50 10L50 20M40 20L50 20M60 10L60 20M60 20L70 20M80 20L90 20M20 20L20 30M10 30L20 30M30 20L30 30M30 30L40 30M50 20L50 30M50 30L60 30M70 20L70 30M70 30L80 30M80 30L90 30M10 30L10 40M30 30L30 40M20 40L30 40M50 30L50 40M60 30L60 40M60 40L70 40M70 40L80 40M10 40L10 50M10 50L20 50M20 50L30 50M40 40L40 50M30 50L40 50M40 50L50 50M50 50L60 50M80 40L80 50M70 50L80 50M10 50L10 60M20 60L30 60M40 50L40 60M60 50L60 60M70 50L70 60M60 60L70 60M10 60L10 70M20 60L20 70M40 60L40 70M30 70L40 70M50 60L50 70M50 70L60 70M60 70L70 70M80 60L80 70M70 70L80 70M0 80L10 80M20 70L20 80M10 80L20 80M20 80L30 80M40 70L40 80M50 70L50 80M60 70L60 80M80 70L80 80M20 80L20 90M40 80L40 90M30 90L40 90M50 80L50 90M50 90L60 90M70 80L70 90M60 90L70 90M80 80L80 90M10 90L10 100M0 100L10 100M20 90L20 100M30 90L30 100M30 100L40 100M40 100L50 100M60 90L60 100M80 90L80 100M20 100L20 110M10 110L20 110M20 110L30 110M30 110L40 110M40 110L50 110M60 100L60 110M50 110L60 110M70 100L70 110M80 100L80 110M20 120L30 120M30 120L40 120M50 120L60 120M70 110L70 120M60 120L70 120M80 110L80 120M10 120L10 130M10 130L20 130M20 130L30 130M40 120L40 130M50 120L50 130M40 130L50 130M70 120L70 130M80 120L80 130M70 130L80 130M30 130L30 140M60 130L60 140M10 0L90 0L90 130M90 140L0 140L0 0' fill='none' stroke='%2374d98e' stroke-width='1.3' stroke-linecap='round' stroke-linejoin='round' stroke-dasharray='1.1 1.4'/%3E%3C/svg%3E"); }
+#setup.bm-bg { background: #2f9e4f var(--bm-art) center / cover no-repeat; }
+#setup.bm-nodlg .dialog { display: none; }
+#bm-notice { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 30; background: #f6f0e4; border: 1px solid #cfc4ad; border-radius: 10px; padding: 18px 22px; text-align: center; box-shadow: 0 6px 24px rgba(0,0,0,.3); color: #2b2620; max-width: 86vw; }
+#bm-notice p { margin: 0 0 12px; }
+#bm-notice button { margin: 0 4px; min-height: 44px; min-width: 44px; }
+#bm-game { position: fixed; inset: 0; z-index: 6; background: var(--paper, #f6f0e4); color: #2b2620; overflow: hidden; display: flex; flex-direction: column; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); font-family: Georgia, "Times New Roman", serif; }
+#bm-game[hidden] { display: none; }
+#bm-msg { position: absolute; top: calc(env(safe-area-inset-top, 0px) + 6px); left: 0; right: 0; text-align: center; font-size: 14px; pointer-events: none; z-index: 9; }
+#bmp { position: relative; flex: 1; min-height: 0; padding: 8px; box-sizing: border-box; --bmcw: 300px; }
+#bmp, #bmp * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+.bmp-card { width: 100%; height: 100%; perspective: 1200px; }
+.bm-inner { position: relative; width: 100%; height: 100%; transition: transform .6s; transform-style: preserve-3d; }
+.bmp-card.down .bm-inner { transform: rotateY(180deg); }
+.bm-face { position: absolute; inset: 0; box-sizing: border-box; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: calc(var(--bmcw) * .05); border: 1px solid #14502a; box-shadow: 0 2px 8px rgba(43,38,32,.28); }
+.bm-front { background: #2f9e4f; color: #f6f0e4; display: flex; flex-direction: column; align-items: stretch; padding: 4px 8px 6px; font-size: 15px; }
+.bm-front a { color: #ffe9a8; }
+.bm-back { transform: rotateY(180deg); background: #2f9e4f var(--bm-art) center / cover no-repeat; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; }
+.bm-back::before { content: ""; position: absolute; inset: calc(var(--bmcw) * .05); border: 2px solid #f1f7e4; border-radius: calc(var(--bmcw) * .03); opacity: .9; pointer-events: none; }
+/* Only the side of the card that is showing takes taps. */
+.bmp-card.down .bmp-face, .bmp-card:not(.down) .bmp-back { pointer-events: none; }
+.bmp-ft { display: flex; justify-content: space-between; align-items: center; min-height: 44px; gap: 10px; font-style: italic; font-size: 15px; flex: none; }
+.bmp-ft span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bmp-ft a { flex: none; max-width: 50%; min-height: 44px; display: flex; align-items: center; text-decoration: underline; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bmp-slim { display: flex; justify-content: space-between; align-items: center; min-height: 44px; flex: none; font-style: italic; font-size: 15px; }
+.bmp-slim a { text-decoration: underline; min-height: 44px; display: inline-flex; align-items: center; }
+.bm-wrap { flex: 1 1 auto; min-height: 0; display: flex; align-items: center; justify-content: center; container-type: size; }
+.bm-svg { width: min(100cqw, 100cqh); height: min(100cqw, 100cqh); display: block; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; border-radius: 7px; box-shadow: 0 2px 9px rgba(0,0,0,.38); }
+.bm-cp circle { fill: #17572b; stroke: #f6f0e4; stroke-width: .5; }
+.bm-cp text { fill: #f6f0e4; font: 700 4.6px Georgia, serif; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+.bm-cp.hit circle { fill: #e8a317; stroke: #fff6d6; }
+.bm-cp.hit text { fill: #2b2620; }
+.bm-pl { fill: none; stroke: #e8a317; stroke-width: 3.3; stroke-linecap: round; stroke-linejoin: round; opacity: .93; pointer-events: none; }
+.bm-hd { fill: #fff3c4; pointer-events: none; }
+.bm-nb { font-size: 3.2em; font-weight: 700; text-align: center; }
+.bm-clk { font-variant-numeric: tabular-nums; font-weight: 700; font-size: 20px; font-style: normal; }
+.bmp-top { position: relative; z-index: 1; flex: none; display: flex; justify-content: space-between; align-items: center; padding: calc(var(--bmcw) * .06) calc(var(--bmcw) * .1) 0; color: #f6f0e4; font-style: italic; font-size: 16px; text-shadow: 0 1px 3px rgba(0,0,0,.85); }
+.bmp-top a { position: relative; color: inherit; text-decoration: underline; min-height: 44px; display: flex; align-items: center; padding: 0 4px; }
+.bmp-top a sup.bmp-un { position: absolute; top: calc(50% - 1.15em); right: -.55em; font-style: inherit; font-size: .8em; line-height: 1; color: #ffe9a8; font-weight: 700; text-decoration: none; }
+.bmp-rows { position: relative; z-index: 1; flex: 1; min-height: 0; display: flex; flex-direction: column; padding-bottom: calc(var(--bmcw) * .08); }
+.bmp-row { position: relative; flex: .9 1 44px; min-height: 44px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.bmp-sc { position: absolute; top: 50%; transform: translateY(-50%); right: 22px; font-weight: 400; font-size: 17px; line-height: 1; white-space: nowrap; }
+.bmp-sc sup { font-size: .7em; line-height: 0; vertical-align: baseline; position: relative; top: -.5em; }
+.bmp-nb { position: relative; width: 66%; height: 44px; box-sizing: border-box; background: #f6f0e4; color: #2b2620; border-radius: 99px; display: flex; align-items: center; justify-content: center; overflow: hidden; white-space: pre; padding: 0 10px; }
+.bmp-x { position: absolute; right: 0; top: 0; width: 44px; height: 44px; padding: 0; margin: 0; background: none; border: 0; border-radius: 22px; color: #2b2620; }
+.bmp-cv { flex: 1; min-height: 0; overflow-y: auto; padding-top: 8px; font-size: 17px; line-height: 1.35; }
+.bmp-cv p { margin: 0 0 .4em; overflow-wrap: anywhere; }
+.bmp-cv p.me b { color: #ffe9a8; }
+.bmp-cv .cv-a { color: #ffe9a8; }
+.bmp-cvf { flex: none; display: flex; align-items: center; gap: 10px; min-height: 48px; border-top: 1px solid rgba(246,240,228,.4); }
+#bmp .bmp-cvf input { flex: 1; min-width: 0; font: inherit; font-size: 16px; border: 0; border-bottom: 2px solid #f6f0e4; background: transparent; color: #f6f0e4; outline: none; border-radius: 0; padding: 6px 0; -webkit-user-select: text; user-select: text; }
+#bmp .bmp-cvf input::placeholder { color: #cfe7c8; }
+.bmp-cvf a { flex: none; text-decoration: underline; min-height: 44px; display: flex; align-items: center; padding: 0 4px; font-style: italic; font-size: 15px; }
+.bmp-sb { flex: 1; min-height: 0; overflow: auto; padding-top: 8px; }
+/* ===== shared phone parts (every phone game uses these) ===== */
+#bt-pick { display: none; margin: 6px 0; }
+#bt-headsup.bt-pick #bt-pick { display: block; }
+#bt-headsup.bt-pick #bt-headsup-input { display: none; }
+.bt-phone #bt-pick { display: none; }
+.bt-phone #bt-headsup.bt-pick #bt-pick { display: flex; flex-direction: column; gap: 10px; }
+.bt-phone #bt-t, .bt-phone #bt-n { width: 100%; max-width: none; margin: 0; min-height: 44px; font-size: 16px; text-align: left; box-sizing: border-box; }
+.bt-phone #bt-save { display: flex; align-items: center; min-height: 44px; }
+#bt-soon { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 50; background: #f6f0e4; border: 1px solid #cfc4ad; border-radius: 10px; padding: 18px 22px; text-align: center; box-shadow: 0 6px 24px rgba(0,0,0,.3); color: #2b2620; max-width: 82vw; font-family: Georgia, "Times New Roman", serif; font-size: 18px; }
+#bt-soon p { margin: 0 0 14px; }
+#bt-soon button { min-height: 44px; min-width: 88px; font: inherit; }
+#bt-foyer { position: fixed; inset: 0; z-index: 45; background: var(--paper, #f6f0e4); color: #2b2620; overflow: hidden; display: flex; flex-direction: column; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); font-family: Georgia, "Times New Roman", serif; }
+#bt-foyer[hidden] { display: none; }
+#bt-foyer-paws { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.btf-head { position: relative; z-index: 1; flex: none; height: 17dvh; }   /* room for BearTracks / Destination unknown */
+.btf-rows { position: relative; z-index: 1; flex: 1; min-height: 0; display: flex; flex-direction: column; padding-bottom: 4dvh; }
+.btf-row { flex: 1 1 44px; min-height: 44px; display: flex; align-items: center; justify-content: center; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.btf-nb { width: 66%; height: 44px; box-sizing: border-box; background: #fffdf8; border: 2px solid #b9a98d; color: #2b2620; border-radius: 99px; display: flex; align-items: center; justify-content: center; font-size: 22px; box-shadow: 0 3px 8px rgba(64,48,28,.12); white-space: nowrap; }
+.btg-gl { flex: 1; min-height: 0; overflow: auto; }
+.btg-gl .dim { opacity: .6; }
+.btg-gr { display: flex; align-items: center; min-height: 44px; border-bottom: 1px solid rgba(128,118,96,.35); }
+.btg-gr a[data-g] { flex: 1; min-width: 0; display: flex; align-items: center; min-height: 44px; font-size: 20px; color: inherit; text-decoration: none; padding: 0 6px; }
+.btg-gr a.cur { font-weight: 700; }
+.btg-gx { position: relative; flex: none; width: 44px; height: 44px; padding: 0; margin: 0; background: none; border: 0; color: inherit; opacity: .6; }
+.btg-gh { justify-content: space-between; padding: 0 6px; font-size: 18px; opacity: .8; }
+.btg-gh a { color: inherit; text-decoration: underline; min-height: 44px; display: flex; align-items: center; padding: 0 6px; }
+.bt-bar { position: absolute; left: 0; right: 0; bottom: calc(var(--btcw) * .05 - 4px); height: 44px; z-index: 2; display: flex; align-items: center; justify-content: space-around; color: #f6f0e4; font-style: italic; font-size: 15px; text-shadow: 0 1px 3px rgba(0,0,0,.75); }
+.bt-bar a { color: inherit; text-decoration: underline; min-height: 44px; display: flex; align-items: center; padding: 0 10px; }
+#gwp { --bt-bar: #8d867a; --bt-hi: #5a8f5a; --bt-hit: #fff; }
+#bmp { --bt-bar: #17572b; --bt-hi: #e8a317; --bt-hit: #2b2620; }
+.bt-ns { display: grid; grid-template-columns: repeat(4, 1fr); gap: calc(var(--btcw) * .01); text-align: center; margin-bottom: calc(var(--btcw) * .04); }
+.bt-ns b { display: block; font-size: calc(var(--btcw) * .11); font-weight: 400; line-height: 1.1; }
+.bt-ns span { display: block; font-size: calc(var(--btcw) * .034); line-height: 1.15; }
+.bt-nh { text-align: center; font-weight: 700; font-size: calc(var(--btcw) * .045); letter-spacing: .04em; margin-bottom: calc(var(--btcw) * .02); }
+.bt-nd { display: grid; grid-template-columns: auto 1fr; gap: calc(var(--btcw) * .015) calc(var(--btcw) * .025); align-items: center; }
+.bt-nd > i { font-style: normal; text-align: right; }
+.bt-nd > div { display: flex; }
+.bt-nd > div > em { font-style: normal; background: var(--bt-bar); color: #fff; text-align: right; padding: 0 .35em; box-sizing: border-box; min-width: 1.6em; }
+.bt-nd > div > em.hi { background: var(--bt-hi); color: var(--bt-hit); }
 .install-row { margin-top: 12px; text-align: center; font-size: 13px; }
 .bt-install-link { color: inherit; text-decoration: underline; cursor: pointer; }
 .bt-install-msg { display: block; margin-top: 6px; color: var(--muted, #6b6455); }
@@ -3021,13 +3100,13 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     let tries = [0, 60, 200, 500, 1000];
     tries.forEach(function (ms) { setTimeout(function () { try { let f = document.getElementById('reg-user'), br = document.getElementById('box-register'); if (!f || !br || br.hidden || document.getElementById('setup').hidden || document.activeElement === f) return; f.focus({ preventScroll: true }); } catch (e) { } }, ms); });
   }
-  function renderBoxes() { let setupEl = document.getElementById('setup'); if (setupEl) { setupEl.classList.toggle('gw-bg', postRegisterTarget === 'groupwords'); setupEl.classList.remove('gw-nodlg'); if (postRegisterTarget === 'cribbage') { setupEl.classList.add('crib-bg'); if (!setupEl.style.backgroundImage) { let art = document.getElementById('crib-landing-art'); if (art && art.src) setupEl.style.backgroundImage = "url('" + art.src + "')"; } } else { setupEl.classList.remove('crib-bg'); setupEl.style.backgroundImage = ''; } } let owner = getOwner(); let br = document.getElementById("box-register"), bs = document.getElementById("box-start"); if (!br || !bs) return; if (!owner) { try { br.querySelector('h1').textContent = gwLoginGid ? 'Log in to my group' : 'BearTracks Registration'; let rp = br.querySelector('h1 + p'); if (rp) rp.hidden = !!gwLoginGid; let rb = $('btn-register'); if (rb) rb.textContent = gwLoginGid ? 'Log in' : 'Register'; } catch (e) { } br.hidden = false; bs.hidden = true; let sp = document.getElementById("share-panel"); if (sp) sp.hidden = true; focusRegUser(); } else { br.hidden = true; bs.hidden = false; let on = document.getElementById("owner-name"); if (on) on.textContent = owner; setTimeout(() => { let f = document.getElementById("nameB"); if (f) f.focus(); }, 0); } }  
+  function renderBoxes() { let setupEl = document.getElementById('setup'); if (setupEl) { btGames.forEach(function (G) { setupEl.classList.toggle(G.bg, postRegisterTarget === G.kind); setupEl.classList.remove(G.nodlg); }); if (postRegisterTarget === 'cribbage') { setupEl.classList.add('crib-bg'); if (!setupEl.style.backgroundImage) { let art = document.getElementById('crib-landing-art'); if (art && art.src) setupEl.style.backgroundImage = "url('" + art.src + "')"; } } else { setupEl.classList.remove('crib-bg'); setupEl.style.backgroundImage = ''; } } let owner = getOwner(); let br = document.getElementById("box-register"), bs = document.getElementById("box-start"); if (!br || !bs) return; if (!owner) { try { br.querySelector('h1').textContent = gwLoginGid ? 'Log in to my group' : 'BearTracks Registration'; let rp = br.querySelector('h1 + p'); if (rp) rp.hidden = !!gwLoginGid; let rb = $('btn-register'); if (rb) rb.textContent = gwLoginGid ? 'Log in' : 'Register'; } catch (e) { } br.hidden = false; bs.hidden = true; let sp = document.getElementById("share-panel"); if (sp) sp.hidden = true; focusRegUser(); } else { br.hidden = true; bs.hidden = false; let on = document.getElementById("owner-name"); if (on) on.textContent = owner; setTimeout(() => { let f = document.getElementById("nameB"); if (f) f.focus(); }, 0); } }  
   function getPendingInviteIds() { try { return JSON.parse(localStorage.getItem("bt_pending_invite_ids") || "[]"); } catch (e) { return []; } }
   function rememberPendingInvite(inv) { if (!inv || !inv.id) return; try { let ids = getPendingInviteIds(); if (ids.indexOf(inv.id) === -1) ids.push(inv.id); localStorage.setItem("bt_pending_invite_ids", JSON.stringify(ids)); } catch (e) { } }
   function forgetPendingInvite(id) { if (!id) return; try { localStorage.setItem("bt_pending_invite_ids", JSON.stringify(getPendingInviteIds().filter(x => x !== id))); } catch (e) { } }
   // Backup and restore are offered only while a registered player is in the Foyer.
   function updateBackupVisibility() { try { let b = $('entry-backup'); if (b) b.hidden = !getOwner(); } catch (e) { } }
-  function showEntryPage() { wordageRemove(); let el = $('entry-home'); if (!el) return; updateBackupVisibility(); try { $('bt-headsup').classList.remove('gw-pick'); $('setup').classList.remove('gw-nodlg'); } catch (e) { } el.hidden = false; $('setup').hidden = true; $('bt-headsup').hidden = true; let owner = getOwner(); $('entry-welcome').textContent = owner ? 'Welcome, ' + owner : 'Welcome'; }
+  function showEntryPage() { wordageRemove(); let el = $('entry-home'); if (!el) return; updateBackupVisibility(); btClearSetup(); el.hidden = false; $('setup').hidden = true; $('bt-headsup').hidden = true; let owner = getOwner(); $('entry-welcome').textContent = owner ? 'Welcome, ' + owner : 'Welcome'; }
   function hideEntryPage() { let el = $('entry-home'); if (el) el.hidden = true; }
   function entryWordage() { postRegisterTarget = 'wordage'; hideEntryPage(); try { btFillOpponents(); $('nameB').value = ''; } catch (e) { } $('setup').hidden = false; renderBoxes(); }
   function entryCribbage() { if (BT_TAB) { btTabNoCrib(); return; } postRegisterTarget = 'cribbage'; hideEntryPage(); try { btFillOpponents(); $('nameB').value = ''; } catch (e) { } $('setup').hidden = false; renderBoxes(); }
@@ -3543,7 +3622,7 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
       $('box-install').hidden = true; $('box-register').hidden = false;
     } catch (e) { try { $('box-install').hidden = true; } catch (e2) { } }
   }
-  async function handleRegister() { let uEl = $('reg-user'), pEl = $('reg-pass'), p2El = $('reg-pass2'), errEl = $('reg-error'); let u = uEl ? uEl.value.trim() : '', p = pEl ? pEl.value : '', p2 = p2El ? p2El.value : ''; if (errEl) errEl.textContent = ''; if (!u || !p) { if (errEl) errEl.textContent = 'Fill username and password'; return; } if (p !== p2) { if (errEl) errEl.textContent = 'Passwords do not match'; return; } let users = []; try { users = JSON.parse(localStorage.getItem("bt_users") || "[]") } catch (e) { users = [] } if (users.some(x => x.toLowerCase() === u.toLowerCase())) { if (errEl) errEl.textContent = 'Username taken'; return; } localStorage.setItem("bt_owner", u); try { localStorage.removeItem("bt_pass_" + u.toLowerCase()); } catch (e) { } try { await storePassword(u, p); mirrorPassword(u); await mkStore(u, p); } catch (e) { } users.push(u); localStorage.setItem("bt_users", JSON.stringify(users)); let inviteParam = null; try { inviteParam = new URLSearchParams(location.search).get("invite"); } catch (e) { } await installGate(inviteParam); if (inviteParam) { if (postRegisterTarget === 'othello') { try { let inv = await cribLoadInvite(inviteParam); if (inv) { forgetPendingInvite(inviteParam); currentInvite = inv; if (await othJoinViaInvite(inv, u)) return; } } catch (e) { } } else if (postRegisterTarget === 'cribbage') { try { let inv = await cribLoadInvite(inviteParam); if (inv) { forgetPendingInvite(inviteParam); currentInvite = inv; if (await cribJoinViaInvite(inv, u)) return; } } catch (e) { } } else { try { let res = await linkGameViaInvite(inviteParam, u); if (res && res.game) { forgetPendingInvite(inviteParam); currentInvite = res.invite || currentInvite; await enterGameDirect(res.game, 1); return; } } catch (e) { } } } if (pendingGameOnRegister) { let pg = pendingGameOnRegister; pendingGameOnRegister = null; try { let fg = await loadGame(pg.id); if (fg) pg = fg; let mi = (pg.players || []).findIndex(pl => String(pl.name || '').toLowerCase() === u.toLowerCase()); if (mi >= 0) { await enterGameDirect(pg, mi); return; } } catch (e) { } $('setup').hidden = true; showEntryPage(); initEntryPaws(); await populateEntryGames(); return; } if (postRegisterTarget === 'groupwords') { gwFreshReg = u; gwAfterRegister(); return; } if (postRegisterTarget === 'cribbage') { showCribbageLanding(); } else if (postRegisterTarget === 'foyer') { $('setup').hidden = true; showEntryPage(); initEntryPaws(); await populateEntryGames(); } else { renderBoxes(); } }
+  async function handleRegister() { let uEl = $('reg-user'), pEl = $('reg-pass'), p2El = $('reg-pass2'), errEl = $('reg-error'); let u = uEl ? uEl.value.trim() : '', p = pEl ? pEl.value : '', p2 = p2El ? p2El.value : ''; if (errEl) errEl.textContent = ''; if (!u || !p) { if (errEl) errEl.textContent = 'Fill username and password'; return; } if (p !== p2) { if (errEl) errEl.textContent = 'Passwords do not match'; return; } let users = []; try { users = JSON.parse(localStorage.getItem("bt_users") || "[]") } catch (e) { users = [] } if (users.some(x => x.toLowerCase() === u.toLowerCase())) { if (errEl) errEl.textContent = 'Username taken'; return; } localStorage.setItem("bt_owner", u); try { localStorage.removeItem("bt_pass_" + u.toLowerCase()); } catch (e) { } try { await storePassword(u, p); mirrorPassword(u); await mkStore(u, p); } catch (e) { } users.push(u); localStorage.setItem("bt_users", JSON.stringify(users)); let inviteParam = null; try { inviteParam = new URLSearchParams(location.search).get("invite"); } catch (e) { } await installGate(inviteParam); if (inviteParam) { if (postRegisterTarget === 'othello') { try { let inv = await cribLoadInvite(inviteParam); if (inv) { forgetPendingInvite(inviteParam); currentInvite = inv; if (await othJoinViaInvite(inv, u)) return; } } catch (e) { } } else if (postRegisterTarget === 'cribbage') { try { let inv = await cribLoadInvite(inviteParam); if (inv) { forgetPendingInvite(inviteParam); currentInvite = inv; if (await cribJoinViaInvite(inv, u)) return; } } catch (e) { } } else { try { let res = await linkGameViaInvite(inviteParam, u); if (res && res.game) { forgetPendingInvite(inviteParam); currentInvite = res.invite || currentInvite; await enterGameDirect(res.game, 1); return; } } catch (e) { } } } if (pendingGameOnRegister) { let pg = pendingGameOnRegister; pendingGameOnRegister = null; try { let fg = await loadGame(pg.id); if (fg) pg = fg; let mi = (pg.players || []).findIndex(pl => String(pl.name || '').toLowerCase() === u.toLowerCase()); if (mi >= 0) { await enterGameDirect(pg, mi); return; } } catch (e) { } $('setup').hidden = true; showEntryPage(); initEntryPaws(); await populateEntryGames(); return; } { let G = btByKind(postRegisterTarget); if (G) { G.afterRegister(u); return; } } if (postRegisterTarget === 'cribbage') { showCribbageLanding(); } else if (postRegisterTarget === 'foyer') { $('setup').hidden = true; showEntryPage(); initEntryPaws(); await populateEntryGames(); } else { renderBoxes(); } }
   async function handleBegin() { let owner = getOwner(); if (!owner) { renderBoxes(); return; } let opp = ($('nameB') ? $('nameB').value.trim() : ''); let g = fresh(owner, opp || "Opponent"); await saveGameToCF(g, { withSeat1: !!opp }); initBroadcastChannel(g.id); if (!opp) { let iid = randomId(); currentInvite = { id: iid, invitedBy: owner, invitedByOpponents: getOpponents(), gameId: g.id, mode: "game-invite", created: Date.now() }; try { await saveInviteToCF(currentInvite); } catch (e) { } addOpponent(opp); await showHeadsUp(iid, g, true); } else { currentInvite = null; if (opp) addOpponent(opp); await showHeadsUp(null, g, false); } }  
   async function handleCreateInvitation() { let owner = getOwner(); if (!owner) { renderBoxes(); return; } let id = randomId(); let placeholder = fresh(owner, "Opponent"); await saveGameToCF(placeholder); initBroadcastChannel(placeholder.id); let inv = { id: id, invitedBy: owner, invitedByOpponents: getOpponents(), gameId: placeholder.id, mode: "unregistered-invite", created: Date.now() }; await saveInviteToCF(inv); currentInvite = inv; await showHeadsUp(id, placeholder, true); }  
   // ===== WORDAGE MODULE: the screen exists only while a Wordage game is open =====
@@ -5253,7 +5332,7 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
 
   // ---- wiring ----
   // Leaving to the Foyer: the game's address goes too, so a reload lands in the Foyer.
-  function foyerUrl() { try { let url = new URL(location.href); ['game', 'kind', 'p', 'gw', 'invite', 'handoff'].forEach(function (k) { url.searchParams.delete(k); }); history.replaceState(null, '', url.pathname + url.search + url.hash); } catch (e) { } }
+  function foyerUrl() { try { let url = new URL(location.href); ['game', 'kind', 'p', 'invite', 'handoff'].concat(btQs()).forEach(function (k) { url.searchParams.delete(k); }); history.replaceState(null, '', url.pathname + url.search + url.hash); } catch (e) { } }
   $('bt-removed-close').onclick = closeRemoved; $('bt-removed-undo').onclick = undoRemoved;
   function nolinkShow(on) { $('bt-nolink').hidden = !on; }
   function joinLinkUrl(text) {
@@ -5278,7 +5357,7 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
   (function () {
     let hu = $('bt-headsup'); if (!hu || !window.MutationObserver) return;
     new MutationObserver(function () {
-      if (hu.hidden || hu.classList.contains('gw-pick')) return;
+      if (hu.hidden || hu.classList.contains('bt-pick')) return;
       setTimeout(function () { let c = $('bt-headsup-copy-link'); if (!hu.hidden && c && !c.disabled) c.focus(); }, 0);
     }).observe(hu, { attributes: true, attributeFilter: ['hidden'] });
   })();
@@ -5292,7 +5371,7 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
   }
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') wordageResync(); });
   window.addEventListener('online', wordageResync);
-  function backToFoyer() { try { $('bt-headsup').hidden = true; pendingGameForHeadsUp = null; cribPendingHeadsUp = null; $('nameB').value = ''; } catch (e) { } if (GW_PHONE && gw.gid) { $('setup').hidden = true; return; } wordageToFoyer(); }
+  function backToFoyer() { try { $('bt-headsup').hidden = true; pendingGameForHeadsUp = null; cribPendingHeadsUp = null; $('nameB').value = ''; } catch (e) { } if (GW_PHONE) { btClearSetup(); btGames.forEach(function (G) { $('setup').classList.remove(G.bg); }); $('setup').hidden = true; if (!btAnyShown()) btFoyer(); return; } wordageToFoyer(); }
   $('btn-cancel-start').onclick = backToFoyer; $('btn-cancel-headsup').onclick = backToFoyer;
   document.addEventListener('keydown', function (e) {
     if (e.key !== 'Escape') return;
@@ -5325,6 +5404,183 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     try { let url = new URL(location.href); url.searchParams.delete('game'); url.searchParams.delete('kind'); url.searchParams.delete('p'); history.replaceState(null, '', url.pathname + url.search + url.hash); } catch (e) { }
     showEntryPage(); initEntryPaws(); populateEntryGames();
   }
+  // ================= shared phone parts: the phone Foyer, "new group", "my groups", My Stats, the coming-soon pop-up =================
+  // Each phone game registers an adapter in btGame (see the end of its module); everything below exists once and serves every game.
+  //
+  // A phone game joins by registering one adapter with btRegister({...}); nothing here, and nothing in any other game, is edited to add a game.
+  // The adapter is the whole contract:
+  //   identity    id (short key), label (the name shown in the Foyer - a Foyer name that matches a registered label is live, otherwise it gets the coming-soon pop-up),
+  //               kind (the ?kind= link value), q (the link's group parameter), bg / nodlg (CSS classes for its sign-in backdrop)
+  //   its state   st: the game's state object, using pv (view), pt (card on show), pgl (my-groups list), pgh (removed-and-undoable), gid (the group on screen)
+  //   its server  api(method, act, body, gid, token) -> {s, j}; tz(); vouch(excludeGid, name); keys() -> {gid:...}; mine(gid) -> {n, token} | null; prune(gid)
+  //   its screens enter(first), use(gid, seat, token), launch() -> opens the group used last (false if none), boot(gid) (a shared link), afterRegister(name), close(), shown(),
+  //               render(), flip(down), leaveMark(gid), leaveUnmark(gid), created(response, name) (remember the group just made), allowed() (optional)
+  // The game calls btEntering(id) when its screen opens; the shared parts handle everything else.
+  const BT_FOYER_GAMES = ['groupWords', 'bearMaze', 'bearDance', 'ineBear8', 'bearBattle', 'bearClimb', 'bearComb', 'bearCat'];
+  const btGame = {}, btGames = [];
+  let btPickId = null;
+  function btRegister(G) { btGame[G.id] = G; btGames.push(G); }
+  function btByKind(k) { return btGames.find(function (G) { return G.kind === k; }) || null; }
+  function btByLabel(l) { return btGames.find(function (G) { return G.label === l; }) || null; }
+  function btQs() { return btGames.map(function (G) { return G.q; }); }
+  function btAnyShown() { return btGames.some(function (G) { return G.shown(); }); }
+  function btEntering(id) {   // one game screen at a time; this is the game to reopen
+    btGames.forEach(function (G) { if (G.id !== id) G.close(); });
+    try { localStorage.setItem('bt_phone_last', id); } catch (e) { }
+  }
+  function btClearSetup() {
+    try { $('bt-headsup').classList.remove('bt-pick'); btGames.forEach(function (G) { $('setup').classList.remove(G.nodlg); }); } catch (e) { }
+  }
+
+  // -- the pop-up for a game that has no tracks yet --
+  function btSoon() {
+    if ($('bt-soon')) return;
+    let d = document.createElement('div'); d.id = 'bt-soon';
+    d.innerHTML = '<p>Tracks to this game are yet being laid. Please come back later.</p><button type="button">OK</button>';
+    d.querySelector('button').onclick = function () { d.remove(); };
+    document.body.appendChild(d);
+  }
+
+  // -- new group: registration if needed, then the group name and player count; the game supplies only its server calls --
+  function btNewGroup(id) {
+    let G = btGame[id]; if (!G) return;
+    if (G.allowed && !G.allowed()) return;
+    postRegisterTarget = G.kind; hideEntryPage(); btFoyerHide(); $('setup').hidden = false; renderBoxes(); if (getOwner()) btSetupShow(id);
+  }
+  function btSetupShow(id) {
+    let G = btGame[id]; btPickId = id;
+    if (!$('bt-pick')) {
+      let d = document.createElement('div'); d.id = 'bt-pick';
+      d.innerHTML = '<input id="bt-t" maxlength="30" autocomplete="off" placeholder="Group name" aria-label="Group name"> <input id="bt-n" inputmode="numeric" maxlength="1" autocomplete="off" placeholder="#" aria-label="Number of players"> <a href="#" id="bt-save">(click to save)</a>';
+      $('bt-headsup-left').insertBefore(d, $('bt-headsup-input'));
+      $('bt-save').onclick = function (e) { e.preventDefault(); btSetupSave(); };
+      $('bt-n').onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); btSetupSave(); } };
+      $('bt-t').onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); $('bt-n').focus(); } };
+    }
+    $('box-start').hidden = true; $('box-register').hidden = true; $('setup').classList.add(G.nodlg);
+    let hu = $('bt-headsup'); hu.classList.add('bt-pick'); hu.hidden = false;
+    $('bt-headsup-help').textContent = 'Name your group and set how many players (up to six):';
+    $('bt-t').value = ''; $('bt-n').value = ''; $('bt-save').textContent = '(click to save)';
+    $('bt-headsup-copy-msg').disabled = true; $('bt-headsup-copy-link').disabled = true; $('bt-headsup-continue').disabled = true;
+    $('bt-headsup-copy-msg').textContent = 'Message copied'; $('bt-headsup-copy-link').textContent = 'Copy link instead';
+    setTimeout(function () { $('bt-t').focus(); }, 50);
+  }
+  async function btSetupSave() {
+    let G = btGame[btPickId]; if (!G) return;
+    let n = parseInt($('bt-n').value, 10), owner = getOwner(), title = $('bt-t').value.replace(/\s+/g, ' ').trim();
+    if (!title) { $('bt-save').textContent = '(give the group a name)'; $('bt-t').focus(); return; }
+    if (!(n >= 2 && n <= 6) || !owner) { $('bt-n').focus(); return; }
+    $('bt-save').textContent = 'saving...';
+    let r = await G.api('POST', 'games', { name: owner, title: title, tz: G.tz(), seats: n, vouch: G.vouch(null, owner) }, null, null);
+    if (r.s === 409) { $('bt-save').textContent = '(that group name is taken - try another)'; $('bt-t').focus(); return; }
+    if (r.s !== 201 || !r.j.token) { $('bt-save').textContent = "(couldn't save - click to retry)"; return; }
+    G.created(r.j, owner);
+    let url = LIVE_SITE + '?kind=' + G.kind + '&' + G.q + '=' + encodeURIComponent(r.j.gid), msg = 'Join me for a game of ' + G.label + ' on BearTracks: ' + url, first = r.j;
+    $('bt-headsup').classList.remove('bt-pick');
+    $('bt-headsup-help').textContent = 'Join me for a game of ' + G.label + ' on BearTracks:';
+    $('bt-headsup-input').value = msg; try { navigator.clipboard.writeText(msg).catch(function () { }); } catch (e) { }
+    $('bt-headsup-copy-msg').disabled = true; $('bt-headsup-copy-msg').textContent = 'Message copied';
+    $('bt-headsup-copy-msg').onclick = function () { $('bt-headsup-input').value = msg; try { navigator.clipboard.writeText(msg).catch(function () { }); } catch (e) { } $('bt-headsup-copy-msg').disabled = true; $('bt-headsup-copy-msg').textContent = 'Message copied'; $('bt-headsup-copy-link').disabled = false; $('bt-headsup-copy-link').textContent = 'Copy link instead'; };
+    $('bt-headsup-copy-link').disabled = false; $('bt-headsup-copy-link').textContent = 'Copy link instead';
+    $('bt-headsup-copy-link').onclick = function () { $('bt-headsup-input').value = url; try { navigator.clipboard.writeText(url).catch(function () { }); } catch (e) { } $('bt-headsup-copy-link').disabled = true; $('bt-headsup-copy-link').textContent = 'Link copied'; $('bt-headsup-copy-msg').disabled = false; $('bt-headsup-copy-msg').textContent = 'Copy message instead'; };
+    $('bt-headsup-continue').disabled = false;
+    $('bt-headsup-continue').onclick = function () { $('bt-headsup').hidden = true; G.enter(first); };
+  }
+
+  // -- my groups: this device's groups for one game, with remove / undo --
+  async function btGroupsLoad(id) {
+    let G = btGame[id], S = G.st, out = [];
+    await Promise.all(Object.keys(G.keys()).map(async function (gid) {
+      let mine = G.mine(gid); if (!mine) return;
+      if (hiddenGames()[gid] && !S.pgh[gid]) return;
+      let r = await G.api('GET', 'status', null, gid, mine.token);
+      if (r.s === 404) { G.prune(gid); return; }
+      if (r.s === 200 && r.j && r.j.title) out.push({ gid: gid, seat: mine.n, token: mine.token, title: r.j.title });
+    }));
+    out.sort(function (a, b) { return a.title.toLowerCase() < b.title.toLowerCase() ? -1 : 1; });
+    S.pgl = out; G.render();
+  }
+  function btEsc(t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function btGroupsHtml(id) {
+    let G = btGame[id], S = G.st;
+    return '<div class="btg-gl">' + (S.pgl ? S.pgl.map(function (g, i) {
+      return S.pgh[g.gid] ? '<div class="btg-gr btg-gh"><span>' + btEsc(g.title) + ' removed</span><a href="#" data-gu="' + i + '">undo</a></div>'
+        : '<div class="btg-gr"><a href="#" data-g="' + i + '"' + (g.gid === S.gid ? ' class="cur"' : '') + '>' + btEsc(g.title) + '</a><button type="button" class="btg-gx" data-gx="' + i + '" aria-label="Remove group"></button></div>';
+    }).join('') : '<p class="dim">&hellip;</p>') + '</div>';
+  }
+  function btGroupsClick(e, id) {   // true when the tap was on the groups list
+    let G = btGame[id], S = G.st, gx = e.target.closest('[data-gx]'), gu = e.target.closest('[data-gu]'), g = e.target.closest('[data-g]');
+    if (!gx && !gu && !g) return false;
+    e.preventDefault();
+    if (gx) { let x = (S.pgl || [])[+gx.getAttribute('data-gx')]; if (x) { setHiddenGame(x.gid, true); G.leaveMark(x.gid); S.pgh[x.gid] = 1; G.render(); } }
+    else if (gu) { let x = (S.pgl || [])[+gu.getAttribute('data-gu')]; if (x) { setHiddenGame(x.gid, false); G.leaveUnmark(x.gid); delete S.pgh[x.gid]; G.render(); } }
+    else { let x = (S.pgl || [])[+g.getAttribute('data-g')]; if (x) { if (x.gid === S.gid) { S.pv = 'face'; S.pt = null; G.render(); G.flip(true); } else G.use(x.gid, x.seat, x.token); } }
+    return true;
+  }
+  // The bottom strip of a card's back: the Foyer link and, where it applies, enable-notifications.
+  function btBackBarHtml(notify) { return '<div class="bt-bar"><a href="#" data-a="foyer">Foyer</a>' + (notify ? '<a href="#" data-a="notify">enable notifications</a>' : '') + '</div>'; }
+
+  // -- My Stats: one layout for every game; a game hands over four headline numbers and a bar chart --
+  // spec = { cells: [[value, label] x4], head: 'HEADING', bars: [{ k: 'label', w: width %, text: 'shown in the bar', hi: true|false }] }
+  function btStatsHtml(spec) {
+    let h = '<div class="bt-ns">' + spec.cells.map(function (c) { return '<div><b>' + btEsc(c[0]) + '</b><span>' + btEsc(c[1]) + '</span></div>'; }).join('') + '</div>';
+    h += '<div class="bt-nh">' + btEsc(spec.head) + '</div><div class="bt-nd">';
+    spec.bars.forEach(function (b) { h += '<i>' + btEsc(b.k) + '</i><div><em' + (b.hi ? ' class="hi"' : '') + ' style="width:' + b.w + '%">' + btEsc(b.text) + '</em></div>'; });
+    return h + '</div>';
+  }
+
+  // -- the phone Foyer: the games as pillboxes on the paw-walkers --
+  function btPawsStart(cv, count) {
+    if (cv._go) { cv._go(); return; }
+    let ctx = cv.getContext('2d'), W = 0, H = 0, run = false, last = 0;
+    const colors = ['#c94a3c', '#e68a82', '#2e8aa8', '#86c2cc'], pad = new Path2D('M 20 56 C 20 46 35 42 50 42 C 65 42 80 46 80 56 C 84 70 78 86 50 92 C 22 86 16 70 20 56 Z'), toes = [[23, 28, 14], [50, 15, 16], [77, 28, 14]];
+    const ws = Array.from({ length: count }, function () { return { nx: Math.random(), ny: Math.random(), ang: Math.random() * Math.PI * 2, sp: .4 + Math.random() * .9, c: colors[Math.floor(Math.random() * 4)] }; });
+    function size() { let d = window.devicePixelRatio || 1; W = cv.clientWidth; H = cv.clientHeight; if (!W || !H) return false; cv.width = Math.round(W * d); cv.height = Math.round(H * d); ctx.setTransform(d, 0, 0, d, 0, 0); return true; }
+    function tick(now) {
+      if (!cv.offsetParent) { run = false; return; }
+      let dt = Math.min((now - last) / 1000, .05); last = now; ctx.clearRect(0, 0, W, H); ctx.globalAlpha = .85;
+      let u = Math.min(W, H) / 15;
+      ws.forEach(function (w) {
+        w.ang += (Math.random() - .5) * .15 * (dt * 60); let x = w.nx * W + Math.cos(w.ang) * w.sp * u * dt, y = w.ny * H + Math.sin(w.ang) * w.sp * u * dt, m = Math.min(W, H) * .01;
+        if (x < m || x > W - m) { w.ang = Math.PI - w.ang; x = Math.min(W - m, Math.max(m, x)); } if (y < m || y > H - m) { w.ang = -w.ang; y = Math.min(H - m, Math.max(m, y)); }
+        w.nx = x / W; w.ny = y / H; let k = u * .6 / 100; ctx.save(); ctx.translate(x, y); ctx.rotate(w.ang + Math.PI / 2); ctx.scale(k, k); ctx.translate(-50, -50); ctx.fillStyle = w.c; toes.forEach(function (t) { ctx.beginPath(); ctx.arc(t[0], t[1], t[2], 0, Math.PI * 2); ctx.fill(); }); ctx.fill(pad); ctx.restore();
+      });
+      ctx.globalAlpha = 1; requestAnimationFrame(tick);
+    }
+    cv._go = function () { if (run || !cv.offsetParent || !size()) return; run = true; last = performance.now(); requestAnimationFrame(tick); };
+    addEventListener('resize', function () { setTimeout(cv._go, 50); }); addEventListener('orientationchange', function () { setTimeout(cv._go, 300); }); setInterval(cv._go, 1000);
+    cv._go();
+  }
+  function btFoyer() {
+    let f = $('bt-foyer');
+    if (!f) {
+      f = document.createElement('div'); f.id = 'bt-foyer'; f.hidden = true;
+      f.innerHTML = '<canvas id="bt-foyer-paws" aria-hidden="true"></canvas><div class="btf-head"></div><div class="btf-rows">' + BT_FOYER_GAMES.map(function (n) { return '<div class="btf-row" data-f="' + n + '"><div class="btf-nb">' + n + '</div></div>'; }).join('') + '</div>';
+      f.addEventListener('click', btFoyerClick);
+      document.body.appendChild(f);
+    }
+    hideEntryPage(); $('setup').hidden = true; $('bt-headsup').hidden = true;
+    f.hidden = false; btPawsStart($('bt-foyer-paws'), 34);
+  }
+  function btFoyerHide() { let f = $('bt-foyer'); if (f) f.hidden = true; }
+  async function btFoyerClick(e) {
+    let r = e.target.closest('[data-f]'); if (!r) return; e.preventDefault();
+    let G = btByLabel(r.getAttribute('data-f'));
+    if (!G) { btSoon(); return; }
+    if (G.allowed && !G.allowed()) return;
+    if (G.shown()) { btFoyerHide(); return; }   // that game's card is already on screen under the Foyer
+    btFoyerHide();
+    if (!(await G.launch())) btNewGroup(G.id);
+  }
+  // Opening the app on a phone goes to the group used last, in whichever game; with no groups at all, the Foyer.
+  async function btPhoneLaunch() {
+    let last = ''; try { last = localStorage.getItem('bt_phone_last') || ''; } catch (e) { }
+    let order = btGames.slice().sort(function (a, b) { return (b.id === last) - (a.id === last); });
+    for (const G of order) if (await G.launch()) return true;
+    return false;
+  }
+  // ================= END shared phone parts =================
+
   // ================= groupWords MODULE (additive) =================
   let gw = { gid: null, token: null, seat: null, st: null, shown: {}, cur: '', items: [], ids: '', poll: null, chatSig: '', chatSeenAt: null };
   let gwMsgTimer = null;
@@ -5472,46 +5728,8 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
   function gwMsg(t) { let m = $('gw-msg'); if (!m) return; m.textContent = t; clearTimeout(gwMsgTimer); gwMsgTimer = setTimeout(function () { m.textContent = ''; }, 3500); }
 
   // ---- Foyer -> registration (groupWords background) -> HeadsUp with the player-count picker ----
-  function entryGroupWords() { postRegisterTarget = 'groupwords'; hideEntryPage(); $('setup').hidden = false; renderBoxes(); if (getOwner()) gwShowSetup(); }
-  function gwAfterRegister() { if (gwLoginGid) { let lg = gwLoginGid; gwJoin(lg, getOwner(), true); return; } let g = null; try { g = new URLSearchParams(location.search).get('gw'); } catch (e) { } if (g) gwBoot(g); else gwShowSetup(); }
-  function gwShowSetup() {
-    if (!$('gw-pick')) {
-      let d = document.createElement('div'); d.id = 'gw-pick';
-      d.innerHTML = '<input id="gw-t" maxlength="30" autocomplete="off" placeholder="Group name" aria-label="Group name"> <input id="gw-n" inputmode="numeric" maxlength="1" autocomplete="off" placeholder="#" aria-label="Number of players"> <a href="#" id="gw-save">(click to save)</a>';
-      $('bt-headsup-left').insertBefore(d, $('bt-headsup-input'));
-      $('gw-save').onclick = function (e) { e.preventDefault(); gwSaveCount(); };
-      $('gw-n').onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); gwSaveCount(); } };
-      $('gw-t').onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); $('gw-n').focus(); } };
-    }
-    $('box-start').hidden = true; $('box-register').hidden = true; $('setup').classList.add('gw-nodlg');
-    let hu = $('bt-headsup'); hu.classList.add('gw-pick'); hu.hidden = false;
-    $('bt-headsup-help').textContent = 'Name your group and set how many players (up to six):';
-    $('gw-t').value = ''; $('gw-n').value = ''; $('gw-save').textContent = '(click to save)';
-    $('bt-headsup-copy-msg').disabled = true; $('bt-headsup-copy-link').disabled = true; $('bt-headsup-continue').disabled = true;
-    $('bt-headsup-copy-msg').textContent = 'Message copied'; $('bt-headsup-copy-link').textContent = 'Copy link instead';
-    setTimeout(function () { $('gw-t').focus(); }, 50);
-  }
-  async function gwSaveCount() {
-    let n = parseInt($('gw-n').value, 10), owner = getOwner(), title = $('gw-t').value.replace(/\s+/g, ' ').trim();
-    if (!title) { $('gw-save').textContent = '(give the group a name)'; $('gw-t').focus(); return; }
-    if (!(n >= 2 && n <= 6) || !owner) { $('gw-n').focus(); return; }
-    $('gw-save').textContent = 'saving...';
-    let r = await gwApi('POST', 'games', { name: owner, title: title, tz: GW_TZ(), seats: n, vouch: gwVouch(null, owner) }, null, null);
-    if (r.s === 409) { $('gw-save').textContent = '(that group name is taken - try another)'; $('gw-t').focus(); return; }
-    if (r.s !== 201 || !r.j.token) { $('gw-save').textContent = "(couldn't save - click to retry)"; return; }
-    gw.gid = r.j.gid; gw.token = r.j.token; gw.seat = 0; gwSaveKey(gw.gid, gw.token, 0, owner); gwSetTabSeat(gw.gid, 0, gw.token);
-    let url = LIVE_SITE + '?kind=groupwords&gw=' + encodeURIComponent(gw.gid), msg = 'Join me for a game of groupWords on BearTracks: ' + url, first = r.j;
-    $('bt-headsup').classList.remove('gw-pick');
-    $('bt-headsup-help').textContent = 'Join me for a game of groupWords on BearTracks:';
-    $('bt-headsup-input').value = msg; try { navigator.clipboard.writeText(msg).catch(function () { }); } catch (e) { }
-    $('bt-headsup-copy-msg').disabled = true; $('bt-headsup-copy-msg').textContent = 'Message copied';
-    $('bt-headsup-copy-msg').onclick = function () { $('bt-headsup-input').value = msg; try { navigator.clipboard.writeText(msg).catch(function () { }); } catch (e) { } $('bt-headsup-copy-msg').disabled = true; $('bt-headsup-copy-msg').textContent = 'Message copied'; $('bt-headsup-copy-link').disabled = false; $('bt-headsup-copy-link').textContent = 'Copy link instead'; };
-    $('bt-headsup-copy-link').disabled = false; $('bt-headsup-copy-link').textContent = 'Copy link instead';
-    $('bt-headsup-copy-link').onclick = function () { $('bt-headsup-input').value = url; try { navigator.clipboard.writeText(url).catch(function () { }); } catch (e) { } $('bt-headsup-copy-link').disabled = true; $('bt-headsup-copy-link').textContent = 'Link copied'; $('bt-headsup-copy-msg').disabled = false; $('bt-headsup-copy-msg').textContent = 'Copy message instead'; };
-    $('bt-headsup-continue').disabled = false;
-    $('bt-headsup-continue').onclick = function () { $('bt-headsup').hidden = true; gwEnter(first); };
-  }
-
+  function entryGroupWords() { btNewGroup('gw'); }
+  function gwAfterRegister() { if (gwLoginGid) { let lg = gwLoginGid; gwJoin(lg, getOwner(), true); return; } let g = null; try { g = new URLSearchParams(location.search).get('gw'); } catch (e) { } if (g) gwBoot(g); else btSetupShow('gw'); }
   // ---- joining by the shared link ----
   async function gwBoot(gid) {
     let owner = getOwner(), seats = gwSeatsOf(gid), tab = gwTabRec(gid), hint = gwUrlSeat();
@@ -5614,12 +5832,12 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     gw.gid = null; gw.token = null; gw.seat = null; gw.st = null; gw.up = false; gw.shown = {}; gw.cur = ''; gw.items = []; gw.ids = ''; gw.chatSig = ''; gw.chatSeenAt = null;
     let g = $('gw-game'); if (g) { g.hidden = true; let t = $('gw-area'); if (t) t.innerHTML = ''; gwSideReset(); let i = $('gw-inp'); if (i) i.value = ''; }
   }
-  function gwLeave() { if (GW_PHONE) { gwClose(); gwNoticeClose(); $('setup').hidden = true; gwpLaunch().then(function (ok) { if (!ok) entryGroupWords(); }); return; } gwClose(); foyerUrl(); gwNoticeClose(); $('setup').hidden = true; showEntryPage(); try { initEntryPaws(); } catch (e) { } try { populateEntryGames(); } catch (e) { } }
+  function gwLeave() { if (GW_PHONE) { gwClose(); gwNoticeClose(); $('setup').hidden = true; btPhoneLaunch().then(function (ok) { if (!ok) btFoyer(); }); return; } gwClose(); foyerUrl(); gwNoticeClose(); $('setup').hidden = true; showEntryPage(); try { initEntryPaws(); } catch (e) { } try { populateEntryGames(); } catch (e) { } }
 
   // ---- the game screen ----
   function gwBuild() {
     if ($('gw-game')) return;
-    let g = document.createElement('div'); g.id = 'gw-game'; g.hidden = true;
+    let g = document.createElement('div'); g.id = 'gw-game'; g.className = (g.className + ' bt-gamescreen').trim(); g.hidden = true;
     g.innerHTML = '<button class="foyer-link" id="gFoyer" type="button">&lsaquo; Foyer</button><div id="gw-msg"></div><div id="gw-table"><div id="gw-area"></div><div id="gw-side"></div></div><input id="gw-inp" maxlength="5" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" aria-label="Guess">';
     document.body.appendChild(g); gwSideBuild();
     $('gFoyer').onclick = gwLeave;
@@ -5633,6 +5851,7 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     addEventListener('resize', gwLayout); addEventListener('orientationchange', function () { setTimeout(gwLayout, 200); });
   }
   async function gwEnter(first) {
+    btEntering('gw');
     hideEntryPage(); $('setup').hidden = true; $('bt-headsup').hidden = true; gwNoticeClose(); gwBuild(); $('gw-game').hidden = false; gw.up = false;
     try { let u = new URL(location.href); u.searchParams.set('kind', 'groupwords'); u.searchParams.set('gw', gw.gid); u.searchParams.set('p', String(gw.seat)); u.searchParams.delete('invite'); u.searchParams.delete('share'); history.replaceState(null, '', u.pathname + u.search + u.hash); } catch (e) { }
     if (first && first.me) { gw.st = first; gwRender(); }
@@ -6073,8 +6292,7 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     }
     h += '<div class="gwp-row" data-a="tom">' + pill('Bear Bot Tom', gw.tomScore != null ? String(gw.tomScore) : '', st.me.day) + '</div>';
     h += '<div class="gwp-row" data-a="stats">' + pill('My Stats', '') + '</div>';
-    if (gwPushCan() && !gwPushOn()) h += '<a href="#" class="gwp-notify" data-a="notify">enable notifications</a>';
-    return h + '</div>';
+    return h + btBackBarHtml(gwPushCan() && !gwPushOn()) + '</div>';
   }
   function gwpKbHtml(rows) {
     let used = {}; (rows || []).forEach(function (x) { if (x && x.g && x.c) for (let q = 0; q < x.g.length; q++) used[x.g[q]] = Math.max(used[x.g[q]] === undefined ? -1 : used[x.g[q]], x.c[q]); });   // each letter takes its best color so far, the same colors as the tiles
@@ -6085,19 +6303,14 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     }).join('') + '</div>';
   }
   function gwpStatsHtml(me, st) {
-    let S = gwStatsCompute(gwStatsLoad(me.name), st.today), h = '';
-    h += '<div class="gw-ns"><div><b>' + S.played + '</b><span>Played</span></div><div><b>' + S.pct + '</b><span>Win %</span></div><div><b>' + S.cur + '</b><span>Current Streak</span></div><div><b>' + S.max + '</b><span>Max Streak</span></div></div>';
-    h += '<div class="gw-nh">GUESS DISTRIBUTION</div><div class="gw-nd">';
-    let top = Math.max.apply(null, S.dist.concat([1]));
-    for (let k = 1; k <= 6; k++) h += '<i>' + k + '</i><div><em' + (S.last === k ? ' class="hi"' : '') + ' style="width:' + Math.max(8, Math.round(S.dist[k - 1] / top * 100)) + '%">' + S.dist[k - 1] + '</em></div>';
-    return h + '</div>';
+    let S = gwStatsCompute(gwStatsLoad(me.name), st.today), top = Math.max.apply(null, S.dist.concat([1])), bars = [];
+    for (let k = 1; k <= 6; k++) bars.push({ k: String(k), w: Math.max(8, Math.round(S.dist[k - 1] / top * 100)), text: String(S.dist[k - 1]), hi: S.last === k });
+    return btStatsHtml({ cells: [[S.played, 'Played'], [S.pct, 'Win %'], [S.cur, 'Current Streak'], [S.max, 'Max Streak']], head: 'GUESS DISTRIBUTION', bars: bars });
   }
   function gwpFaceHtml(st) {
     let me = st.me, title = gwpEsc(st.title || ''), top = function (left, raw) { return '<div class="gwp-ft"><span>' + (raw ? left : gwpEsc(left)) + '</span><a href="#" data-a="back">' + title + '</a></div>'; };
     if (gw.pv === 'groups') {
-      let h = top('');
-      h += '<div class="gwp-gl">' + (gw.pgl ? gw.pgl.map(function (g, i) { return gw.pgh[g.gid] ? '<div class="gwp-gr gwp-gh"><span>' + gwpEsc(g.title) + ' removed</span><a href="#" data-gu="' + i + '">undo</a></div>' : '<div class="gwp-gr"><a href="#" data-g="' + i + '"' + (g.gid === gw.gid ? ' class="cur"' : '') + '>' + gwpEsc(g.title) + '</a><button type="button" class="gwp-gx" data-gx="' + i + '" aria-label="Remove group"></button></div>'; }).join('') : '<p class="dim">&hellip;</p>') + '</div>';
-      return h;
+      return top('') + btGroupsHtml('gw');
     }
     let t = gw.pt;
     if (t === 'chat') return top('Convo-Ursidae') + '<div class="gwp-cv" id="gwp-cvlog"></div><div class="gwp-cvf"><input id="gwp-cvin" maxlength="300" autocomplete="off" enterkeyhint="send" placeholder="say something" aria-label="Message"><a href="#" data-a="cvsend">send</a></div>';
@@ -6139,7 +6352,7 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
   }
   function gwpLayout() {
     let c = $('gwp-card'); if (!c || !gw.st) return;
-    let w = c.clientWidth; $('gwp').style.setProperty('--gwcw', w + 'px');
+    let w = c.clientWidth; $('gwp').style.setProperty('--gwcw', w + 'px'); $('gwp').style.setProperty('--btcw', w + 'px');
     let g = $('gwp-face').querySelector('.gwp-gw');
     if (g) { let gap = 5, W = g.clientWidth, H = g.clientHeight, t = Math.floor(Math.min((W - 4 * gap) / 5, (H - 5 * gap) / 6, 66)); if (t > 10) g.style.setProperty('--t', t + 'px'); }
     Array.prototype.forEach.call($('gwp-back').querySelectorAll('.gwp-nb'), function (nb) {
@@ -6157,32 +6370,18 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     if (seen === null) { gwpSeenSet(gw.gid, last); return 0; }   // a group opened for the first time starts with nothing unread
     return ch.filter(function (m) { return m.at > seen && m.name !== st.me.name; }).length;
   }
-  async function gwpGroups() {
-    let owner = (getOwner() || '').toLowerCase(), ks = gwKeys(), out = [];
-    await Promise.all(Object.keys(ks).map(async function (gid) {
-      let seats = gwSeatsOf(gid), sk = Object.keys(seats); if (!sk.length) return;
-      let mine = sk.find(function (n) { return (seats[n].name || '').toLowerCase() === owner; }); if (mine === undefined) mine = sk[0];
-      if (hiddenGames()[gid] && !gw.pgh[gid]) return;
-      let r = await gwApi('GET', 'status', null, gid, seats[mine].token);
-      if (r.s === 404) { gwPrune(gid); return; }
-      if (r.s === 200 && r.j && r.j.title) out.push({ gid: gid, seat: +mine, token: seats[mine].token, title: r.j.title });
-    }));
-    out.sort(function (a, b) { return a.title.toLowerCase() < b.title.toLowerCase() ? -1 : 1; });
-    gw.pgl = out; gwpRender();
-  }
   async function gwpClick(e) {
     let k = e.target.closest('[data-k]'); if (k) { e.preventDefault(); gwpKey(k.getAttribute('data-k')); return; }
     let dx = e.target.closest('[data-x]'); if (dx) { e.preventDefault(); e.stopPropagation(); let n = +dx.getAttribute('data-x'), it = gw.st && gw.st.seats.find(function (x) { return x.n === n; }); if (it) gwDropAsk(it); return; }
-    let gx = e.target.closest('[data-gx]'); if (gx) { e.preventDefault(); let x = (gw.pgl || [])[+gx.getAttribute('data-gx')]; if (x) { setHiddenGame(x.gid, true); gwLeaveMark(x.gid); gw.pgh[x.gid] = 1; gwpRender(); } return; }
-    let gu = e.target.closest('[data-gu]'); if (gu) { e.preventDefault(); let x = (gw.pgl || [])[+gu.getAttribute('data-gu')]; if (x) { setHiddenGame(x.gid, false); gwLeaveUnmark(x.gid); delete gw.pgh[x.gid]; gwpRender(); } return; }
-    let g = e.target.closest('[data-g]'); if (g) { e.preventDefault(); let x = (gw.pgl || [])[+g.getAttribute('data-g')]; if (x) { if (x.gid === gw.gid) { gw.pv = 'face'; gw.pt = null; gwpRender(); gwpFlip(true); } else gwUse(x.gid, x.seat, x.token); } return; }
+    if (btGroupsClick(e, 'gw')) return;
     let a = e.target.closest('[data-a]'), r = e.target.closest('[data-n]');
     if (a) {
       e.preventDefault(); let act = a.getAttribute('data-a');
       if (act === 'card') { gw.pv = 'face'; gw.pt = null; gwpRender(); gwpFlip(false); }
       else if (act === 'back') gwpFlip(true);
-      else if (act === 'groups') { gw.pv = 'groups'; gw.pt = null; gw.pgh = {}; gwpRender(); gwpFlip(false); gwpGroups(); }
-      else if (act === 'newgroup') entryGroupWords();
+      else if (act === 'groups') { gw.pv = 'groups'; gw.pt = null; gw.pgh = {}; gwpRender(); gwpFlip(false); btGroupsLoad('gw'); }
+      else if (act === 'newgroup') btNewGroup('gw');
+      else if (act === 'foyer') btFoyer();
       else if (act === 'chat') { gw.pv = 'face'; gw.pt = 'chat'; gwpFlip(false); gwpRender(); }
       else if (act === 'cvsend') gwpSendChat();
       else if (act === 'newword') gwNewDay();
@@ -6228,6 +6427,14 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     let seats = gwSeatsOf(gid), sk = Object.keys(seats), mine = sk.find(function (n) { return (seats[n].name || '').toLowerCase() === owner; }); if (mine === undefined) mine = sk[0]; if (mine === undefined) return false;
     hideEntryPage(); await gwUse(gid, +mine, seats[mine].token); return true;
   }
+  btRegister({
+    id: 'gw', label: 'groupWords', kind: 'groupwords', q: 'gw', nodlg: 'gw-nodlg', bg: 'gw-bg', st: gw,
+    boot: gwBoot, close: gwClose, afterRegister: function (u) { gwFreshReg = u; gwAfterRegister(); },
+    api: gwApi, tz: GW_TZ, vouch: gwVouch, keys: gwKeys, prune: gwPrune, use: gwUse, enter: gwEnter, render: function () { gwpRender(); }, flip: gwpFlip, leaveMark: gwLeaveMark, leaveUnmark: gwLeaveUnmark, launch: gwpLaunch,
+    created: function (j, owner) { gw.gid = j.gid; gw.token = j.token; gw.seat = 0; gwSaveKey(gw.gid, gw.token, 0, owner); gwSetTabSeat(gw.gid, 0, gw.token); },
+    mine: function (gid) { let seats = gwSeatsOf(gid), sk = Object.keys(seats), owner = (getOwner() || '').toLowerCase(); if (!sk.length) return null; let m = sk.find(function (n) { return (seats[n].name || '').toLowerCase() === owner; }); if (m === undefined) m = sk[0]; return { n: +m, token: seats[m].token }; },
+    shown: function () { let g = $('gw-game'); return !!(g && !g.hidden && gw.gid); }
+  });
   async function gwpCookieHandoff() {
     let c = hoCookieGet(); if (!c) return false;
     let err = ''; try { err = await hoEnter(c); } catch (e) { err = 'The hand-off failed.'; }
@@ -6242,6 +6449,526 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
 
   // ================= END CRIBBAGE MODULE =================
 
+  // ================= bearMaze MODULE (its own module: its own state, storage, server routes (/bm/) and screens) =================
+  // One hedge maze a day per player, scored by the time it takes (the server keeps the clock). Groups of up to six; the card is one per day per player across all of that player's bearMaze groups.
+  let bm = { gid: null, token: null, seat: null, st: null, stAt: 0, stRef: null, shown: {}, poll: null, pdown: true, pv: 'face', pt: null, ptom: null, pgl: null, pgh: {}, pday: null, mz: null, tomKey: '', tomScore: null, phB: '', phF: '', phCv: '', chatSeenAt: null, starting: false };
+  let bmMsgTimer = null, bmHbAt = 0, bmLFlushing = false, bmPushAll = false;
+  const BM_PHONE = (function () { try { let u = navigator.userAgent || ''; return /iPhone|iPod/.test(u) || window.btAndroidPhone(u); } catch (e) { return false; } })();
+  function BM_TZ() { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; } catch (e) { return 'UTC'; } }
+  function bmEsc(t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function bmFmt(s) { s = Math.max(0, Math.round(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
+  function bmMsg(t) { let m = $('bm-msg'); if (!m) return; m.textContent = t; clearTimeout(bmMsgTimer); bmMsgTimer = setTimeout(function () { m.textContent = ''; }, 3500); }
+
+  // ---- this device's seats: { gid: { seats: { "0": {token, name} } } } in localStorage "bt_bm" ----
+  function bmKeys() { try { return JSON.parse(localStorage.getItem('bt_bm') || '{}') || {}; } catch (e) { return {}; } }
+  function bmSeatsOf(gid) { let r = bmKeys()[gid]; return r && r.seats ? r.seats : {}; }
+  function bmSaveKey(gid, token, seat, name) { let k = bmKeys(), v = bmSeatsOf(gid); v[seat] = { token: token, name: name || (v[seat] && v[seat].name) || '' }; k[gid] = { seats: v }; localStorage.setItem('bt_bm', JSON.stringify(k)); }
+  function bmMine(gid) {   // the seat on this device that belongs to the signed-in name (else the first one)
+    let seats = bmSeatsOf(gid), sk = Object.keys(seats), owner = (getOwner() || '').toLowerCase(); if (!sk.length) return null;
+    let m = sk.find(function (n) { return (seats[n].name || '').toLowerCase() === owner; }); if (m === undefined) m = sk[0];
+    return { n: +m, token: seats[m].token, name: seats[m].name || '' };
+  }
+  // Another bearMaze group on this device where the same name holds a seat: proof, to the worker, that this seat is the same player (one card a day).
+  function bmVouch(exceptGid, name) {
+    try { let k = bmKeys(), nm = String(name || '').toLowerCase(); if (!nm) return null;
+      for (const gid of Object.keys(k)) { if (gid === exceptGid) continue; let sv = bmSeatsOf(gid); for (const n of Object.keys(sv)) if (String(sv[n].name || '').toLowerCase() === nm && sv[n].token) return { gid: gid, token: sv[n].token }; } } catch (e) { }
+    return null;
+  }
+  function bmTabMap() { try { return JSON.parse(sessionStorage.getItem('bt_bm_tab') || '{}') || {}; } catch (e) { return {}; } }
+  function bmTabRec(gid) { let r = bmTabMap()[gid]; return r && r.token ? r : null; }
+  function bmSetTabSeat(gid, seat, token) { try { let m = bmTabMap(); m[gid] = { seat: seat, token: token }; sessionStorage.setItem('bt_bm_tab', JSON.stringify(m)); } catch (e) { } }
+  // A group that no longer exists (the worker answers 404): forget it on this device.
+  function bmPrune(gid) {
+    try { let k = bmKeys(); delete k[gid]; localStorage.setItem('bt_bm', JSON.stringify(k)); } catch (e) { }
+    try { if (localStorage.getItem('bt_bm_last') === gid) localStorage.removeItem('bt_bm_last'); } catch (e) { }
+    try { let m = bmTabMap(); delete m[gid]; sessionStorage.setItem('bt_bm_tab', JSON.stringify(m)); } catch (e) { }
+    try { setHiddenGame(gid, false); } catch (e) { }
+    bmLeaveDrop(gid);
+  }
+  // Removing a group from your own list (the "x") tells the group you have left, 20 seconds later and only if it is still removed, so Undo costs nothing; offline, it waits for the next chance.
+  function bmLQ() { try { return JSON.parse(localStorage.getItem('bt_bm_leave') || '{}') || {}; } catch (e) { return {}; } }
+  function bmLQSave(q) { try { localStorage.setItem('bt_bm_leave', JSON.stringify(q)); } catch (e) { } }
+  function bmLeaveMark(gid) { let me = bmMine(gid); if (!me) return; let q = bmLQ(); q[gid] = { token: me.token, due: Date.now() + 20000, sent: false }; bmLQSave(q); }
+  async function bmLeaveUnmark(gid) { let q = bmLQ(), e = q[gid]; if (!e) return; delete q[gid]; bmLQSave(q); if (e.sent) { try { await bmApi('POST', 'stay', {}, gid, e.token); } catch (x) { } } }
+  function bmLeaveDrop(gid) { let q = bmLQ(); if (q[gid]) { delete q[gid]; bmLQSave(q); } }
+  async function bmLeaveFlush() {
+    if (bmLFlushing) return; bmLFlushing = true;
+    try {
+      let q = bmLQ();
+      for (const gid of Object.keys(q)) {
+        let e = q[gid]; if (e.sent || e.due > Date.now()) continue;
+        if (!hiddenGames()[gid]) { q = bmLQ(); delete q[gid]; bmLQSave(q); continue; }
+        let r = await bmApi('POST', 'leave', {}, gid, e.token); q = bmLQ();
+        if (r.s === 200 && q[gid]) q[gid].sent = true; else if (r.s === 404 || r.s === 401) delete q[gid];
+        bmLQSave(q);
+      }
+    } catch (e) { }
+    bmLFlushing = false;
+  }
+  setInterval(function () { try { if (!document.hidden) bmLeaveFlush(); } catch (e) { } }, 5000);
+  async function bmApi(method, act, body, gid, token) {
+    gid = gid || bm.gid; token = token === undefined ? bm.token : token;
+    let url = act === 'games' ? API + '/bm/games' : API + '/bm/' + encodeURIComponent(gid) + '/' + act + (method === 'GET' ? '?tz=' + encodeURIComponent(BM_TZ()) : '');
+    let h = {}; if (token) h['X-Seat-Token'] = token; if (body) h['Content-Type'] = 'application/json';
+    try { let r = await fetch(url, { method: method, headers: h, body: body ? JSON.stringify(body) : undefined, cache: 'no-store' }); return { s: r.status, j: await r.json().catch(function () { return {}; }) }; }
+    catch (e) { return { s: 0, j: { error: 'offline' } }; }
+  }
+  function bmSetSt(j) { bm.st = j; bm.stAt = Date.now(); }
+
+  // ---- web push (the device's push address is told to each bearMaze group; the notification tap opens ?kind=bearmaze&bm=<gid>) ----
+  function bmPushCan() { return ('serviceWorker' in navigator) && ('PushManager' in window) && ('Notification' in window) && hoStandalone(); }
+  function bmPushOn() { try { return localStorage.getItem('bt_push') === '1' && Notification.permission === 'granted'; } catch (e) { return false; } }
+  function bmB64uBytes(t) { let b = atob(t.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((t.length + 3) % 4)), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; }
+  function bmPushBase() { return location.origin + location.pathname.replace(/[^\/]*$/, ''); }
+  try { if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', function (e) { let d = e.data; if (!d || d.t !== 'open' || d.k !== 'bm' || typeof d.g !== 'string') return; if (!BM_PHONE) return; if (d.g === bm.gid && $('bm-game') && !$('bm-game').hidden) { if (bm.st) { bm.pv = 'face'; bm.pt = null; bmpRender(); bmpFlip(false); } return; } let pk = bmMine(d.g); if (pk) bmUse(d.g, pk.n, pk.token); }); } catch (e) { }
+  async function bmPushSync(all, gid) {
+    if (!bmPushCan() || !bmPushOn()) return false;
+    try {
+      let kr = await fetch(API + '/push/key', { cache: 'no-store' }), key = (await kr.json()).key; if (!key) return false;
+      let reg = await navigator.serviceWorker.register(bmPushBase() + 'sw.js', { scope: bmPushBase() }); await navigator.serviceWorker.ready;
+      let sub = await reg.pushManager.getSubscription(), old = ''; try { old = localStorage.getItem('bt_push_key') || ''; } catch (e) { }
+      if (sub && old !== key) { await sub.unsubscribe(); sub = null; }
+      if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: bmB64uBytes(key) });
+      try { localStorage.setItem('bt_push_key', key); } catch (e) { }
+      let ids = all ? Object.keys(bmKeys()) : (gid ? [gid] : []), j = sub.toJSON();
+      await Promise.all(ids.map(function (g) { let s = bmMine(g); return s && s.token ? bmApi('POST', 'push', { sub: j }, g, s.token) : null; }));
+      if (all) bmPushAll = true;
+      return true;
+    } catch (e) { return false; }
+  }
+  function bmPushHook(gid) { if (!bmPushCan() || !bmPushOn()) return; setTimeout(function () { bmPushSync(!bmPushAll, gid); }, 1500); }
+  async function bmPushEnable() {
+    if (!bmPushCan()) { bmMsg('Open BearTracks from its Home Screen icon to turn on notifications'); return; }
+    let perm = Notification.permission;
+    if (perm === 'default') perm = await Notification.requestPermission();   // asked straight from the tap, as iOS requires
+    if (perm !== 'granted') { bmMsg('Notifications are off for BearTracks: allow them in Settings > Notifications'); bmpRender(); return; }
+    try { localStorage.setItem('bt_push', '1'); } catch (e) { }
+    let ok = await bmPushSync(true, bm.gid);
+    bmMsg(ok ? 'Notifications are on' : 'Could not turn notifications on. Please try again.'); if (!ok) { try { localStorage.removeItem('bt_push'); } catch (e) { } }
+    bmpRender();
+  }
+
+  // ---- registration, when a bearMaze link or new group needs it, continues here ----
+  function bmAfterRegister() { let g = null; try { g = new URLSearchParams(location.search).get('bm'); } catch (e) { } if (g) bmBoot(g); else btSetupShow('bm'); }
+
+  // ---- joining by the shared link ----
+  async function bmBoot(gid) {
+    let owner = getOwner(), seats = bmSeatsOf(gid), tab = bmTabRec(gid);
+    hideEntryPage(); $('bt-headsup').hidden = true;
+    if (!BM_PHONE) {   // bearMaze is a phone game: a larger screen says so and offers the Foyer
+      $('setup').hidden = true;
+      return bmNotice('bearMaze is played on a phone.', [['to Foyer', function () { bmNoticeClose(); foyerUrl(); showEntryPage(); try { initEntryPaws(); populateEntryGames(); } catch (e) { } }]]);
+    }
+    if (tab) return bmUse(gid, tab.seat, tab.token);                          // this tab already has a seat (e.g. a reload)
+    let mine = bmMine(gid), pushed = false; try { pushed = new URLSearchParams(location.search).get('push') === '1'; } catch (e) { }
+    if (mine && (pushed || (owner && mine.name.toLowerCase() === owner.toLowerCase()))) return bmUse(gid, mine.n, mine.token);   // a tapped notification, or my own seat: straight in
+    if (Object.keys(seats).length) return bmChoose(gid, seats);               // this browser holds some other seat(s): ask which one this tab is
+    if (!owner) { postRegisterTarget = 'bearmaze'; $('setup').hidden = false; renderBoxes(); return; }
+    return bmJoin(gid, owner, false);
+  }
+  function bmUse(gid, seat, token) {
+    bmPushHook(gid); bm.chatSeenAt = null; bm.st = null; bm.shown = {}; bm.mz = null; bm.gid = gid; bm.token = token; bm.seat = +seat; bm.pv = 'face'; bm.pt = null; bm.pdown = true; bm.ptom = null;
+    bmSetTabSeat(gid, +seat, token); try { setHiddenGame(gid, false); } catch (e) { } bmLeaveUnmark(gid);
+    try { localStorage.setItem('bt_bm_last', gid); } catch (e) { }
+    return bmEnter();
+  }
+  btHand.register('bearmaze', {
+    current: function () { let gg = $('bm-game'); if (!(gg && !gg.hidden && bm.gid && bm.token)) return null; return { gid: bm.gid, seat: bm.seat, name: (bmSeatsOf(bm.gid)[bm.seat] || {}).name || getOwner() || '', token: bm.token }; },
+    adopt: async function (b) { bmSaveKey(b.gameId, b.token, b.seat, b.name); await bmUse(b.gameId, b.seat, b.token); return ''; }
+  });
+  function bmBackdrop() { bmNoticeClose(); $('setup').hidden = false; $('box-start').hidden = true; $('box-register').hidden = true; $('setup').classList.add('bm-nodlg', 'bm-bg'); }
+  function bmChoose(gid, seats) {
+    bmBackdrop();
+    let b = Object.keys(seats).map(function (n) { return ['Continue as ' + (seats[n].name || ('player ' + (+n + 1))), function () { bmUse(gid, n, seats[n].token); }]; });
+    b.push(['Join as someone else', function () { bmAskName(gid); }]);
+    bmNotice('This browser already holds a seat in this game. Which player is this tab?', b);
+  }
+  function bmAskName(gid) {
+    bmBackdrop();
+    let d = document.createElement('div'); d.id = 'bm-notice';
+    let p = document.createElement('p'); p.textContent = 'Name for the new player (any name, no registration needed):'; d.appendChild(p);
+    let i = document.createElement('input'); i.maxLength = 24; i.autocomplete = 'off'; i.style.cssText = 'display:block;margin:8px auto;font:inherit;font-size:16px;text-align:center'; d.appendChild(i);
+    let go = function () { let n = i.value.trim(); if (n) bmJoin(gid, n, false); else i.focus(); };
+    let ok = document.createElement('button'); ok.textContent = 'Join'; ok.onclick = go; d.appendChild(ok);
+    let bk = document.createElement('button'); bk.textContent = 'Back'; bk.onclick = function () { bmBoot(gid); }; d.appendChild(bk);
+    i.onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); go(); } };
+    document.body.appendChild(d); setTimeout(function () { i.focus(); }, 50);
+  }
+  async function bmJoin(gid, owner, restore) {
+    bmBackdrop();
+    let r = await bmApi('POST', 'join', { name: owner, tz: BM_TZ(), restore: !!restore, vouch: restore ? undefined : bmVouch(gid, owner) }, gid, null);
+    if (r.s === 200 || r.s === 201) {
+      let tok = r.j.token || ((bmSeatsOf(gid)[r.j.seat] || {}).token);
+      if (r.j.token) bmSaveKey(gid, r.j.token, r.j.seat, owner);
+      return bmUse(gid, r.j.seat, tok);
+    }
+    let back = ['OK', bmLeave];
+    if (r.s === 409 && /taken/.test(r.j.error || '')) {
+      let sv = bmSeatsOf(gid), mine = Object.keys(sv).find(function (n) { return (sv[n].name || '').toLowerCase() === owner.toLowerCase(); });
+      if (mine != null) return bmUse(gid, mine, sv[mine].token);   // this browser already holds that seat: just use it
+      return bmNotice('This game already has a player named ' + owner + '.', [['Restore my seat', function () { bmJoin(gid, owner, true); }], ['Use a different name', function () { bmAskName(gid); }], back]);
+    }
+    if (r.s === 409) return bmNotice('This game is full.', [back]);
+    if (r.s === 404) return bmNotice(restore ? 'No seat with that name was found.' : 'That game was not found.', [back]);
+    bmNotice('Could not join right now. Please try again.', [back]);
+  }
+  function bmNotice(text, buttons) {
+    bmNoticeClose();
+    let d = document.createElement('div'); d.id = 'bm-notice'; let p = document.createElement('p'); p.textContent = text; d.appendChild(p);
+    buttons.forEach(function (b) { let x = document.createElement('button'); x.textContent = b[0]; x.onclick = b[1]; d.appendChild(x); });
+    document.body.appendChild(d);
+  }
+  function bmNoticeClose() { let d = $('bm-notice'); if (d) d.remove(); }
+  function bmClose() {
+    clearInterval(bm.poll); bm.poll = null;
+    try { btLink.close('bm'); } catch (e) { }
+    bm.gid = null; bm.token = null; bm.seat = null; bm.st = null; bm.shown = {}; bm.mz = null; bm.chatSeenAt = null;
+    let g = $('bm-game'); if (g) g.hidden = true;
+  }
+  function bmLeave() {
+    bmClose(); bmNoticeClose(); $('setup').hidden = true; try { $('setup').classList.remove('bm-nodlg', 'bm-bg'); } catch (e) { }
+    if (BM_PHONE) { btPhoneLaunch().then(function (ok) { if (!ok) btFoyer(); }); return; }
+    foyerUrl(); showEntryPage(); try { initEntryPaws(); } catch (e) { } try { populateEntryGames(); } catch (e) { }
+  }
+
+  // ---- the game screen: one card (back = the players, face = the maze) ----
+  function bmBuild() {
+    if ($('bm-game')) return;
+    let g = document.createElement('div'); g.id = 'bm-game'; g.className = 'bt-gamescreen'; g.hidden = true;
+    g.innerHTML = '<div id="bm-msg"></div><div id="bmp"><div class="bmp-card down" id="bmp-card"><div class="bm-inner"><div class="bm-face bm-front bmp-face" id="bmp-face"></div><div class="bm-face bm-back bmp-back" id="bmp-back"></div></div></div></div>';
+    document.body.appendChild(g);
+    let p = $('bmp');
+    p.addEventListener('click', bmpClick);
+    p.addEventListener('pointerdown', bmDown); p.addEventListener('pointermove', bmMove); p.addEventListener('pointerup', bmUp); p.addEventListener('pointercancel', bmUp);
+    p.addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target && e.target.id === 'bmp-cvin') { e.preventDefault(); bmpSendChat(); } });
+    addEventListener('resize', bmpLayout); addEventListener('orientationchange', function () { setTimeout(bmpLayout, 250); });
+  }
+  async function bmEnter(first) {
+    btEntering('bm');
+    hideEntryPage(); $('setup').hidden = true; $('bt-headsup').hidden = true; bmNoticeClose(); try { $('setup').classList.remove('bm-nodlg', 'bm-bg'); } catch (e) { }
+    bmBuild(); $('bm-game').hidden = false;
+    try { let u = new URL(location.href); u.searchParams.set('kind', 'bearmaze'); u.searchParams.set('bm', bm.gid); u.searchParams.delete('gw'); u.searchParams.delete('p'); u.searchParams.delete('invite'); u.searchParams.delete('push'); history.replaceState(null, '', u.pathname + u.search + u.hash); } catch (e) { }
+    if (first && first.me) { bmSetSt(first); bmpRender(); }
+    await bmRefresh(); if (!bm.gid) return; bmConnect();
+    clearInterval(bm.poll); bm.poll = setInterval(function () { if (document.hidden) return; if (btLink.isOpen('bm') && Date.now() - bmHbAt < 25000) return; bmRefresh(); }, 30000);   // no look-again while the socket answers
+  }
+  function bmConnect() {
+    try { btLink.open('bm', { url: API.replace(/^http/, 'ws') + '/bm/' + encodeURIComponent(bm.gid) + '/ws', protocols: ['bt.' + bm.token], retryMs: 8000, keep: function () { return !$('bm-game').hidden; }, onopen: function () { bmHbAt = Date.now(); bmRefresh(); }, onmessage: function (ev) { bmHbAt = Date.now(); if (ev && ev.data === '{"t":"hb"}') return; bmRefresh(); } }); } catch (e) { }
+  }
+  setInterval(function () {
+    try {
+      if (document.hidden || !bm.gid || !btLink.isOpen('bm')) return;
+      if (bmHbAt && Date.now() - bmHbAt > 25000) { btLink.drop('bm'); return; }
+      btLink.send('bm', '{"t":"hb"}');
+    } catch (e) { }
+  }, 10000);
+  document.addEventListener('visibilitychange', function () { try { if (!document.hidden && bm.gid && $('bm-game') && !$('bm-game').hidden) { bmHbAt = 0; btLink.send('bm', '{"t":"hb"}'); bmRefresh(); } } catch (e) { } });
+  async function bmRefresh() {
+    if (!bm.gid) return;
+    let r = await bmApi('GET', 'status');
+    if (r.s === 404) { let gone = bm.gid; bmPrune(gone); bmLeave(); return; }
+    if (r.s === 401) { bmMsg('This device does not hold a seat in this game.'); return; }
+    if (r.s !== 200) return;
+    bmSetSt(r.j);
+    Object.keys(bm.shown).forEach(function (n) { let s = r.j.seats.find(function (x) { return String(x.n) === n; }); if (!s || !s.flip || s.day !== bm.shown[n].day) delete bm.shown[n]; });
+    bmpRender(); bmUpgradeShown();
+  }
+  // Once you have finished, cards you flipped for a time only can show the path taken.
+  async function bmUpgradeShown() {
+    let st = bm.st; if (!st || st.me.status === 'playing' || bm.upgrading) return;
+    let ns = Object.keys(bm.shown).filter(function (n) { let s = bm.shown[n]; return s && s.path === undefined; });
+    if (!ns.length) return; bm.upgrading = true;
+    try { for (const n of ns) { let it = st.seats.find(function (x) { return String(x.n) === n; }); if (!it || !it.reveal) continue; let r = await bmApi('POST', 'reveal', { target: +n, tz: BM_TZ() }); if (r.s === 200 && bm.shown[n]) bm.shown[n] = r.j; } } finally { bm.upgrading = false; }
+    bmpRender();
+  }
+  async function bmNewDay() { let r = await bmApi('POST', 'newday', { tz: BM_TZ() }); if (r.s === 200) { bm.mz = null; bmSetSt(r.j); bm.ptom = null; bmpRender(); } else bmRefresh(); }
+
+  // ---- the clock (the server holds t0; this only displays it) ----
+  function bmElapsed(me) { if (!me || !me.t0 || !bm.st) return 0; return Math.max(0, (bm.st.now - me.t0 + (Date.now() - (bm.stAt || Date.now()))) / 1000); }
+  function bmClkText() {
+    let me = bm.st && bm.st.me; if (!me) return '';
+    if (me.status === 'won') return bmFmt(me.score);
+    if (me.status !== 'playing' || me.canNewDay) return '';
+    return me.t0 ? bmFmt(bmElapsed(me)) : '';
+  }
+  setInterval(function () { let c = $('bm-clk'); if (c && bm.st) { let t = bmClkText(); if (c.textContent !== t) c.textContent = t; } }, 500);
+
+  // ---- the board: an SVG, a cell is 10 units; walls are hedge; numbered checkpoints; the trail is drawn by bmPaint ----
+  function bmSvg(P, path, own) {
+    let n = P.n, u = 10, h = '<svg class="bm-svg" ' + (own ? 'id="bm-svg" ' : '') + 'viewBox="0 0 ' + n * u + ' ' + n * u + '" data-n="' + n + '" data-path="' + (path || '') + '"><rect width="' + n * u + '" height="' + n * u + '" rx="1.2" fill="#efe6c8"/>';
+    for (let i = 1; i < n; i++) h += '<path d="M' + i * u + ' 0V' + n * u + 'M0 ' + i * u + 'H' + n * u + '" stroke="#d6cba6" stroke-width=".25" fill="none"/>';
+    let d = '';
+    P.walls.forEach(function (w) {
+      let a = Math.min(w[0], w[1]), b = Math.max(w[0], w[1]), r = Math.floor(a / n), c = a % n;
+      d += b - a === 1 ? 'M' + (c + 1) * u + ' ' + r * u + 'v' + u : 'M' + c * u + ' ' + (r + 1) * u + 'h' + u;
+    });
+    d += 'M0 0H' + n * u + 'V' + n * u + 'H0Z';
+    h += '<path d="' + d + '" fill="none" stroke="#14502a" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><path d="' + d + '" fill="none" stroke="#2f9e4f" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/>';
+    h += '<polyline class="bm-pl" points=""/><circle class="bm-hd" r="2.1" cx="-9" cy="-9"/>';
+    P.cp.forEach(function (c, i) { h += '<g class="bm-cp" data-c="' + c + '"><circle cx="' + (c % n * u + 5) + '" cy="' + (Math.floor(c / n) * u + 5) + '" r="3.5"/><text x="' + (c % n * u + 5) + '" y="' + (Math.floor(c / n) * u + 5.2) + '">' + (i + 1) + '</text></g>'; });
+    return h + '</svg>';
+  }
+  // The trail drawn on this device for the current day's maze; kept so a reload does not lose it (the clock keeps running regardless).
+  function bmState() {
+    let me = bm.st && bm.st.me, key = bm.gid + ':' + (me ? me.day : '');
+    if (!bm.mz || bm.mz.key !== key) {
+      let p = []; try { let o = JSON.parse(localStorage.getItem('bt_bm_path') || 'null'); if (o && o.key === key && Array.isArray(o.p)) p = o.p; } catch (e) { }
+      bm.mz = { key: key, path: p, drag: false, last: null };
+    }
+    return bm.mz;
+  }
+  function bmSave() { try { let z = bm.mz; if (z) localStorage.setItem('bt_bm_path', JSON.stringify({ key: z.key, p: z.path })); } catch (e) { } }
+  function bmPaint() {
+    let st = bm.st, me = st && st.me; if (!me) return;
+    document.querySelectorAll('#bmp .bm-svg').forEach(function (svg) {
+      let n = +svg.getAttribute('data-n'), own = svg.id === 'bm-svg', p;
+      if (own) p = me.status === 'won' && me.path ? String(me.path).split(',').map(Number) : (me.maze ? bmState().path : []);
+      else p = (svg.getAttribute('data-path') || '').split(',').filter(Boolean).map(Number);
+      let pl = svg.querySelector('.bm-pl'), hd = svg.querySelector('.bm-hd');
+      pl.setAttribute('points', p.map(function (c) { return (c % n * 10 + 5) + ',' + (Math.floor(c / n) * 10 + 5); }).join(' '));
+      if (own && me.status === 'playing' && p.length) { let c = p[p.length - 1]; hd.setAttribute('cx', c % n * 10 + 5); hd.setAttribute('cy', Math.floor(c / n) * 10 + 5); } else { hd.setAttribute('cx', -9); hd.setAttribute('cy', -9); }
+      svg.querySelectorAll('.bm-cp').forEach(function (g) { g.classList.toggle('hit', p.indexOf(+g.getAttribute('data-c')) >= 0); });
+    });
+  }
+  function bmCanDraw() { let me = bm.st && bm.st.me; return !!(me && me.maze && me.status === 'playing' && !me.canNewDay && me.t0 > 0 && !bm.pdown && bm.pv === 'face' && bm.pt == null); }
+  // One step of the trail; true when the trail changed. Touching the trail rewinds it to that cell (the start cell restarts it).
+  function bmStep(cell) {
+    let P = bm.st.me.maze, n = P.n, N = n * n, z = bmState(), p = z.path, head = p[p.length - 1];
+    if (cell === head) return false;
+    let at = p.indexOf(cell);
+    if (at >= 0) { p.length = at + 1; return true; }
+    let dr = Math.abs(Math.floor(head / n) - Math.floor(cell / n)), dc = Math.abs(head % n - cell % n);
+    if (dr + dc !== 1) return false;
+    let lo = Math.min(head, cell), hi = Math.max(head, cell);
+    if (P.walls.some(function (w) { return Math.min(w[0], w[1]) === lo && Math.max(w[0], w[1]) === hi; })) return false;
+    let k = P.cp.indexOf(cell), got = p.filter(function (c) { return P.cp.indexOf(c) >= 0; }).length;
+    if (k >= 0 && (k !== got || (k === P.cp.length - 1 && p.length !== N - 1))) return false;   // checkpoints in order; the last one only closes a full trail
+    p.push(cell); return true;
+  }
+  function bmCellAt(svg, x, y) {
+    let r = svg.getBoundingClientRect(), n = +svg.getAttribute('data-n');
+    let c = Math.floor((x - r.left) / r.width * n), q = Math.floor((y - r.top) / r.height * n);
+    return c < 0 || q < 0 || c >= n || q >= n ? -1 : q * n + c;
+  }
+  function bmDown(e) {
+    let svg = e.target.closest && e.target.closest('#bm-svg'); if (!svg || !bmCanDraw()) return;
+    e.preventDefault(); try { svg.setPointerCapture(e.pointerId); } catch (x) { }
+    let z = bmState(), P = bm.st.me.maze, cell = bmCellAt(svg, e.clientX, e.clientY); z.drag = true; z.last = { x: e.clientX, y: e.clientY };
+    if (cell < 0) return;
+    if (!z.path.length) { if (cell === P.cp[0]) z.path = [cell]; }
+    else bmStep(cell);
+    bmPaint();
+  }
+  function bmMove(e) {
+    let svg = e.target.closest && e.target.closest('#bm-svg'), z = bm.mz; if (!z || !z.drag || !svg || !bmCanDraw()) return;
+    e.preventDefault();
+    let r = svg.getBoundingClientRect(), step = r.width / +svg.getAttribute('data-n') / 4, dx = e.clientX - z.last.x, dy = e.clientY - z.last.y, len = Math.hypot(dx, dy), m = Math.max(1, Math.ceil(len / step)), ch = false;
+    for (let i = 1; i <= m; i++) { let cell = bmCellAt(svg, z.last.x + dx * i / m, z.last.y + dy * i / m); if (cell >= 0 && z.path.length && bmStep(cell)) ch = true; }
+    z.last = { x: e.clientX, y: e.clientY };
+    if (ch) bmPaint();
+  }
+  async function bmUp() {
+    let z = bm.mz; if (!z || !z.drag) return; z.drag = false; bmSave();
+    let me = bm.st && bm.st.me; if (!me || !me.maze || me.status !== 'playing') return;
+    let P = me.maze, N = P.n * P.n;
+    if (z.path.length === N && z.path[N - 1] === P.cp[P.cp.length - 1] && !z.sending) {
+      z.sending = true;
+      let r = await bmApi('POST', 'guess', { path: z.path.slice(), tz: BM_TZ() });
+      z.sending = false;
+      if (r.s === 200) { bmSetSt(r.j); bmpRender(); return; }
+      bmMsg(r.s === 422 ? 'That path is not a solution' : 'That could not be sent'); bmRefresh();
+    }
+  }
+  // The clock starts when the maze is first shown face-up.
+  async function bmMaybeStart() {
+    let me = bm.st && bm.st.me;
+    if (!me || me.status !== 'playing' || me.canNewDay || me.t0 || bm.starting || bm.pdown || bm.pv !== 'face' || bm.pt != null) return;
+    bm.starting = true;
+    try { let r = await bmApi('POST', 'start', { tz: BM_TZ() }); if (r.s === 200) { bmSetSt(r.j); bmpRender(); } } finally { bm.starting = false; }
+  }
+
+  // ---- Bear Bot Tom: his time for your maze today (the worker models an average human time; it is fixed for you and the day) ----
+  function bmTomStore() { try { return JSON.parse(localStorage.getItem('bt_bm_tom') || '{}') || {}; } catch (e) { return {}; } }
+  function bmTomSync() {
+    let st = bm.st; if (!st) return; let key = bm.gid + ':' + st.me.day; if (bm.tomKey === key) return;
+    bm.tomKey = key; let v = bmTomStore()[key]; bm.tomScore = (typeof v === 'number') ? v : null;
+  }
+  function bmTomUsed(j) {
+    let st = bm.st; if (!st || !j || typeof j.score !== 'number') return;
+    let key = bm.gid + ':' + st.me.day; bm.tomKey = key; bm.tomScore = j.score;
+    try { let m = bmTomStore(), o = {}; Object.keys(m).forEach(function (k) { if (k.split(':').pop() === st.me.day) o[k] = m[k]; }); o[key] = j.score; localStorage.setItem('bt_bm_tom', JSON.stringify(o)); } catch (e) { }
+  }
+
+  // ---- My Stats (kept on this device, per name) ----
+  function bmStatsKey(name) { return 'bt_bm_stats_' + String(name || '').toLowerCase(); }
+  function bmStatsLoad(name) { try { let a = JSON.parse(localStorage.getItem(bmStatsKey(name)) || '[]'); return Array.isArray(a) ? a : []; } catch (e) { return []; } }
+  function bmStatsRecord(me) {
+    if (!me || !me.day || me.status === 'playing') return;
+    let sc = me.status === 'won' ? String(me.score) : (me.t0 ? 'incomplete' : 'no-show'), a = bmStatsLoad(me.name), k = a.findIndex(function (x) { return x.d === me.day; });
+    if (k >= 0) { if (a[k].s === sc) return; a[k] = { d: me.day, s: sc }; } else a.push({ d: me.day, s: sc });
+    a.sort(function (x, y) { return x.d < y.d ? 1 : x.d > y.d ? -1 : 0; });
+    try { localStorage.setItem(bmStatsKey(me.name), JSON.stringify(a.slice(0, 400))); } catch (e) { }
+  }
+  function bmStatsHtml(me, st) {
+    let rec = bmStatsLoad(me.name).slice().sort(function (a, b) { return a.d < b.d ? -1 : a.d > b.d ? 1 : 0; }), wins = rec.filter(function (r) { return /^\d+$/.test(r.s); });
+    let secs = wins.map(function (r) { return +r.s; }), best = secs.length ? Math.min.apply(null, secs) : null, avg = secs.length ? secs.reduce(function (a, b) { return a + b; }, 0) / secs.length : null;
+    let dn = function (d) { let p = d.split('-'); return Math.round(Date.UTC(+p[0], +p[1] - 1, +p[2]) / 86400000); }, cur = 0, run = 0, prev = null;
+    wins.forEach(function (r) { let x = dn(r.d); run = prev !== null && x === prev + 1 ? run + 1 : 1; prev = x; });
+    if (wins.length) { let lastDay = dn(wins[wins.length - 1].d), today = st.today ? dn(st.today) : lastDay; cur = today - lastDay <= 1 ? run : 0; }
+    let recent = wins.slice(-7), top = Math.max.apply(null, secs.concat([1]));
+    return btStatsHtml({ cells: [[wins.length, 'Solved'], [best == null ? '-' : bmFmt(best), 'Best'], [avg == null ? '-' : bmFmt(avg), 'Average'], [cur, 'Streak']], head: 'RECENT TIMES',
+      bars: recent.map(function (r, i) { let p = r.d.split('-'); return { k: (+p[1]) + '/' + (+p[2]), w: Math.max(14, Math.round(+r.s / top * 100)), text: bmFmt(+r.s), hi: i === recent.length - 1 }; }) });
+  }
+
+  // ---- the card ----
+  function bmpFlip(down) { bm.pdown = !!down; let c = $('bmp-card'); if (c) c.classList.toggle('down', bm.pdown); if (!down) setTimeout(bmMaybeStart, 0); }
+  function bmpLabel(it) { return it.lapsed ? (it.noshow ? '∞' : 'dnf') : (it.score != null ? bmFmt(it.score) : ''); }
+  function bmpOthers(st) {
+    let seats = st.seats, ord = st.order.map(function (nm) { return seats.find(function (s) { return s.name === nm; }); }).filter(Boolean);
+    seats.forEach(function (s) { if (ord.indexOf(s) < 0) ord.push(s); });
+    return ord.filter(function (s) { return s.n !== st.me.n; }).slice(0, 5);
+  }
+  function bmpBackHtml(st) {
+    let prev = function (day) { return !!(day && st.today && day < st.today); };
+    let sc = function (lb, day) { return lb === '' ? '' : '<b class="bmp-sc">' + bmEsc(lb) + (prev(day) ? '<sup>*</sup>' : '') + '</b>'; };
+    let pill = function (name, lb, day) { return '<div class="bmp-nb"><span class="bmp-n">' + bmEsc(name) + '</span>' + sc(lb, day) + '</div>'; };
+    let gonePill = function (it) { return '<div class="bmp-nb"><span class="bmp-n">' + bmEsc(it.name + '   player seceded') + '</span>' + (st.me.gone ? '' : '<button type="button" class="bmp-x" data-x="' + it.n + '" aria-label="Remove player"></button>') + '</div>'; };
+    let un = bmpUnread(st);
+    let h = '<div class="bmp-top"><a href="#" data-a="newgroup">new group</a><a href="#" data-a="chat">chat' + (un ? '<sup class="bmp-un">' + un + '</sup>' : '') + '</a><a href="#" data-a="groups">my groups</a></div><div class="bmp-rows">';
+    let own = st.seats.find(function (s) { return s.n === st.me.n; });
+    h += '<div class="bmp-row" data-a="card">' + pill('my card', own ? bmpLabel(own) : '', own ? own.day : '') + '</div>';
+    let o = bmpOthers(st);
+    for (let k = 0; k < 5; k++) {
+      let it = o[k];
+      if (!it) { h += '<div class="bmp-row"></div>'; continue; }
+      h += '<div class="bmp-row" data-n="' + it.n + '">' + (it.gone ? gonePill(it) : pill(it.name, bmpLabel(it), it.day)) + '</div>';
+    }
+    h += '<div class="bmp-row" data-a="tom">' + pill('Bear Bot Tom', bm.tomScore != null ? bmFmt(bm.tomScore) : '', st.me.day) + '</div>';
+    h += '<div class="bmp-row" data-a="stats">' + pill('My Stats', '') + '</div>';
+    return h + btBackBarHtml(bmPushCan() && !bmPushOn()) + '</div>';
+  }
+  function bmpFaceHtml(st) {
+    let me = st.me, title = bmEsc(st.title || ''), top = function (left) { return '<div class="bmp-ft"><span>' + bmEsc(left) + '</span><a href="#" data-a="back">' + title + '</a></div>'; };
+    let wrapOf = function (inner) { return '<div class="bm-wrap">' + inner + '</div>'; }, P = me.maze;
+    if (bm.pv === 'groups') return top('') + btGroupsHtml('bm');
+    let t = bm.pt;
+    if (t === 'chat') return top('Convo-Ursidae') + '<div class="bmp-cv" id="bmp-cvlog"></div><div class="bmp-cvf"><input id="bmp-cvin" maxlength="300" autocomplete="off" enterkeyhint="send" placeholder="say something" aria-label="Message"><a href="#" data-a="cvsend">send</a></div>';
+    if (t === 'stats') return top('My Stats') + '<div class="bmp-sb">' + bmStatsHtml(me, st) + '</div>';
+    if (t === 'tom' && bm.ptom) return top('Bear Bot Tom') + wrapOf(P ? bmSvg(P, '', false) : '') + '<div class="bmp-slim"><span>' + bmEsc(me.day || '') + '</span><span>solved in ' + bmFmt(bm.ptom.score) + '</span></div>';
+    let it = typeof t === 'number' ? st.seats.find(function (x) { return x.n === t; }) : null, shown = it ? bm.shown[it.n] : null;
+    if (it && shown) {
+      let same = shown.day === me.day, time = it.score != null && same ? it.score : shown.time;
+      return top(it.name) + wrapOf(same && P && shown.path ? bmSvg(P, shown.path, false) : '<div class="bm-nb">' + (time != null ? bmFmt(time) : '') + '</div>') + '<div class="bmp-slim"><span>' + bmEsc(shown.day || '') + '</span><span>' + (time != null ? 'solved in ' + bmFmt(time) : 'not solved') + '</span></div>';
+    }
+    return top(me.name) + wrapOf(P ? bmSvg(P, '', true) : '<div class="bm-nb">&hellip;</div>') + '<div class="bmp-slim"><span>' + bmEsc(me.day || '') + (me.canNewDay ? ' &nbsp;<a href="#" data-a="newmaze">new maze</a>' : '') + '</span><span class="bm-clk" id="bm-clk"></span></div>';
+  }
+  function bmpRender() {
+    let st = bm.st; if (!st || !$('bmp')) return;
+    let me = st.me;
+    bmStatsRecord(me); bmTomSync();
+    if (bm.pday !== me.day) { bm.pday = me.day; bm.ptom = null; bm.mz = null; if (bm.pt === 'tom') bm.pt = null; }
+    if (typeof bm.pt === 'number' && !bm.shown[bm.pt]) bm.pt = null;
+    let b = bmpBackHtml(st), f = bmpFaceHtml(st);
+    if (b !== bm.phB) { bm.phB = b; $('bmp-back').innerHTML = b; }
+    if (bm.pv !== 'groups' && bm.pt === 'chat') {   // the shell is built once; messages are filled in without touching the box being typed in
+      if (!$('bmp-cvin')) { bm.phF = f; $('bmp-face').innerHTML = f; bm.phCv = ''; }
+      let ch = st.chat || [], lastAt = ch.length ? ch[ch.length - 1].at : 0, sig = bm.gid + ':' + ch.length + ':' + lastAt;
+      bm.chatSeenAt = lastAt; if (!bm.pdown) { bmpSeenSet(bm.gid, lastAt); let b2 = bmpBackHtml(st); if (b2 !== bm.phB) { bm.phB = b2; $('bmp-back').innerHTML = b2; } }
+      if (sig !== bm.phCv) {
+        bm.phCv = sig; let log = $('bmp-cvlog'); log.innerHTML = '';
+        if (!ch.length) { let p = document.createElement('p'); p.className = 'dim'; p.textContent = 'No messages yet.'; log.appendChild(p); }
+        ch.forEach(function (m) { let p = document.createElement('p'), b = document.createElement('b'); if (m.n === me.n) p.className = 'me'; b.textContent = m.name + ': '; p.appendChild(b); btLinkify(p, btEmoji(m.text)); log.appendChild(p); });
+        log.scrollTop = log.scrollHeight;
+      }
+    } else if (f !== bm.phF) { bm.phF = f; $('bmp-face').innerHTML = f; }
+    $('bmp-card').classList.toggle('down', bm.pdown);
+    bmpLayout(); bmPaint();
+    let c = $('bm-clk'); if (c) c.textContent = bmClkText();
+    if (!bm.pdown) bmMaybeStart();
+  }
+  function bmpLayout() {
+    let c = $('bmp-card'); if (!c || !bm.st) return;
+    $('bmp').style.setProperty('--bmcw', c.clientWidth + 'px'); $('bmp').style.setProperty('--btcw', c.clientWidth + 'px');
+    Array.prototype.forEach.call($('bmp-back').querySelectorAll('.bmp-nb'), function (nb) {
+      let sp = nb.querySelector('.bmp-n'), sc = nb.querySelector('.bmp-sc'), xb = nb.querySelector('.bmp-x'), fs = 22, W = nb.clientWidth, r = nb.offsetHeight / 2;
+      let room = xb ? W - 2 * 46 : (sc ? 2 * (W / 2 - r - sc.offsetWidth - 6) : W - 20);   // the name is centered; with a score it must stop short of the score
+      sp.style.fontSize = fs + 'px';
+      while (fs > 9 && sp.offsetWidth > room) { fs--; sp.style.fontSize = fs + 'px'; }
+    });
+  }
+  // Chat: how many messages from others have come since this group's chat was last on screen (remembered per group on this device).
+  function bmpSeenGet(gid) { try { let v = JSON.parse(localStorage.getItem('bt_bm_seen') || '{}')[gid]; return typeof v === 'number' ? v : null; } catch (e) { return null; } }
+  function bmpSeenSet(gid, at) { try { let m = JSON.parse(localStorage.getItem('bt_bm_seen') || '{}') || {}; if (m[gid] === at) return; m[gid] = at; localStorage.setItem('bt_bm_seen', JSON.stringify(m)); } catch (e) { } }
+  function bmpUnread(st) {
+    let ch = st.chat || [], last = ch.length ? ch[ch.length - 1].at : 0, seen = bmpSeenGet(bm.gid);
+    if (seen === null) { bmpSeenSet(bm.gid, last); return 0; }   // a group opened for the first time starts with nothing unread
+    return ch.filter(function (m) { return m.at > seen && m.name !== st.me.name; }).length;
+  }
+  // A player who has left shows "player seceded"; any player may be removed from the card by the "x" (the worker decides who may).
+  async function bmDropAsk(it) {
+    if (!confirm('Remove ' + it.name + ' from this group?')) return;
+    let r = await bmApi('POST', 'drop', { target: it.n }); if (r.s === 200 && r.j && r.j.me) { bmSetSt(r.j); bmpRender(); } else bmRefresh();
+  }
+  async function bmpClick(e) {
+    let dx = e.target.closest('[data-x]'); if (dx) { e.preventDefault(); e.stopPropagation(); let n = +dx.getAttribute('data-x'), it = bm.st && bm.st.seats.find(function (x) { return x.n === n; }); if (it) bmDropAsk(it); return; }
+    if (btGroupsClick(e, 'bm')) return;
+    let a = e.target.closest('[data-a]'), r = e.target.closest('[data-n]');
+    if (a) {
+      e.preventDefault(); let act = a.getAttribute('data-a');
+      if (act === 'card') { bm.pv = 'face'; bm.pt = null; bmpRender(); bmpFlip(false); }
+      else if (act === 'back') bmpFlip(true);
+      else if (act === 'groups') { bm.pv = 'groups'; bm.pt = null; bm.pgh = {}; bmpRender(); bmpFlip(false); btGroupsLoad('bm'); }
+      else if (act === 'newgroup') btNewGroup('bm');
+      else if (act === 'foyer') btFoyer();
+      else if (act === 'chat') { bm.pv = 'face'; bm.pt = 'chat'; bmpFlip(false); bmpRender(); }
+      else if (act === 'cvsend') bmpSendChat();
+      else if (act === 'newmaze') bmNewDay();
+      else if (act === 'notify') bmPushEnable();
+      else if (act === 'stats') { bm.pv = 'face'; bm.pt = 'stats'; bmpRender(); bmpFlip(false); }
+      else if (act === 'tom') {
+        let r2 = await bmApi('POST', 'tom', {});
+        if (r2.s !== 200 || !r2.j || typeof r2.j.score !== 'number') { bmMsg('Bear Bot Tom could not play'); return; }
+        bm.ptom = r2.j; bmTomUsed(r2.j); bm.pv = 'face'; bm.pt = 'tom'; bmpRender(); bmpFlip(false);
+      }
+      return;
+    }
+    if (r) {
+      let st = bm.st; if (!st) return; let n = +r.getAttribute('data-n'), it = st.seats.find(function (x) { return x.n === n; }); if (!it) return;
+      if (!bm.shown[n]) {
+        if (!it.flip) { bmMsg(it.done ? "You can't flip a player who has moved on to a newer day" : 'That player has not finished yet'); return; }
+        let r3 = await bmApi('POST', it.reveal ? 'reveal' : 'flip', { target: n, tz: BM_TZ() });
+        if (r3.s !== 200) { bmRefresh(); return; }
+        bm.shown[n] = r3.j;
+      }
+      bm.pv = 'face'; bm.pt = n; bmpRender(); bmpFlip(false);
+    }
+  }
+  async function bmpSendChat() {
+    let i = $('bmp-cvin'); if (!i) return; let tx = i.value.trim(); if (!tx) return; i.value = '';
+    let r = await bmApi('POST', 'chat', { text: tx });
+    if (r.s === 200 && r.j && r.j.me) { bmSetSt(r.j); bmpRender(); return; }
+    i.value = tx; bmMsg('That message could not be sent');
+  }
+  // Opening the app on a phone goes to the bearMaze group used last.
+  async function bmLaunch() {
+    let ids = Object.keys(bmKeys()), last = null; try { last = localStorage.getItem('bt_bm_last'); } catch (e) { }
+    let hid = hiddenGames(); ids = ids.filter(function (g) { return !hid[g]; });
+    let gid = ids.indexOf(last) >= 0 ? last : ids[ids.length - 1]; if (!gid) return false;
+    let mine = bmMine(gid); if (!mine) return false;
+    hideEntryPage(); await bmUse(gid, mine.n, mine.token); return true;
+  }
+  btRegister({
+    id: 'bm', label: 'bearMaze', kind: 'bearmaze', q: 'bm', nodlg: 'bm-nodlg', bg: 'bm-bg', st: bm,
+    boot: bmBoot, close: bmClose, afterRegister: bmAfterRegister,
+    api: bmApi, tz: BM_TZ, vouch: bmVouch, keys: bmKeys, prune: bmPrune, use: bmUse, enter: bmEnter, render: function () { bmpRender(); }, flip: bmpFlip, leaveMark: bmLeaveMark, leaveUnmark: bmLeaveUnmark, launch: bmLaunch,
+    allowed: function () { if (BM_PHONE) return true; try { message('bearMaze is played on a phone.'); } catch (e) { } return false; },
+    created: function (j, owner) { bm.gid = j.gid; bm.token = j.token; bm.seat = 0; bmSaveKey(bm.gid, bm.token, 0, owner); bmSetTabSeat(bm.gid, 0, bm.token); },
+    mine: function (gid) { return bmMine(gid); },
+    shown: function () { let g = $('bm-game'); return !!(g && !g.hidden && bm.gid); }
+  });
+  // ================= END bearMaze MODULE =================
+
+
   (async () => {
     if (window.btBrowserLocked) return;   // a Chromium browser tab: the lock panel (at the foot of the page) is all there is
     let params = null; try { params = new URLSearchParams(location.search); } catch (e) { params = { get: () => null } }
@@ -6251,7 +6978,7 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     let hoParam = params.get('handoff');
     if (BT_IOS && hoStandalone() && !owner && hoCookieGet()) { if (await gwpCookieHandoff()) return; }
     if (hoParam && hoStandalone()) { let hoErr = ''; try { hoErr = await hoEnter(hoParam); } catch (e) { hoErr = 'The hand-off failed.'; } if (!hoErr) return; try { message(hoErr); } catch (e) { } }
-    if (GW_PHONE && (iid || gid) && kindParam !== 'groupwords') { gwpBigScreen(); return; }
+    if (GW_PHONE && (iid || gid) && !btByKind(kindParam)) { gwpBigScreen(); return; }
     if (kindParam === 'othello') { if (await othBoot(gid, iid, pParam, owner)) return; }
     if (kindParam === 'cribbage') {
       if (gid) {
@@ -6285,7 +7012,7 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
         return;
       }
     }    
-    if (kindParam === 'groupwords' && params.get("gw")) { await gwBoot(params.get("gw")); return; }
+    { let G = btByKind(kindParam); if (G && params.get(G.q)) { await G.boot(params.get(G.q)); return; } }
     let sState = tryLoadFromHash(); absorbSeatKey(sState ? sState.id : gid, pParam); if (sState) { state = sState; hasState = true; if (state) initBroadcastChannel(state.id); }  
     if (!hasState && gid) {  
       let g = await loadGame(gid);  
@@ -6318,7 +7045,7 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
           history.replaceState(null, '', url.pathname + url.search + location.hash);  
         } catch (e) { }  
       } else { pendingGameOnRegister = state; try { addGameId(state.id); } catch (e) { } $('setup').hidden = false; renderBoxes(); }  
-    } else if (!iid && !gid && !hasState) { if (!getOwner()) { if (!(BT_IOS && hoStandalone() && await gwpCookieHandoff())) requireSignIn(); } else if (GW_PHONE) { if (!(await gwpLaunch())) entryGroupWords(); } else { showEntryPage(); initEntryPaws(); await populateEntryGames(); } }  
+    } else if (!iid && !gid && !hasState) { if (!getOwner()) { if (!(BT_IOS && hoStandalone() && await gwpCookieHandoff())) requireSignIn(); } else if (GW_PHONE) { if (!(await btPhoneLaunch())) btFoyer(); } else { showEntryPage(); initEntryPaws(); await populateEntryGames(); } }  
    
     if (gateFresh) gateFresh = false; else lockGate();  
   })();  
