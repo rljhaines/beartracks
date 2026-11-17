@@ -975,7 +975,9 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
 #bt-foyer { position: fixed; inset: 0; z-index: 45; background: var(--paper, #f6f0e4); color: #2b2620; overflow: hidden; display: flex; flex-direction: column; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); font-family: Georgia, "Times New Roman", serif; }
 #bt-foyer[hidden] { display: none; }
 #bt-foyer-paws { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
-.btf-head { position: relative; z-index: 1; flex: none; height: 17dvh; }   /* room for BearTracks / Destination unknown */
+.btf-head { position: relative; z-index: 1; flex: none; height: 17dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 5vw; text-align: center; }
+.btf-head h1 { margin: 0; font-size: 34px; line-height: 1; font-weight: 800; letter-spacing: -.028em; }
+.btf-head p { margin: 8px 0 0; font-size: 15px; line-height: 1.2; font-style: italic; color: #5a4630; }
 .btf-rows { position: relative; z-index: 1; flex: 1; min-height: 0; display: flex; flex-direction: column; padding-bottom: 4dvh; }
 .btf-row { flex: 1 1 44px; min-height: 44px; display: flex; align-items: center; justify-content: center; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .btf-nb { width: 66%; height: 44px; box-sizing: border-box; background: #fffdf8; border: 2px solid #b9a98d; color: #2b2620; border-radius: 99px; display: flex; align-items: center; justify-content: center; font-size: 22px; box-shadow: 0 3px 8px rgba(64,48,28,.12); white-space: nowrap; }
@@ -5371,7 +5373,7 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
   }
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') wordageResync(); });
   window.addEventListener('online', wordageResync);
-  function backToFoyer() { try { $('bt-headsup').hidden = true; pendingGameForHeadsUp = null; cribPendingHeadsUp = null; $('nameB').value = ''; } catch (e) { } if (GW_PHONE) { btClearSetup(); btGames.forEach(function (G) { $('setup').classList.remove(G.bg); }); $('setup').hidden = true; if (!btAnyShown()) btFoyer(); return; } wordageToFoyer(); }
+  function backToFoyer() { try { $('bt-headsup').hidden = true; pendingGameForHeadsUp = null; cribPendingHeadsUp = null; $('nameB').value = ''; } catch (e) { } if (GW_PHONE) { btClearSetup(); btGames.forEach(function (G) { $('setup').classList.remove(G.bg); }); $('setup').hidden = true; if (btNewFrom === 'foyer' || !btAnyShown()) btFoyer(); btNewFrom = ''; return; } wordageToFoyer(); }
   $('btn-cancel-start').onclick = backToFoyer; $('btn-cancel-headsup').onclick = backToFoyer;
   document.addEventListener('keydown', function (e) {
     if (e.key !== 'Escape') return;
@@ -5418,7 +5420,7 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
   // The game calls btEntering(id) when its screen opens; the shared parts handle everything else.
   const BT_FOYER_GAMES = ['groupWords', 'bearMaze', 'bearDance', 'ineBear8', 'bearBattle', 'bearClimb', 'bearComb', 'bearCat'];
   const btGame = {}, btGames = [];
-  let btPickId = null;
+  let btPickId = null, btNewFrom = '';   // btNewFrom: 'foyer' when the group-start was reached from the Foyer, so backing out returns there
   function btRegister(G) { btGame[G.id] = G; btGames.push(G); }
   function btByKind(k) { return btGames.find(function (G) { return G.kind === k; }) || null; }
   function btByLabel(l) { return btGames.find(function (G) { return G.label === l; }) || null; }
@@ -5442,9 +5444,10 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
   }
 
   // -- new group: registration if needed, then the group name and player count; the game supplies only its server calls --
-  function btNewGroup(id) {
+  function btNewGroup(id, from) {
     let G = btGame[id]; if (!G) return;
     if (G.allowed && !G.allowed()) return;
+    btNewFrom = from || '';
     postRegisterTarget = G.kind; hideEntryPage(); btFoyerHide(); $('setup').hidden = false; renderBoxes(); if (getOwner()) btSetupShow(id);
   }
   function btSetupShow(id) {
@@ -5555,7 +5558,7 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     let f = $('bt-foyer');
     if (!f) {
       f = document.createElement('div'); f.id = 'bt-foyer'; f.hidden = true;
-      f.innerHTML = '<canvas id="bt-foyer-paws" aria-hidden="true"></canvas><div class="btf-head"></div><div class="btf-rows">' + BT_FOYER_GAMES.map(function (n) { return '<div class="btf-row" data-f="' + n + '"><div class="btf-nb">' + n + '</div></div>'; }).join('') + '</div>';
+      f.innerHTML = '<canvas id="bt-foyer-paws" aria-hidden="true"></canvas><div class="btf-head"><h1>BearTracks</h1><p>Destination unknown, but we\'ll get there together.</p></div><div class="btf-rows">' + BT_FOYER_GAMES.map(function (n) { return '<div class="btf-row" data-f="' + n + '"><div class="btf-nb">' + n + '</div></div>'; }).join('') + '</div>';
       f.addEventListener('click', btFoyerClick);
       document.body.appendChild(f);
     }
@@ -5570,7 +5573,7 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     if (G.allowed && !G.allowed()) return;
     if (G.shown()) { btFoyerHide(); return; }   // that game's card is already on screen under the Foyer
     btFoyerHide();
-    if (!(await G.launch())) btNewGroup(G.id);
+    if (!(await G.launch())) btNewGroup(G.id, 'foyer');
   }
   // Opening the app on a phone goes to the group used last, in whichever game; with no groups at all, the Foyer.
   async function btPhoneLaunch() {
