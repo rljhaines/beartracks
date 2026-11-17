@@ -894,8 +894,8 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
 .gwp-card.down .gwp-face, .gwp-card:not(.down) .gwp-back { pointer-events: none; }
 .gwp-top { position: relative; z-index: 1; flex: none; display: flex; justify-content: space-between; align-items: center; padding: calc(var(--gwcw) * .06) calc(var(--gwcw) * .1) 0; color: #f6f0e4; font-style: italic; font-size: 16px; }
 .gwp-top a { position: relative; color: inherit; text-decoration: underline; min-height: 44px; display: flex; align-items: center; padding: 0 4px; }
-.gwp-rows::after, .bmp-rows::after { content: ''; flex: .8 1 0; }
-.gwp-rows, .bmp-rows { top: -1.4px; }   /* the first pillbox's distance from the links is 90% of what it was (the link text sits 14px above its box, hence 1.4px) */
+.gwp-rows::before, .gwp-rows::after, .bmp-rows::before, .bmp-rows::after { content: ''; flex: .4 1 0; }   /* the pillboxes keep 90% of their old gaps; the remaining 10% is shared equally above and below them */
+.gwp-rows, .bmp-rows { top: -22px; }   /* then lifted so that the space from the top links to the first pillbox equals the space from the last pillbox to the Foyer link (the link texts sit inside 44px boxes) */
 .gwp-rows { position: relative; z-index: 1; flex: 1; min-height: 0; display: flex; flex-direction: column; padding-bottom: calc(var(--gwcw) * .08); }
 .gwp-row { position: relative; flex: .9 1 44px; min-height: 44px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
 .gwp-sc { position: absolute; top: 50%; transform: translateY(-50%); right: 22px; font-weight: 400; font-size: 17px; line-height: 1; white-space: nowrap; }
@@ -976,9 +976,14 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
 #bt-foyer[hidden] { display: none; }
 #bt-foyer-paws { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .btf-head { position: relative; z-index: 1; flex: none; height: 17dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 5vw; text-align: center; }
+/* the list starts 25% (3.36dvh - 12.8px, from the measured gap of 13.45dvh - 51px) closer to the byline; the same amount is returned as bottom room for the notifications link */
+.btf-head { margin-bottom: calc(12.8px - 3.36dvh); }
 .btf-head h1 { margin: 0; font-size: 34px; line-height: 1; font-weight: 800; letter-spacing: -.028em; }
 .btf-head p { margin: 8px 0 0; font-size: 15px; line-height: 1.2; font-style: italic; color: #5a4630; }
-.btf-rows { position: relative; z-index: 1; flex: 1; min-height: 0; display: flex; flex-direction: column; padding-bottom: 4dvh; }
+.btf-rows { position: relative; z-index: 1; flex: 1; min-height: 0; display: flex; flex-direction: column; padding-bottom: calc(7.36dvh - 8.8px); }
+.btf-note { position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(env(safe-area-inset-bottom, 0px) + 2px); z-index: 2; min-height: 44px; display: flex; align-items: center; padding: 0 12px; white-space: nowrap; color: #5a4630; font-style: italic; font-size: 15px; text-decoration: underline; }
+.btf-note[hidden] { display: none; }
+#bt-foyer-msg { position: absolute; left: 0; right: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + 48px); z-index: 2; text-align: center; font-size: 14px; color: #5a4630; pointer-events: none; }
 .btf-row { flex: 1 1 44px; min-height: 44px; display: flex; align-items: center; justify-content: center; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .btf-nb { width: 66%; height: 44px; box-sizing: border-box; background: #fffdf8; border: 2px solid #b9a98d; color: #2b2620; border-radius: 99px; display: flex; align-items: center; justify-content: center; font-size: 22px; box-shadow: 0 3px 8px rgba(64,48,28,.12); white-space: nowrap; }
 .btg-gl { flex: 1; min-height: 0; overflow: auto; }
@@ -989,7 +994,7 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
 .btg-gx { position: relative; flex: none; width: 44px; height: 44px; padding: 0; margin: 0; background: none; border: 0; color: inherit; opacity: .6; }
 .btg-gh { justify-content: space-between; padding: 0 6px; font-size: 18px; opacity: .8; }
 .btg-gh a { color: inherit; text-decoration: underline; min-height: 44px; display: flex; align-items: center; padding: 0 6px; }
-.bt-bar { position: absolute; left: 0; right: 0; bottom: calc(var(--btcw) * .05 - 4px); height: 44px; z-index: 2; display: flex; align-items: center; justify-content: space-around; color: #f6f0e4; font-style: italic; font-size: 15px; text-shadow: 0 1px 3px rgba(0,0,0,.75); }
+.bt-bar { position: absolute; left: 0; right: 0; bottom: calc(var(--btcw) * .05 - 11px); height: 44px; z-index: 2; display: flex; align-items: center; justify-content: center; color: #f6f0e4; font-style: italic; font-size: 15px; text-shadow: 0 1px 3px rgba(0,0,0,.75); }
 .bt-bar a { color: inherit; text-decoration: underline; min-height: 44px; display: flex; align-items: center; padding: 0 10px; }
 #gwp { --bt-bar: #8d867a; --bt-hi: #5a8f5a; --bt-hit: #fff; }
 #bmp { --bt-bar: #17572b; --bt-hi: #e8a317; --bt-hit: #2b2620; }
@@ -5417,6 +5422,7 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
   //   its server  api(method, act, body, gid, token) -> {s, j}; tz(); vouch(excludeGid, name); keys() -> {gid:...}; mine(gid) -> {n, token} | null; prune(gid)
   //   its screens enter(first), use(gid, seat, token), launch() -> opens the group used last (false if none), boot(gid) (a shared link), afterRegister(name), close(), shown(),
   //               render(), flip(down), leaveMark(gid), leaveUnmark(gid), created(response, name) (remember the group just made), allowed() (optional)
+  //   its push    pushSync(all, gid): tell this game's groups the device's push address (the on/off switch itself is the Foyer's)
   // The game calls btEntering(id) when its screen opens; the shared parts handle everything else.
   const BT_FOYER_GAMES = ['groupWords', 'bearMaze', 'bearDance', 'ineBear8', 'bearBattle', 'bearClimb', 'bearComb', 'bearCat'];
   const btGame = {}, btGames = [];
@@ -5520,8 +5526,8 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     else { let x = (S.pgl || [])[+g.getAttribute('data-g')]; if (x) { if (x.gid === S.gid) { S.pv = 'face'; S.pt = null; G.render(); G.flip(true); } else G.use(x.gid, x.seat, x.token); } }
     return true;
   }
-  // The bottom strip of a card's back: the Foyer link and, where it applies, enable-notifications.
-  function btBackBarHtml(notify) { return '<div class="bt-bar"><a href="#" data-a="foyer">Foyer</a>' + (notify ? '<a href="#" data-a="notify">enable notifications</a>' : '') + '</div>'; }
+  // The bottom strip of a card's back: the Foyer link.
+  function btBackBarHtml() { return '<div class="bt-bar"><a href="#" data-a="foyer">Foyer</a></div>'; }
 
   // -- My Stats: one layout for every game; a game hands over four headline numbers and a bar chart --
   // spec = { cells: [[value, label] x4], head: 'HEADING', bars: [{ k: 'label', w: width %, text: 'shown in the bar', hi: true|false }] }
@@ -5531,6 +5537,24 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     spec.bars.forEach(function (b) { h += '<i>' + btEsc(b.k) + '</i><div><em' + (b.hi ? ' class="hi"' : '') + ' style="width:' + b.w + '%">' + btEsc(b.text) + '</em></div>'; });
     return h + '</div>';
   }
+
+  // -- notifications: one switch for the whole device, in the Foyer; each game tells its own groups --
+  function btPushCan() { return ('serviceWorker' in navigator) && ('PushManager' in window) && ('Notification' in window) && hoStandalone(); }
+  function btPushOn() { try { return localStorage.getItem('bt_push') === '1' && Notification.permission === 'granted'; } catch (e) { return false; } }
+  async function btPushEnable() {
+    if (!btPushCan()) { btFoyerMsg('Open BearTracks from its Home Screen icon to turn on notifications'); return; }
+    let perm = Notification.permission;
+    if (perm === 'default') perm = await Notification.requestPermission();   // asked straight from the tap, as iOS requires
+    if (perm !== 'granted') { btFoyerMsg('Notifications are off for BearTracks: allow them in Settings > Notifications'); btFoyerSync(); return; }
+    try { localStorage.setItem('bt_push', '1'); } catch (e) { }
+    let ok = false;
+    for (const G of btGames) if (await G.pushSync(true, null)) ok = true;
+    if (!ok) { try { localStorage.removeItem('bt_push'); } catch (e) { } }
+    btFoyerMsg(ok ? 'Notifications are on' : 'Could not turn notifications on. Please try again.'); btFoyerSync();
+  }
+  let btFoyerMsgTimer = null;
+  function btFoyerMsg(t) { let m = $('bt-foyer-msg'); if (!m) return; m.textContent = t; clearTimeout(btFoyerMsgTimer); btFoyerMsgTimer = setTimeout(function () { m.textContent = ''; }, 4000); }
+  function btFoyerSync() { let a = $('bt-foyer-note'); if (a) a.hidden = !(btPushCan() && !btPushOn()); }
 
   // -- the phone Foyer: the games as pillboxes on the paw-walkers --
   function btPawsStart(cv, count) {
@@ -5558,15 +5582,16 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     let f = $('bt-foyer');
     if (!f) {
       f = document.createElement('div'); f.id = 'bt-foyer'; f.hidden = true;
-      f.innerHTML = '<canvas id="bt-foyer-paws" aria-hidden="true"></canvas><div class="btf-head"><h1>BearTracks</h1><p>Destination unknown, but we\'ll get there together.</p></div><div class="btf-rows">' + BT_FOYER_GAMES.map(function (n) { return '<div class="btf-row" data-f="' + n + '"><div class="btf-nb">' + n + '</div></div>'; }).join('') + '</div>';
+      f.innerHTML = '<canvas id="bt-foyer-paws" aria-hidden="true"></canvas><div class="btf-head"><h1>BearTracks</h1><p>Destination unknown, but we\'ll get there together.</p></div><div class="btf-rows">' + BT_FOYER_GAMES.map(function (n) { return '<div class="btf-row" data-f="' + n + '"><div class="btf-nb">' + n + '</div></div>'; }).join('') + '</div><div id="bt-foyer-msg"></div><a href="#" id="bt-foyer-note" class="btf-note" data-a="notify" hidden>enable notifications</a>';
       f.addEventListener('click', btFoyerClick);
       document.body.appendChild(f);
     }
     hideEntryPage(); $('setup').hidden = true; $('bt-headsup').hidden = true;
-    f.hidden = false; btPawsStart($('bt-foyer-paws'), 34);
+    f.hidden = false; btFoyerSync(); btPawsStart($('bt-foyer-paws'), 34);
   }
   function btFoyerHide() { let f = $('bt-foyer'); if (f) f.hidden = true; }
   async function btFoyerClick(e) {
+    if (e.target.closest('[data-a="notify"]')) { e.preventDefault(); btPushEnable(); return; }
     let r = e.target.closest('[data-f]'); if (!r) return; e.preventDefault();
     let G = btByLabel(r.getAttribute('data-f'));
     if (!G) { btSoon(); return; }
@@ -5658,8 +5683,8 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
   // The worker keeps this device's push address on the player's seat in each group and sends when another player chats or finishes a card.
   // The icon shows a dot (no number) for anything that arrived while the app was closed; opening the app clears it.
   let gwPushAll = false;
-  function gwPushCan() { return ('serviceWorker' in navigator) && ('PushManager' in window) && ('Notification' in window) && hoStandalone(); }
-  function gwPushOn() { try { return localStorage.getItem('bt_push') === '1' && Notification.permission === 'granted'; } catch (e) { return false; } }
+  function gwPushCan() { return btPushCan(); }
+  function gwPushOn() { return btPushOn(); }
   function gwPushFlag(v) { try { if (v) localStorage.setItem('bt_push', '1'); else localStorage.removeItem('bt_push'); } catch (e) { } }
   function gwB64uBytes(t) { let b = atob(t.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((t.length + 3) % 4)), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; }
   function gwPushBase() { return location.origin + location.pathname.replace(/[^\/]*$/, ''); }
@@ -5685,16 +5710,6 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     } catch (e) { return false; }
   }
   function gwPushHook(gid) { if (!gwPushCan() || !gwPushOn()) return; setTimeout(function () { gwPushSync(!gwPushAll, gid); }, 1500); }
-  async function gwPushEnable() {
-    if (!gwPushCan()) { gwMsg('Open BearTracks from its Home Screen icon to turn on notifications'); return; }
-    let perm = Notification.permission;
-    if (perm === 'default') perm = await Notification.requestPermission(); // asked straight from the tap, as iOS requires
-    if (perm !== 'granted') { gwMsg('Notifications are off for BearTracks: allow them in Settings > Notifications'); gwpRender(); return; }
-    gwPushFlag(true);
-    let ok = await gwPushSync(true, gw.gid);
-    gwMsg(ok ? 'Notifications are on' : 'Could not turn notifications on. Please try again.'); if (!ok) gwPushFlag(false);
-    gwpRender();
-  }
   async function gwPushDisable() {
     if (!confirm('Stop BearTracks notifications on this iPhone?')) return;
     try {
@@ -6295,7 +6310,7 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     }
     h += '<div class="gwp-row" data-a="tom">' + pill('Bear Bot Tom', gw.tomScore != null ? String(gw.tomScore) : '', st.me.day) + '</div>';
     h += '<div class="gwp-row" data-a="stats">' + pill('My Stats', '') + '</div>';
-    return h + btBackBarHtml(gwPushCan() && !gwPushOn()) + '</div>';
+    return h + btBackBarHtml() + '</div>';
   }
   function gwpKbHtml(rows) {
     let used = {}; (rows || []).forEach(function (x) { if (x && x.g && x.c) for (let q = 0; q < x.g.length; q++) used[x.g[q]] = Math.max(used[x.g[q]] === undefined ? -1 : used[x.g[q]], x.c[q]); });   // each letter takes its best color so far, the same colors as the tiles
@@ -6389,7 +6404,6 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
       else if (act === 'cvsend') gwpSendChat();
       else if (act === 'newword') gwNewDay();
       else if (act === 'cardshare') gwCardShare();
-      else if (act === 'notify') gwPushEnable();
       else if (act === 'joinlink') handleJoinWithLink(e);
       else if (act === 'stats') { gw.pv = 'face'; gw.pt = 'stats'; gwpRender(); gwpFlip(false); }
       else if (act === 'tom') {
@@ -6432,7 +6446,7 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
   }
   btRegister({
     id: 'gw', label: 'groupWords', kind: 'groupwords', q: 'gw', nodlg: 'gw-nodlg', bg: 'gw-bg', st: gw,
-    boot: gwBoot, close: gwClose, afterRegister: function (u) { gwFreshReg = u; gwAfterRegister(); },
+    boot: gwBoot, close: gwClose, pushSync: gwPushSync, afterRegister: function (u) { gwFreshReg = u; gwAfterRegister(); },
     api: gwApi, tz: GW_TZ, vouch: gwVouch, keys: gwKeys, prune: gwPrune, use: gwUse, enter: gwEnter, render: function () { gwpRender(); }, flip: gwpFlip, leaveMark: gwLeaveMark, leaveUnmark: gwLeaveUnmark, launch: gwpLaunch,
     created: function (j, owner) { gw.gid = j.gid; gw.token = j.token; gw.seat = 0; gwSaveKey(gw.gid, gw.token, 0, owner); gwSetTabSeat(gw.gid, 0, gw.token); },
     mine: function (gid) { let seats = gwSeatsOf(gid), sk = Object.keys(seats), owner = (getOwner() || '').toLowerCase(); if (!sk.length) return null; let m = sk.find(function (n) { return (seats[n].name || '').toLowerCase() === owner; }); if (m === undefined) m = sk[0]; return { n: +m, token: seats[m].token }; },
@@ -6519,8 +6533,8 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
   function bmSetSt(j) { bm.st = j; bm.stAt = Date.now(); }
 
   // ---- web push (the device's push address is told to each bearMaze group; the notification tap opens ?kind=bearmaze&bm=<gid>) ----
-  function bmPushCan() { return ('serviceWorker' in navigator) && ('PushManager' in window) && ('Notification' in window) && hoStandalone(); }
-  function bmPushOn() { try { return localStorage.getItem('bt_push') === '1' && Notification.permission === 'granted'; } catch (e) { return false; } }
+  function bmPushCan() { return btPushCan(); }
+  function bmPushOn() { return btPushOn(); }
   function bmB64uBytes(t) { let b = atob(t.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((t.length + 3) % 4)), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; }
   function bmPushBase() { return location.origin + location.pathname.replace(/[^\/]*$/, ''); }
   try { if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', function (e) { let d = e.data; if (!d || d.t !== 'open' || d.k !== 'bm' || typeof d.g !== 'string') return; if (!BM_PHONE) return; if (d.g === bm.gid && $('bm-game') && !$('bm-game').hidden) { if (bm.st) { bm.pv = 'face'; bm.pt = null; bmpRender(); bmpFlip(false); } return; } let pk = bmMine(d.g); if (pk) bmUse(d.g, pk.n, pk.token); }); } catch (e) { }
@@ -6540,17 +6554,6 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     } catch (e) { return false; }
   }
   function bmPushHook(gid) { if (!bmPushCan() || !bmPushOn()) return; setTimeout(function () { bmPushSync(!bmPushAll, gid); }, 1500); }
-  async function bmPushEnable() {
-    if (!bmPushCan()) { bmMsg('Open BearTracks from its Home Screen icon to turn on notifications'); return; }
-    let perm = Notification.permission;
-    if (perm === 'default') perm = await Notification.requestPermission();   // asked straight from the tap, as iOS requires
-    if (perm !== 'granted') { bmMsg('Notifications are off for BearTracks: allow them in Settings > Notifications'); bmpRender(); return; }
-    try { localStorage.setItem('bt_push', '1'); } catch (e) { }
-    let ok = await bmPushSync(true, bm.gid);
-    bmMsg(ok ? 'Notifications are on' : 'Could not turn notifications on. Please try again.'); if (!ok) { try { localStorage.removeItem('bt_push'); } catch (e) { } }
-    bmpRender();
-  }
-
   // ---- registration, when a bearMaze link or new group needs it, continues here ----
   function bmAfterRegister() { let g = null; try { g = new URLSearchParams(location.search).get('bm'); } catch (e) { } if (g) bmBoot(g); else btSetupShow('bm'); }
 
@@ -6848,7 +6851,7 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     }
     h += '<div class="bmp-row" data-a="tom">' + pill('Bear Bot Tom', bm.tomScore != null ? bmFmt(bm.tomScore) : '', st.me.day) + '</div>';
     h += '<div class="bmp-row" data-a="stats">' + pill('My Stats', '') + '</div>';
-    return h + btBackBarHtml(bmPushCan() && !bmPushOn()) + '</div>';
+    return h + btBackBarHtml() + '</div>';
   }
   function bmpFaceHtml(st) {
     let me = st.me, title = bmEsc(st.title || ''), top = function (left) { return '<div class="bmp-ft"><span>' + bmEsc(left) + '</span><a href="#" data-a="back">' + title + '</a></div>'; };
@@ -6926,7 +6929,6 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
       else if (act === 'chat') { bm.pv = 'face'; bm.pt = 'chat'; bmpFlip(false); bmpRender(); }
       else if (act === 'cvsend') bmpSendChat();
       else if (act === 'newmaze') bmNewDay();
-      else if (act === 'notify') bmPushEnable();
       else if (act === 'stats') { bm.pv = 'face'; bm.pt = 'stats'; bmpRender(); bmpFlip(false); }
       else if (act === 'tom') {
         let r2 = await bmApi('POST', 'tom', {});
@@ -6962,7 +6964,7 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
   }
   btRegister({
     id: 'bm', label: 'bearMaze', kind: 'bearmaze', q: 'bm', nodlg: 'bm-nodlg', bg: 'bm-bg', st: bm,
-    boot: bmBoot, close: bmClose, afterRegister: bmAfterRegister,
+    boot: bmBoot, close: bmClose, pushSync: bmPushSync, afterRegister: bmAfterRegister,
     api: bmApi, tz: BM_TZ, vouch: bmVouch, keys: bmKeys, prune: bmPrune, use: bmUse, enter: bmEnter, render: function () { bmpRender(); }, flip: bmpFlip, leaveMark: bmLeaveMark, leaveUnmark: bmLeaveUnmark, launch: bmLaunch,
     allowed: function () { if (BM_PHONE) return true; try { message('bearMaze is played on a phone.'); } catch (e) { } return false; },
     created: function (j, owner) { bm.gid = j.gid; bm.token = j.token; bm.seat = 0; bmSaveKey(bm.gid, bm.token, 0, owner); bmSetTabSeat(bm.gid, 0, bm.token); },
