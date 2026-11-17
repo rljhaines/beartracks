@@ -995,6 +995,10 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
 .btg-gh { justify-content: space-between; padding: 0 6px; font-size: 18px; opacity: .8; }
 .btg-gh a { color: inherit; text-decoration: underline; min-height: 44px; display: flex; align-items: center; padding: 0 6px; }
 .bt-bar { position: absolute; left: 0; right: 0; bottom: calc(var(--btcw) * .05 - 18px); height: 44px; z-index: 2; display: flex; align-items: center; justify-content: center; color: #f6f0e4; font-style: italic; font-size: 15px; text-shadow: 0 1px 3px rgba(0,0,0,.75); }
+#bmp-back .bmp-top a, #bmp-back .bt-bar a { color: #ff4a3d; font-weight: 700; text-shadow: 0 0 3px #0f2a1a, 0 1px 2px #0f2a1a, 0 0 6px #0f2a1a; }   /* the links on the back of a bearMaze card are red */
+#bt-play { display: none; }
+#bt-headsup.bt-canplay #bt-play { display: inline; margin-left: 6px; }
+.bt-phone #bt-headsup.bt-canplay #bt-play { display: flex; align-items: center; min-height: 44px; margin: 0; }
 .bt-bar a { color: inherit; text-decoration: underline; min-height: 44px; display: flex; align-items: center; padding: 0 10px; }
 #gwp { --bt-bar: #8d867a; --bt-hi: #5a8f5a; --bt-hit: #fff; }
 #bmp { --bt-bar: #17572b; --bt-hi: #e8a317; --bt-hit: #2b2620; }
@@ -5460,9 +5464,10 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     let G = btGame[id]; btPickId = id;
     if (!$('bt-pick')) {
       let d = document.createElement('div'); d.id = 'bt-pick';
-      d.innerHTML = '<input id="bt-t" maxlength="30" autocomplete="off" placeholder="Group name" aria-label="Group name"> <input id="bt-n" inputmode="numeric" maxlength="1" autocomplete="off" placeholder="#" aria-label="Number of players"> <a href="#" id="bt-save">(click to save)</a>';
+      d.innerHTML = '<input id="bt-t" maxlength="30" autocomplete="off" placeholder="Group name" aria-label="Group name"> <input id="bt-n" inputmode="numeric" maxlength="1" autocomplete="off" placeholder="#" aria-label="Number of players"> <a href="#" id="bt-save">(click to save)</a> <a href="#" id="bt-play">play now</a>';
       $('bt-headsup-left').insertBefore(d, $('bt-headsup-input'));
       $('bt-save').onclick = function (e) { e.preventDefault(); btSetupSave(); };
+      $('bt-play').onclick = function (e) { e.preventDefault(); btPlayNow(); };
       $('bt-n').onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); btSetupSave(); } };
       $('bt-t').onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); $('bt-n').focus(); } };
     }
@@ -5470,9 +5475,25 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     let hu = $('bt-headsup'); hu.classList.add('bt-pick'); hu.hidden = false;
     $('bt-headsup-help').textContent = 'Name your group and set how many players (up to six):';
     $('bt-t').value = ''; $('bt-n').value = ''; $('bt-save').textContent = '(click to save)';
+    // "play now" is offered only to a registered player who is in no group of this game yet; once in a group, playing happens from within it.
+    let owner = getOwner(), inGroup = false; try { inGroup = Object.keys(G.keys()).some(function (gid) { return !!G.mine(gid); }); } catch (e) { }
+    $('bt-play').textContent = 'play now'; hu.classList.toggle('bt-canplay', !!owner && !inGroup);
     $('bt-headsup-copy-msg').disabled = true; $('bt-headsup-copy-link').disabled = true; $('bt-headsup-continue').disabled = true;
     $('bt-headsup-copy-msg').textContent = 'Message copied'; $('bt-headsup-copy-link').textContent = 'Copy link instead';
     setTimeout(function () { $('bt-t').focus(); }, 50);
+  }
+  // Play now: no invitations either way.  The player is put in a group of their own (room for five more later) and goes straight into the game.
+  async function btPlayNow() {
+    let G = btGame[btPickId], owner = getOwner(); if (!G || !owner) return;
+    $('bt-play').textContent = 'starting...';
+    let base = String(owner).slice(0, 16) + ' (play now)', r = null;
+    for (let i = 0; i < 25; i++) {
+      let title = (i ? base + ' ' + (i + 1) : base).slice(0, 30);
+      r = await G.api('POST', 'games', { name: owner, title: title, tz: G.tz(), seats: 6, vouch: G.vouch(null, owner) }, null, null);
+      if (r.s !== 409) break;
+    }
+    if (!r || r.s !== 201 || !r.j.token) { $('bt-play').textContent = "(couldn't start - click to retry)"; return; }
+    G.created(r.j, owner); $('bt-headsup').classList.remove('bt-pick', 'bt-canplay'); $('bt-headsup').hidden = true; G.enter(r.j);
   }
   async function btSetupSave() {
     let G = btGame[btPickId]; if (!G) return;
