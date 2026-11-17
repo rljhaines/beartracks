@@ -895,7 +895,7 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
 .gwp-top { position: relative; z-index: 1; flex: none; display: flex; justify-content: space-between; align-items: center; padding: calc(var(--gwcw) * .06) calc(var(--gwcw) * .1) 0; color: #f6f0e4; font-style: italic; font-size: 16px; }
 .gwp-top a { position: relative; color: inherit; text-decoration: underline; min-height: 44px; display: flex; align-items: center; padding: 0 4px; }
 .gwp-rows::before, .gwp-rows::after, .bmp-rows::before, .bmp-rows::after { content: ''; flex: .4 1 0; }   /* the pillboxes keep 90% of their old gaps; the remaining 10% is shared equally above and below them */
-.gwp-rows, .bmp-rows { top: -22px; }   /* then lifted so that the space from the top links to the first pillbox equals the space from the last pillbox to the Foyer link (the link texts sit inside 44px boxes) */
+.gwp-rows, .bmp-rows { top: -15.4px; }   /* then lifted so that the space from the top links to the first pillbox equals the space from the last pillbox to the Foyer link (the link texts sit inside 44px boxes) */
 .gwp-rows { position: relative; z-index: 1; flex: 1; min-height: 0; display: flex; flex-direction: column; padding-bottom: calc(var(--gwcw) * .08); }
 .gwp-row { position: relative; flex: .9 1 44px; min-height: 44px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
 .gwp-sc { position: absolute; top: 50%; transform: translateY(-50%); right: 22px; font-weight: 400; font-size: 17px; line-height: 1; white-space: nowrap; }
@@ -994,7 +994,7 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
 .btg-gx { position: relative; flex: none; width: 44px; height: 44px; padding: 0; margin: 0; background: none; border: 0; color: inherit; opacity: .6; }
 .btg-gh { justify-content: space-between; padding: 0 6px; font-size: 18px; opacity: .8; }
 .btg-gh a { color: inherit; text-decoration: underline; min-height: 44px; display: flex; align-items: center; padding: 0 6px; }
-.bt-bar { position: absolute; left: 0; right: 0; bottom: calc(var(--btcw) * .05 - 11px); height: 44px; z-index: 2; display: flex; align-items: center; justify-content: center; color: #f6f0e4; font-style: italic; font-size: 15px; text-shadow: 0 1px 3px rgba(0,0,0,.75); }
+.bt-bar { position: absolute; left: 0; right: 0; bottom: calc(var(--btcw) * .05 - 18px); height: 44px; z-index: 2; display: flex; align-items: center; justify-content: center; color: #f6f0e4; font-style: italic; font-size: 15px; text-shadow: 0 1px 3px rgba(0,0,0,.75); }
 .bt-bar a { color: inherit; text-decoration: underline; min-height: 44px; display: flex; align-items: center; padding: 0 10px; }
 #gwp { --bt-bar: #8d867a; --bt-hi: #5a8f5a; --bt-hit: #fff; }
 #bmp { --bt-bar: #17572b; --bt-hi: #e8a317; --bt-hit: #2b2620; }
@@ -6737,9 +6737,21 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     });
   }
   function bmCanDraw() { let me = bm.st && bm.st.me; return !!(me && me.maze && me.status === 'playing' && !me.canNewDay && me.t0 > 0 && !bm.pdown && bm.pv === 'face' && bm.pt == null); }
+  function bmComplete() { let me = bm.st && bm.st.me, z = bm.mz; if (!me || !me.maze || !z) return false; let P = me.maze, N = P.n * P.n; return z.path.length === N && z.path[N - 1] === P.cp[P.cp.length - 1]; }
+  // The moment the trail is complete it is sent, without waiting for the finger to lift.
+  async function bmFinish() {
+    let z = bm.mz, me = bm.st && bm.st.me; if (!z || !me || me.status !== 'playing' || !bmComplete() || z.sending) return;
+    z.drag = false; bmSave(); bmPaint(); z.sending = true;
+    let r = await bmApi('POST', 'guess', { path: z.path.slice(), tz: BM_TZ() });
+    z.sending = false;
+    if (r.s === 200) { bmSetSt(r.j); bmpRender(); return; }
+    if (r.s === 422) { z.path = []; bmSave(); bmPaint(); bmMsg('That path is not a solution'); } else bmMsg('That could not be sent; lift and touch the maze to try again');
+    bmRefresh();
+  }
   // One step of the trail; true when the trail changed. Touching the trail rewinds it to that cell (the start cell restarts it).
   function bmStep(cell) {
     let P = bm.st.me.maze, n = P.n, N = n * n, z = bmState(), p = z.path, head = p[p.length - 1];
+    if (bmComplete()) return false;   // a finished trail is final: nothing the finger does afterwards can rewind it
     if (cell === head) return false;
     let at = p.indexOf(cell);
     if (at >= 0) { p.length = at + 1; return true; }
@@ -6763,7 +6775,7 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     if (cell < 0) return;
     if (!z.path.length) { if (cell === P.cp[0]) z.path = [cell]; }
     else bmStep(cell);
-    bmPaint();
+    bmPaint(); if (bmComplete()) bmFinish();
   }
   function bmMove(e) {
     let svg = e.target.closest && e.target.closest('#bm-svg'), z = bm.mz; if (!z || !z.drag || !svg || !bmCanDraw()) return;
@@ -6771,19 +6783,11 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     let r = svg.getBoundingClientRect(), step = r.width / +svg.getAttribute('data-n') / 4, dx = e.clientX - z.last.x, dy = e.clientY - z.last.y, len = Math.hypot(dx, dy), m = Math.max(1, Math.ceil(len / step)), ch = false;
     for (let i = 1; i <= m; i++) { let cell = bmCellAt(svg, z.last.x + dx * i / m, z.last.y + dy * i / m); if (cell >= 0 && z.path.length && bmStep(cell)) ch = true; }
     z.last = { x: e.clientX, y: e.clientY };
-    if (ch) bmPaint();
+    if (ch) { bmPaint(); if (bmComplete()) bmFinish(); }
   }
   async function bmUp() {
-    let z = bm.mz; if (!z || !z.drag) return; z.drag = false; bmSave();
-    let me = bm.st && bm.st.me; if (!me || !me.maze || me.status !== 'playing') return;
-    let P = me.maze, N = P.n * P.n;
-    if (z.path.length === N && z.path[N - 1] === P.cp[P.cp.length - 1] && !z.sending) {
-      z.sending = true;
-      let r = await bmApi('POST', 'guess', { path: z.path.slice(), tz: BM_TZ() });
-      z.sending = false;
-      if (r.s === 200) { bmSetSt(r.j); bmpRender(); return; }
-      bmMsg(r.s === 422 ? 'That path is not a solution' : 'That could not be sent'); bmRefresh();
-    }
+    let z = bm.mz; if (!z || !z.drag) { if (z && bmComplete()) bmFinish(); return; } z.drag = false; bmSave();
+    if (bmComplete()) bmFinish();
   }
   // The clock starts when the maze is first shown face-up.
   async function bmMaybeStart() {
