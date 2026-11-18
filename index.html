@@ -1009,11 +1009,9 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
 .ibp-cvf a { flex: none; text-decoration: underline; min-height: 44px; display: flex; align-items: center; padding: 0 4px; font-style: italic; font-size: 15px; }
 .ibp-sb { flex: 1; min-height: 0; overflow: auto; padding-top: 8px; }
 .ib-svg { width: min(100cqw, 100cqh); height: min(100cqw, 100cqh); display: block; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
-.ib-t rect { fill: #ffffff; stroke: #4a0f18; stroke-width: .35; }
-.ib-t text { fill: #7a1f2b; font: 700 5.8px Georgia, serif; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
-.ib-t.f text { fill: #ffffff; }
-.ib-t.sel rect { fill: #e9b8bf !important; }
-.ib-t.sel text { fill: #4a0f18 !important; }
+.ib-t rect { fill: #96303f; }
+.ib-tb { fill: none; stroke: #000000; stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+.ib-t text { fill: #ffffff; font: 700 5.8px Georgia, serif; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
 .ib-nb { font-size: 3.2em; font-weight: 700; text-align: center; }
 .ib-cur { flex: none; min-height: 28px; display: flex; align-items: center; justify-content: center; color: #ffffff; font-weight: 700; font-size: 19px; letter-spacing: .18em; }
 .ib-slots { flex: none; display: flex; flex-wrap: wrap; justify-content: center; align-content: flex-start; gap: 6px; min-height: 66px; padding: 2px 0 6px; }
@@ -1054,8 +1052,8 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
 .btg-gh { justify-content: space-between; padding: 0 6px; font-size: 18px; opacity: .8; }
 .btg-gh a { color: inherit; text-decoration: underline; min-height: 44px; display: flex; align-items: center; padding: 0 6px; }
 .bt-bar { position: absolute; left: 0; right: 0; bottom: calc(var(--btcw) * .05 - 18px); height: 44px; z-index: 2; display: flex; align-items: center; justify-content: center; color: #f6f0e4; font-style: italic; font-size: 15px; text-shadow: 0 1px 3px rgba(0,0,0,.75); }
-#bmp-back .bmp-top a, #bmp-back .bt-bar a { color: #ff4a3d; font-weight: 700; text-shadow: 0 0 3px #0f2a1a, 0 1px 2px #0f2a1a, 0 0 6px #0f2a1a; }   /* the links on the back of a bearMaze card are red */
-#ibp-back .ibp-top a, #ibp-back .bt-bar a { color: #ffffff; font-weight: 700; text-shadow: 0 0 3px #2a0509, 0 1px 2px #2a0509, 0 0 6px #2a0509; }   /* the links on the back of an ineBear8 card are white on maroon */
+#bmp-back .bmp-top a, #bmp-back .bt-bar a { color: #ff4a3d; font-weight: 400; text-shadow: none; }   /* the links on the back of a bearMaze card are red */
+#ibp-back .ibp-top a, #ibp-back .bt-bar a { color: #ffffff; font-weight: 400; text-shadow: none; }   /* the links on the back of an ineBear8 card are white on maroon */
 #bt-play { display: none; }
 #bt-headsup.bt-canplay #bt-play { display: inline; margin-left: 6px; }
 .bt-phone #bt-headsup.bt-canplay #bt-play { display: flex; align-items: center; min-height: 44px; margin: 0; }
@@ -7291,16 +7289,24 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
   setInterval(function () { let c = $('ib-clk'); if (c && ib.st) { let t = ibClkText(); if (c.textContent !== t) c.textContent = t; } }, 500);
 
   // ---- the board: an SVG of letter tiles (a cell is 10 units); empty cells are blank. Words are traced by dragging over neighbouring tiles (up, down, left, right). ----
-  const IB_TINT = ['#a8434f', '#4a0f18', '#c47a84', '#6e1a26', '#b95f6b', '#5a1520', '#9a3c49', '#7f3340'];
-  function ibSvg(P, words, own) {   // words: cell lists to show as found (each a tint)
-    let n = P.n, u = 10, of = {}, h = '<svg class="ib-svg" ' + (own ? 'id="ib-svg" ' : '') + 'viewBox="0 0 ' + n * u + ' ' + n * u + '" data-n="' + n + '">';
-    (words || []).forEach(function (w, k) { (w.cells || w).forEach(function (c) { of[c] = k; }); });
+  // Letters are white on maroon tiles; a black tube encloses the letters of each word found and of the word being traced.
+  function ibTube(P, cells, id) {
+    let n = P.n, pts = cells.map(function (c) { return (c % n * 10 + 5) + ',' + (Math.floor(c / n) * 10 + 5); });
+    if (pts.length === 1) pts.push(pts[0]);
+    return '<polyline class="ib-tb"' + (id ? ' id="' + id + '"' : '') + ' points="' + pts.join(' ') + '"/>';
+  }
+  function ibSvg(P, words, own) {   // words: cell lists (in word order) to show as found
+    let n = P.n, u = 10, h = '<svg class="ib-svg" ' + (own ? 'id="ib-svg" ' : '') + 'viewBox="0 0 ' + n * u + ' ' + n * u + '" data-n="' + n + '">', tiles = '', letters = '';
     for (let c = 0; c < n * n; c++) {
       let ch = P.grid[c]; if (!ch || ch === '.') continue;
-      let x = c % n * u, y = Math.floor(c / n) * u, f = of[c] !== undefined;
-      h += '<g class="ib-t' + (f ? ' f' : '') + '" data-c="' + c + '"><rect x="' + (x + .5) + '" y="' + (y + .5) + '" width="9" height="9" rx="1.8"' + (f ? ' style="fill:' + IB_TINT[of[c] % IB_TINT.length] + '"' : '') + '/><text x="' + (x + 5) + '" y="' + (y + 5.3) + '">' + ibEsc(ch.toUpperCase()) + '</text></g>';
+      let x = c % n * u, y = Math.floor(c / n) * u;
+      tiles += '<rect x="' + (x + .5) + '" y="' + (y + .5) + '" width="9" height="9" rx="1.8"/>';
+      letters += '<text x="' + (x + 5) + '" y="' + (y + 5.3) + '">' + ibEsc(ch.toUpperCase()) + '</text>';
     }
-    return h + '</svg>';
+    h += '<g class="ib-t">' + tiles + '</g>';
+    (words || []).forEach(function (w) { h += ibTube(P, w.cells || w, ''); });
+    if (own) h += '<polyline class="ib-tb" id="ib-live" points=""/>';
+    return h + '<g class="ib-t">' + letters + '</g></svg>';
   }
   function ibSpell(P, cells) { return cells.map(function (c) { return P.grid[c] || ''; }).join(''); }
   // The slots for the hidden words, longest first; the words found fill the slots of their length.
@@ -7316,9 +7322,9 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
   }
   function ibCh() { if (!ib.ch) ib.ch = { cells: [], drag: false, last: null }; return ib.ch; }
   function ibPaint() {
-    let svg = $('ib-svg'), z = ib.ch, cs = z ? z.cells : [];
-    if (svg) svg.querySelectorAll('.ib-t').forEach(function (g) { g.classList.toggle('sel', cs.indexOf(+g.getAttribute('data-c')) >= 0); });
-    let cur = $('ib-cur'), P = ib.st && ib.st.me && ib.st.me.puz; if (cur && P) { let t = ibSpell(P, cs).toUpperCase(); if (cur.textContent !== t) cur.textContent = t; }
+    let svg = $('ib-svg'), z = ib.ch, cs = z ? z.cells : [], P = ib.st && ib.st.me && ib.st.me.puz, live = $('ib-live');
+    if (live && P) { let n = P.n, pts = cs.map(function (c) { return (c % n * 10 + 5) + ',' + (Math.floor(c / n) * 10 + 5); }); if (pts.length === 1) pts.push(pts[0]); live.setAttribute('points', pts.join(' ')); }
+    let cur = $('ib-cur'); if (cur && P) { let t = ibSpell(P, cs).toUpperCase(); if (cur.textContent !== t) cur.textContent = t; }
   }
   function ibCanDraw() { let me = ib.st && ib.st.me; return !!(me && me.puz && me.status === 'playing' && !me.canNewDay && me.t0 > 0 && !ib.pdown && ib.pv === 'face' && ib.pt == null); }
   function ibStep(cell) {
