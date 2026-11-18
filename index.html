@@ -843,9 +843,9 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
 #gwp { display: none; }
 .gw-x { position: absolute; left: calc(var(--gwcw) * .065 + 2px); top: calc(var(--gwcw) * .05 + 2px); width: 30px; height: 30px; padding: 0; margin: 0; background: none; border: 0; border-radius: 6px; color: #f6f0e4; cursor: pointer; z-index: 2; }
 .gw-x[hidden] { display: none; }
-.gw-x::before, .gw-x::after, .gwp-x::before, .gwp-x::after, .btg-gx::before, .btg-gx::after, .bmp-x::before, .bmp-x::after { content: ''; position: absolute; left: 50%; top: 50%; width: 14px; height: 2px; border-radius: 1px; background: currentColor; }
-.gw-x::before, .gwp-x::before, .btg-gx::before, .bmp-x::before { transform: translate(-50%, -50%) rotate(45deg); }
-.gw-x::after, .gwp-x::after, .btg-gx::after, .bmp-x::after { transform: translate(-50%, -50%) rotate(-45deg); }
+.gw-x::before, .gw-x::after, .gwp-x::before, .gwp-x::after, .btg-gx::before, .btg-gx::after, .bmp-x::before, .bmp-x::after, .ibp-x::before, .ibp-x::after { content: ''; position: absolute; left: 50%; top: 50%; width: 14px; height: 2px; border-radius: 1px; background: currentColor; }
+.gw-x::before, .gwp-x::before, .btg-gx::before, .bmp-x::before, .ibp-x::before { transform: translate(-50%, -50%) rotate(45deg); }
+.gw-x::after, .gwp-x::after, .btg-gx::after, .bmp-x::after, .ibp-x::after { transform: translate(-50%, -50%) rotate(-45deg); }
 .gw-x:hover { color: #fff; background: rgba(0,0,0,.18); }
 .gw-x:focus-visible, .gwp-x:focus-visible, .btg-gx:focus-visible { outline: 2px solid #f6f0e4; outline-offset: 1px; }
 .gwp-x { position: absolute; right: 0; top: 0; width: 44px; height: 44px; padding: 0; margin: 0; background: none; border: 0; border-radius: 22px; color: #2b2620; }
@@ -894,8 +894,8 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
 .gwp-card.down .gwp-face, .gwp-card:not(.down) .gwp-back { pointer-events: none; }
 .gwp-top { position: relative; z-index: 1; flex: none; display: flex; justify-content: space-between; align-items: center; padding: calc(var(--gwcw) * .06) calc(var(--gwcw) * .1) 0; color: #f6f0e4; font-style: italic; font-size: 16px; }
 .gwp-top a { position: relative; color: inherit; text-decoration: underline; min-height: 44px; display: flex; align-items: center; padding: 0 4px; }
-.gwp-rows::before, .gwp-rows::after, .bmp-rows::before, .bmp-rows::after { content: ''; flex: .4 1 0; }   /* the pillboxes keep 90% of their old gaps; the remaining 10% is shared equally above and below them */
-.gwp-rows, .bmp-rows { top: -15.4px; }   /* then lifted so that the space from the top links to the first pillbox equals the space from the last pillbox to the Foyer link (the link texts sit inside 44px boxes) */
+.gwp-rows::before, .gwp-rows::after, .bmp-rows::before, .bmp-rows::after, .ibp-rows::before, .ibp-rows::after { content: ''; flex: .4 1 0; }   /* the pillboxes keep 90% of their old gaps; the remaining 10% is shared equally above and below them */
+.gwp-rows, .bmp-rows, .ibp-rows { top: -15.4px; }   /* then lifted so that the space from the top links to the first pillbox equals the space from the last pillbox to the Foyer link (the link texts sit inside 44px boxes) */
 .gwp-rows { position: relative; z-index: 1; flex: 1; min-height: 0; display: flex; flex-direction: column; padding-bottom: calc(var(--gwcw) * .08); }
 .gwp-row { position: relative; flex: .9 1 44px; min-height: 44px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
 .gwp-sc { position: absolute; top: 50%; transform: translateY(-50%); right: 22px; font-weight: 400; font-size: 17px; line-height: 1; white-space: nowrap; }
@@ -961,6 +961,65 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
 #bmp .bmp-cvf input::placeholder { color: #cfe7c8; }
 .bmp-cvf a { flex: none; text-decoration: underline; min-height: 44px; display: flex; align-items: center; padding: 0 4px; font-style: italic; font-size: 15px; }
 .bmp-sb { flex: 1; min-height: 0; overflow: auto; padding-top: 8px; }
+/* ===== ineBear8 (its own module): maroon and white; the card shows a grid of letters ===== */
+:root { --ib-art: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 90 140' preserveAspectRatio='xMidYMid slice'%3E%3Crect width='90' height='140' fill='%237a1f2b'/%3E%3Crect x='1' y='1' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='21' y='1' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='41' y='1' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='51' y='1' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='71' y='1' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='1' y='11' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='11' y='11' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='21' y='11' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='31' y='11' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='51' y='11' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='61' y='11' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='71' y='11' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='81' y='11' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='1' y='21' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='21' y='21' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='31' y='21' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='41' y='21' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='61' y='21' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='81' y='21' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='11' y='31' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='31' y='31' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='71' y='31' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='81' y='31' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='11' y='41' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='21' y='41' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='71' y='41' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='81' y='41' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='11' y='51' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='31' y='51' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='81' y='51' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='1' y='61' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='11' y='61' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='21' y='61' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='31' y='61' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='41' y='61' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='61' y='61' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='81' y='61' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='1' y='71' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='11' y='71' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='21' y='71' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='31' y='71' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='41' y='71' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='51' y='71' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='81' y='71' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='1' y='81' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='11' y='81' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='41' y='81' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='61' y='81' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='71' y='81' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='1' y='91' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='11' y='91' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='21' y='91' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='31' y='91' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='41' y='91' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='51' y='91' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='61' y='91' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='81' y='91' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='1' y='101' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='11' y='101' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='21' y='101' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='31' y='101' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='41' y='101' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='61' y='101' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='1' y='111' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='11' y='111' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='21' y='111' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='31' y='111' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='61' y='111' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='81' y='111' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='11' y='121' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='31' y='121' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='81' y='121' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='11' y='131' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='21' y='131' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='41' y='131' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='51' y='131' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='61' y='131' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3Crect x='71' y='131' width='8' height='8' rx='1.6' fill='%23ffffff' fill-opacity='.07'/%3E%3C/svg%3E"); }
+#setup.ib-bg { background: #7a1f2b var(--ib-art) center / cover no-repeat; }
+#setup.ib-nodlg .dialog { display: none; }
+#ib-notice { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 30; background: #ffffff; border: 1px solid #d9bfc3; border-radius: 10px; padding: 18px 22px; text-align: center; box-shadow: 0 6px 24px rgba(0,0,0,.3); color: #4a0f18; max-width: 86vw; }
+#ib-notice p { margin: 0 0 12px; }
+#ib-notice button { margin: 0 4px; min-height: 44px; min-width: 44px; }
+#ib-game { position: fixed; inset: 0; z-index: 6; background: #ffffff; color: #4a0f18; overflow: hidden; display: flex; flex-direction: column; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); font-family: Georgia, "Times New Roman", serif; }
+#ib-game[hidden] { display: none; }
+#ib-msg { position: absolute; top: calc(env(safe-area-inset-top, 0px) + 6px); left: 0; right: 0; text-align: center; font-size: 14px; pointer-events: none; z-index: 9; }
+#ibp { position: relative; flex: 1; min-height: 0; padding: 8px; box-sizing: border-box; --ibcw: 300px; }
+#ibp, #ibp * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+.ibp-card { width: 100%; height: 100%; perspective: 1200px; }
+.ib-inner { position: relative; width: 100%; height: 100%; transition: transform .6s; transform-style: preserve-3d; }
+.ibp-card.down .ib-inner { transform: rotateY(180deg); }
+.ib-face { position: absolute; inset: 0; box-sizing: border-box; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: calc(var(--ibcw) * .05); border: 1px solid #4a0f18; box-shadow: 0 2px 8px rgba(74,15,24,.35); }
+.ib-front { background: #7a1f2b; color: #ffffff; display: flex; flex-direction: column; align-items: stretch; padding: 4px 8px 6px; font-size: 15px; }
+.ib-front a { color: #ffffff; }
+.ib-back { transform: rotateY(180deg); background: #7a1f2b var(--ib-art) center / cover no-repeat; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; }
+.ib-back::before { content: ""; position: absolute; inset: calc(var(--ibcw) * .05); border: 2px solid #ffffff; border-radius: calc(var(--ibcw) * .03); opacity: .9; pointer-events: none; }
+/* Only the side of the card that is showing takes taps. */
+.ibp-card.down .ibp-face, .ibp-card:not(.down) .ibp-back { pointer-events: none; }
+.ibp-ft { display: flex; justify-content: space-between; align-items: center; min-height: 44px; gap: 10px; font-style: italic; font-size: 15px; flex: none; }
+.ibp-ft span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ibp-ft a { flex: none; max-width: 50%; min-height: 44px; display: flex; align-items: center; text-decoration: underline; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ibp-slim { display: flex; justify-content: space-between; align-items: center; min-height: 44px; flex: none; font-style: italic; font-size: 15px; }
+.ibp-slim a { text-decoration: underline; min-height: 44px; display: inline-flex; align-items: center; }
+.ib-wrap { flex: 1 1 auto; min-height: 0; display: flex; align-items: center; justify-content: center; container-type: size; }
+.ib-clk { font-variant-numeric: tabular-nums; font-weight: 700; font-size: 20px; font-style: normal; }
+.ibp-top { position: relative; z-index: 1; flex: none; display: flex; justify-content: space-between; align-items: center; padding: calc(var(--ibcw) * .06) calc(var(--ibcw) * .1) 0; color: #ffffff; font-style: italic; font-size: 16px; text-shadow: 0 1px 3px rgba(0,0,0,.85); }
+.ibp-top a { position: relative; color: inherit; text-decoration: underline; min-height: 44px; display: flex; align-items: center; padding: 0 4px; }
+.ibp-top a sup.ibp-un { position: absolute; top: calc(50% - 1.15em); right: -.55em; font-style: inherit; font-size: .8em; line-height: 1; color: #ffffff; font-weight: 700; text-decoration: none; }
+.ibp-rows { position: relative; z-index: 1; flex: 1; min-height: 0; display: flex; flex-direction: column; padding-bottom: calc(var(--ibcw) * .08); }
+.ibp-row { position: relative; flex: .9 1 44px; min-height: 44px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.ibp-sc { position: absolute; top: 50%; transform: translateY(-50%); right: 22px; font-weight: 400; font-size: 17px; line-height: 1; white-space: nowrap; }
+.ibp-sc sup { font-size: .7em; line-height: 0; vertical-align: baseline; position: relative; top: -.5em; }
+.ibp-nb { position: relative; width: 66%; height: 44px; box-sizing: border-box; background: #ffffff; color: #4a0f18; border-radius: 99px; display: flex; align-items: center; justify-content: center; overflow: hidden; white-space: pre; padding: 0 10px; }
+.ibp-x { position: absolute; right: 0; top: 0; width: 44px; height: 44px; padding: 0; margin: 0; background: none; border: 0; border-radius: 22px; color: #4a0f18; }
+.ibp-cv { flex: 1; min-height: 0; overflow-y: auto; padding-top: 8px; font-size: 17px; line-height: 1.35; }
+.ibp-cv p { margin: 0 0 .4em; overflow-wrap: anywhere; }
+.ibp-cv p.me b { color: #ffffff; }
+.ibp-cv .cv-a { color: #ffffff; }
+.ibp-cvf { flex: none; display: flex; align-items: center; gap: 10px; min-height: 48px; border-top: 1px solid rgba(255,255,255,.4); }
+#ibp .ibp-cvf input { flex: 1; min-width: 0; font: inherit; font-size: 16px; border: 0; border-bottom: 2px solid #ffffff; background: transparent; color: #ffffff; outline: none; border-radius: 0; padding: 6px 0; -webkit-user-select: text; user-select: text; }
+#ibp .ibp-cvf input::placeholder { color: #e9c6cb; }
+.ibp-cvf a { flex: none; text-decoration: underline; min-height: 44px; display: flex; align-items: center; padding: 0 4px; font-style: italic; font-size: 15px; }
+.ibp-sb { flex: 1; min-height: 0; overflow: auto; padding-top: 8px; }
+.ib-svg { width: min(100cqw, 100cqh); height: min(100cqw, 100cqh); display: block; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.ib-t rect { fill: #ffffff; stroke: #4a0f18; stroke-width: .35; }
+.ib-t text { fill: #7a1f2b; font: 700 5.8px Georgia, serif; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+.ib-t.f text { fill: #ffffff; }
+.ib-t.sel rect { fill: #e9b8bf !important; }
+.ib-t.sel text { fill: #4a0f18 !important; }
+.ib-nb { font-size: 3.2em; font-weight: 700; text-align: center; }
+.ib-cur { flex: none; min-height: 28px; display: flex; align-items: center; justify-content: center; color: #ffffff; font-weight: 700; font-size: 19px; letter-spacing: .18em; }
+.ib-slots { flex: none; display: flex; flex-wrap: wrap; justify-content: center; align-content: flex-start; gap: 6px; min-height: 66px; padding: 2px 0 6px; }
+.ib-sl { background: rgba(255,255,255,.16); color: #ffffff; border-radius: 99px; padding: 3px 11px; font-weight: 700; letter-spacing: .14em; font-size: 15px; min-width: 52px; text-align: center; box-sizing: border-box; }
+.ib-sl.on { background: #ffffff; color: #7a1f2b; }
+
 /* ===== shared phone parts (every phone game uses these) ===== */
 #bt-pick { display: none; margin: 6px 0; }
 #bt-headsup.bt-pick #bt-pick { display: block; }
@@ -996,6 +1055,7 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
 .btg-gh a { color: inherit; text-decoration: underline; min-height: 44px; display: flex; align-items: center; padding: 0 6px; }
 .bt-bar { position: absolute; left: 0; right: 0; bottom: calc(var(--btcw) * .05 - 18px); height: 44px; z-index: 2; display: flex; align-items: center; justify-content: center; color: #f6f0e4; font-style: italic; font-size: 15px; text-shadow: 0 1px 3px rgba(0,0,0,.75); }
 #bmp-back .bmp-top a, #bmp-back .bt-bar a { color: #ff4a3d; font-weight: 700; text-shadow: 0 0 3px #0f2a1a, 0 1px 2px #0f2a1a, 0 0 6px #0f2a1a; }   /* the links on the back of a bearMaze card are red */
+#ibp-back .ibp-top a, #ibp-back .bt-bar a { color: #ffffff; font-weight: 700; text-shadow: 0 0 3px #2a0509, 0 1px 2px #2a0509, 0 0 6px #2a0509; }   /* the links on the back of an ineBear8 card are white on maroon */
 #bt-play { display: none; }
 #bt-headsup.bt-canplay #bt-play { display: inline; margin-left: 6px; }
 .bt-phone #bt-headsup.bt-canplay #bt-play { display: flex; align-items: center; min-height: 44px; margin: 0; }
@@ -6997,6 +7057,505 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     shown: function () { let g = $('bm-game'); return !!(g && !g.hidden && bm.gid); }
   });
   // ================= END bearMaze MODULE =================
+  // ================= ineBear8 MODULE (its own module: its own state, storage, server routes (/ib/) and screens) =================
+  // One word puzzle a day per player, scored by the time it takes (the server keeps the clock). Groups of up to six; the card is one per day per player across all of that player's ineBear8 groups.
+  let ib = { gid: null, token: null, seat: null, st: null, stAt: 0, stRef: null, shown: {}, poll: null, pdown: true, pv: 'face', pt: null, ptom: null, pgl: null, pgh: {}, pday: null, ch: null, tomKey: '', tomScore: null, phB: '', phF: '', phCv: '', chatSeenAt: null, starting: false };
+  let ibMsgTimer = null, ibHbAt = 0, ibLFlushing = false, ibPushAll = false;
+  const IB_PHONE = (function () { try { let u = navigator.userAgent || ''; return /iPhone|iPod/.test(u) || window.btAndroidPhone(u); } catch (e) { return false; } })();
+  function IB_TZ() { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; } catch (e) { return 'UTC'; } }
+  function ibEsc(t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function ibFmt(s) { s = Math.max(0, Math.round(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
+  function ibMsg(t) { let m = $('ib-msg'); if (!m) return; m.textContent = t; clearTimeout(ibMsgTimer); ibMsgTimer = setTimeout(function () { m.textContent = ''; }, 3500); }
+
+  // ---- this device's seats: { gid: { seats: { "0": {token, name} } } } in localStorage "bt_ib" ----
+  function ibKeys() { try { return JSON.parse(localStorage.getItem('bt_ib') || '{}') || {}; } catch (e) { return {}; } }
+  function ibSeatsOf(gid) { let r = ibKeys()[gid]; return r && r.seats ? r.seats : {}; }
+  function ibSaveKey(gid, token, seat, name) { let k = ibKeys(), v = ibSeatsOf(gid); v[seat] = { token: token, name: name || (v[seat] && v[seat].name) || '' }; k[gid] = { seats: v }; localStorage.setItem('bt_ib', JSON.stringify(k)); }
+  function ibMine(gid) {   // the seat on this device that belongs to the signed-in name (else the first one)
+    let seats = ibSeatsOf(gid), sk = Object.keys(seats), owner = (getOwner() || '').toLowerCase(); if (!sk.length) return null;
+    let m = sk.find(function (n) { return (seats[n].name || '').toLowerCase() === owner; }); if (m === undefined) m = sk[0];
+    return { n: +m, token: seats[m].token, name: seats[m].name || '' };
+  }
+  // Another ineBear8 group on this device where the same name holds a seat: proof, to the worker, that this seat is the same player (one card a day).
+  function ibVouch(exceptGid, name) {
+    try { let k = ibKeys(), nm = String(name || '').toLowerCase(); if (!nm) return null;
+      for (const gid of Object.keys(k)) { if (gid === exceptGid) continue; let sv = ibSeatsOf(gid); for (const n of Object.keys(sv)) if (String(sv[n].name || '').toLowerCase() === nm && sv[n].token) return { gid: gid, token: sv[n].token }; } } catch (e) { }
+    return null;
+  }
+  function ibTabMap() { try { return JSON.parse(sessionStorage.getItem('bt_ib_tab') || '{}') || {}; } catch (e) { return {}; } }
+  function ibTabRec(gid) { let r = ibTabMap()[gid]; return r && r.token ? r : null; }
+  function ibSetTabSeat(gid, seat, token) { try { let m = ibTabMap(); m[gid] = { seat: seat, token: token }; sessionStorage.setItem('bt_ib_tab', JSON.stringify(m)); } catch (e) { } }
+  // A group that no longer exists (the worker answers 404): forget it on this device.
+  function ibPrune(gid) {
+    try { let k = ibKeys(); delete k[gid]; localStorage.setItem('bt_ib', JSON.stringify(k)); } catch (e) { }
+    try { if (localStorage.getItem('bt_ib_last') === gid) localStorage.removeItem('bt_ib_last'); } catch (e) { }
+    try { let m = ibTabMap(); delete m[gid]; sessionStorage.setItem('bt_ib_tab', JSON.stringify(m)); } catch (e) { }
+    try { setHiddenGame(gid, false); } catch (e) { }
+    ibLeaveDrop(gid);
+  }
+  // Removing a group from your own list (the "x") tells the group you have left, 20 seconds later and only if it is still removed, so Undo costs nothing; offline, it waits for the next chance.
+  function ibLQ() { try { return JSON.parse(localStorage.getItem('bt_ib_leave') || '{}') || {}; } catch (e) { return {}; } }
+  function ibLQSave(q) { try { localStorage.setItem('bt_ib_leave', JSON.stringify(q)); } catch (e) { } }
+  function ibLeaveMark(gid) { let me = ibMine(gid); if (!me) return; let q = ibLQ(); q[gid] = { token: me.token, due: Date.now() + 20000, sent: false }; ibLQSave(q); }
+  async function ibLeaveUnmark(gid) { let q = ibLQ(), e = q[gid]; if (!e) return; delete q[gid]; ibLQSave(q); if (e.sent) { try { await ibApi('POST', 'stay', {}, gid, e.token); } catch (x) { } } }
+  function ibLeaveDrop(gid) { let q = ibLQ(); if (q[gid]) { delete q[gid]; ibLQSave(q); } }
+  async function ibLeaveFlush() {
+    if (ibLFlushing) return; ibLFlushing = true;
+    try {
+      let q = ibLQ();
+      for (const gid of Object.keys(q)) {
+        let e = q[gid]; if (e.sent || e.due > Date.now()) continue;
+        if (!hiddenGames()[gid]) { q = ibLQ(); delete q[gid]; ibLQSave(q); continue; }
+        let r = await ibApi('POST', 'leave', {}, gid, e.token); q = ibLQ();
+        if (r.s === 200 && q[gid]) q[gid].sent = true; else if (r.s === 404 || r.s === 401) delete q[gid];
+        ibLQSave(q);
+      }
+    } catch (e) { }
+    ibLFlushing = false;
+  }
+  setInterval(function () { try { if (!document.hidden) ibLeaveFlush(); } catch (e) { } }, 5000);
+  async function ibApi(method, act, body, gid, token) {
+    gid = gid || ib.gid; token = token === undefined ? ib.token : token;
+    let url = act === 'games' ? API + '/ib/games' : API + '/ib/' + encodeURIComponent(gid) + '/' + act + (method === 'GET' ? '?tz=' + encodeURIComponent(IB_TZ()) : '');
+    let h = {}; if (token) h['X-Seat-Token'] = token; if (body) h['Content-Type'] = 'application/json';
+    try { let r = await fetch(url, { method: method, headers: h, body: body ? JSON.stringify(body) : undefined, cache: 'no-store' }); return { s: r.status, j: await r.json().catch(function () { return {}; }) }; }
+    catch (e) { return { s: 0, j: { error: 'offline' } }; }
+  }
+  function ibSetSt(j) { ib.st = j; ib.stAt = Date.now(); }
+
+  // ---- web push (the device's push address is told to each ineBear8 group; the notification tap opens ?kind=inebear8&ib=<gid>) ----
+  function ibPushCan() { return btPushCan(); }
+  function ibPushOn() { return btPushOn(); }
+  function ibB64uBytes(t) { let b = atob(t.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((t.length + 3) % 4)), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; }
+  function ibPushBase() { return location.origin + location.pathname.replace(/[^\/]*$/, ''); }
+  try { if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', function (e) { let d = e.data; if (!d || d.t !== 'open' || d.k !== 'ib' || typeof d.g !== 'string') return; if (!IB_PHONE) return; if (d.g === ib.gid && $('ib-game') && !$('ib-game').hidden) { if (ib.st) { ib.pv = 'face'; ib.pt = null; ibpRender(); ibpFlip(false); } return; } let pk = ibMine(d.g); if (pk) ibUse(d.g, pk.n, pk.token); }); } catch (e) { }
+  async function ibPushSync(all, gid) {
+    if (!ibPushCan() || !ibPushOn()) return false;
+    try {
+      let kr = await fetch(API + '/push/key', { cache: 'no-store' }), key = (await kr.json()).key; if (!key) return false;
+      let reg = await navigator.serviceWorker.register(ibPushBase() + 'sw.js', { scope: ibPushBase() }); await navigator.serviceWorker.ready;
+      let sub = await reg.pushManager.getSubscription(), old = ''; try { old = localStorage.getItem('bt_push_key') || ''; } catch (e) { }
+      if (sub && old !== key) { await sub.unsubscribe(); sub = null; }
+      if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: ibB64uBytes(key) });
+      try { localStorage.setItem('bt_push_key', key); } catch (e) { }
+      let ids = all ? Object.keys(ibKeys()) : (gid ? [gid] : []), j = sub.toJSON();
+      await Promise.all(ids.map(function (g) { let s = ibMine(g); return s && s.token ? ibApi('POST', 'push', { sub: j }, g, s.token) : null; }));
+      if (all) ibPushAll = true;
+      return true;
+    } catch (e) { return false; }
+  }
+  function ibPushHook(gid) { if (!ibPushCan() || !ibPushOn()) return; setTimeout(function () { ibPushSync(!ibPushAll, gid); }, 1500); }
+  // ---- registration, when a ineBear8 link or new group needs it, continues here ----
+  function ibAfterRegister() { let g = null; try { g = new URLSearchParams(location.search).get('ib'); } catch (e) { } if (g) ibBoot(g); else btSetupShow('ib'); }
+
+  // ---- joining by the shared link ----
+  async function ibBoot(gid) {
+    let owner = getOwner(), seats = ibSeatsOf(gid), tab = ibTabRec(gid);
+    hideEntryPage(); $('bt-headsup').hidden = true;
+    if (!IB_PHONE) {   // ineBear8 is a phone game: a larger screen says so and offers the Foyer
+      $('setup').hidden = true;
+      return ibNotice('ineBear8 is played on a phone.', [['to Foyer', function () { ibNoticeClose(); foyerUrl(); showEntryPage(); try { initEntryPaws(); populateEntryGames(); } catch (e) { } }]]);
+    }
+    if (tab) return ibUse(gid, tab.seat, tab.token);                          // this tab already has a seat (e.g. a reload)
+    let mine = ibMine(gid), pushed = false; try { pushed = new URLSearchParams(location.search).get('push') === '1'; } catch (e) { }
+    if (mine && (pushed || (owner && mine.name.toLowerCase() === owner.toLowerCase()))) return ibUse(gid, mine.n, mine.token);   // a tapped notification, or my own seat: straight in
+    if (Object.keys(seats).length) return ibChoose(gid, seats);               // this browser holds some other seat(s): ask which one this tab is
+    if (!owner) { postRegisterTarget = 'inebear8'; $('setup').hidden = false; renderBoxes(); return; }
+    return ibJoin(gid, owner, false);
+  }
+  function ibUse(gid, seat, token) {
+    ibPushHook(gid); ib.chatSeenAt = null; ib.st = null; ib.shown = {}; ib.ch = null; ib.gid = gid; ib.token = token; ib.seat = +seat; ib.pv = 'face'; ib.pt = null; ib.pdown = true; ib.ptom = null;
+    ibSetTabSeat(gid, +seat, token); try { setHiddenGame(gid, false); } catch (e) { } ibLeaveUnmark(gid);
+    try { localStorage.setItem('bt_ib_last', gid); } catch (e) { }
+    return ibEnter();
+  }
+  btHand.register('inebear8', {
+    current: function () { let gg = $('ib-game'); if (!(gg && !gg.hidden && ib.gid && ib.token)) return null; return { gid: ib.gid, seat: ib.seat, name: (ibSeatsOf(ib.gid)[ib.seat] || {}).name || getOwner() || '', token: ib.token }; },
+    adopt: async function (b) { ibSaveKey(b.gameId, b.token, b.seat, b.name); await ibUse(b.gameId, b.seat, b.token); return ''; }
+  });
+  function ibBackdrop() { ibNoticeClose(); $('setup').hidden = false; $('box-start').hidden = true; $('box-register').hidden = true; $('setup').classList.add('ib-nodlg', 'ib-bg'); }
+  function ibChoose(gid, seats) {
+    ibBackdrop();
+    let b = Object.keys(seats).map(function (n) { return ['Continue as ' + (seats[n].name || ('player ' + (+n + 1))), function () { ibUse(gid, n, seats[n].token); }]; });
+    b.push(['Join as someone else', function () { ibAskName(gid); }]);
+    ibNotice('This browser already holds a seat in this game. Which player is this tab?', b);
+  }
+  function ibAskName(gid) {
+    ibBackdrop();
+    let d = document.createElement('div'); d.id = 'ib-notice';
+    let p = document.createElement('p'); p.textContent = 'Name for the new player (any name, no registration needed):'; d.appendChild(p);
+    let i = document.createElement('input'); i.maxLength = 24; i.autocomplete = 'off'; i.style.cssText = 'display:block;margin:8px auto;font:inherit;font-size:16px;text-align:center'; d.appendChild(i);
+    let go = function () { let n = i.value.trim(); if (n) ibJoin(gid, n, false); else i.focus(); };
+    let ok = document.createElement('button'); ok.textContent = 'Join'; ok.onclick = go; d.appendChild(ok);
+    let bk = document.createElement('button'); bk.textContent = 'Back'; bk.onclick = function () { ibBoot(gid); }; d.appendChild(bk);
+    i.onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); go(); } };
+    document.body.appendChild(d); setTimeout(function () { i.focus(); }, 50);
+  }
+  async function ibJoin(gid, owner, restore) {
+    ibBackdrop();
+    let r = await ibApi('POST', 'join', { name: owner, tz: IB_TZ(), restore: !!restore, vouch: restore ? undefined : ibVouch(gid, owner) }, gid, null);
+    if (r.s === 200 || r.s === 201) {
+      let tok = r.j.token || ((ibSeatsOf(gid)[r.j.seat] || {}).token);
+      if (r.j.token) ibSaveKey(gid, r.j.token, r.j.seat, owner);
+      return ibUse(gid, r.j.seat, tok);
+    }
+    let back = ['OK', ibLeave];
+    if (r.s === 409 && /taken/.test(r.j.error || '')) {
+      let sv = ibSeatsOf(gid), mine = Object.keys(sv).find(function (n) { return (sv[n].name || '').toLowerCase() === owner.toLowerCase(); });
+      if (mine != null) return ibUse(gid, mine, sv[mine].token);   // this browser already holds that seat: just use it
+      return ibNotice('This game already has a player named ' + owner + '.', [['Restore my seat', function () { ibJoin(gid, owner, true); }], ['Use a different name', function () { ibAskName(gid); }], back]);
+    }
+    if (r.s === 409) return ibNotice('This game is full.', [back]);
+    if (r.s === 404) return ibNotice(restore ? 'No seat with that name was found.' : 'That game was not found.', [back]);
+    ibNotice('Could not join right now. Please try again.', [back]);
+  }
+  function ibNotice(text, buttons) {
+    ibNoticeClose();
+    let d = document.createElement('div'); d.id = 'ib-notice'; let p = document.createElement('p'); p.textContent = text; d.appendChild(p);
+    buttons.forEach(function (b) { let x = document.createElement('button'); x.textContent = b[0]; x.onclick = b[1]; d.appendChild(x); });
+    document.body.appendChild(d);
+  }
+  function ibNoticeClose() { let d = $('ib-notice'); if (d) d.remove(); }
+  function ibClose() {
+    clearInterval(ib.poll); ib.poll = null;
+    try { btLink.close('ib'); } catch (e) { }
+    ib.gid = null; ib.token = null; ib.seat = null; ib.st = null; ib.shown = {}; ib.ch = null; ib.chatSeenAt = null;
+    let g = $('ib-game'); if (g) g.hidden = true;
+  }
+  function ibLeave() {
+    ibClose(); ibNoticeClose(); $('setup').hidden = true; try { $('setup').classList.remove('ib-nodlg', 'ib-bg'); } catch (e) { }
+    if (IB_PHONE) { btPhoneLaunch().then(function (ok) { if (!ok) btFoyer(); }); return; }
+    foyerUrl(); showEntryPage(); try { initEntryPaws(); } catch (e) { } try { populateEntryGames(); } catch (e) { }
+  }
+
+  // ---- the game screen: one card (back = the players, face = the letter grid) ----
+  function ibBuild() {
+    if ($('ib-game')) return;
+    let g = document.createElement('div'); g.id = 'ib-game'; g.className = 'bt-gamescreen'; g.hidden = true;
+    g.innerHTML = '<div id="ib-msg"></div><div id="ibp"><div class="ibp-card down" id="ibp-card"><div class="ib-inner"><div class="ib-face ib-front ibp-face" id="ibp-face"></div><div class="ib-face ib-back ibp-back" id="ibp-back"></div></div></div></div>';
+    document.body.appendChild(g);
+    let p = $('ibp');
+    p.addEventListener('click', ibpClick);
+    p.addEventListener('pointerdown', ibDown); p.addEventListener('pointermove', ibMove); p.addEventListener('pointerup', ibUp); p.addEventListener('pointercancel', ibCancel);
+    p.addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target && e.target.id === 'ibp-cvin') { e.preventDefault(); ibpSendChat(); } });
+    addEventListener('resize', ibpLayout); addEventListener('orientationchange', function () { setTimeout(ibpLayout, 250); });
+  }
+  async function ibEnter(first) {
+    btEntering('ib');
+    hideEntryPage(); $('setup').hidden = true; $('bt-headsup').hidden = true; ibNoticeClose(); try { $('setup').classList.remove('ib-nodlg', 'ib-bg'); } catch (e) { }
+    ibBuild(); $('ib-game').hidden = false;
+    try { let u = new URL(location.href); u.searchParams.set('kind', 'inebear8'); u.searchParams.set('ib', ib.gid); u.searchParams.delete('gw'); u.searchParams.delete('p'); u.searchParams.delete('invite'); u.searchParams.delete('push'); history.replaceState(null, '', u.pathname + u.search + u.hash); } catch (e) { }
+    if (first && first.me) { ibSetSt(first); ibpRender(); }
+    await ibRefresh(); if (!ib.gid) return; ibConnect();
+    clearInterval(ib.poll); ib.poll = setInterval(function () { if (document.hidden) return; if (btLink.isOpen('ib') && Date.now() - ibHbAt < 25000) return; ibRefresh(); }, 30000);   // no look-again while the socket answers
+  }
+  function ibConnect() {
+    try { btLink.open('ib', { url: API.replace(/^http/, 'ws') + '/ib/' + encodeURIComponent(ib.gid) + '/ws', protocols: ['bt.' + ib.token], retryMs: 8000, keep: function () { return !$('ib-game').hidden; }, onopen: function () { ibHbAt = Date.now(); ibRefresh(); }, onmessage: function (ev) { ibHbAt = Date.now(); if (ev && ev.data === '{"t":"hb"}') return; ibRefresh(); } }); } catch (e) { }
+  }
+  setInterval(function () {
+    try {
+      if (document.hidden || !ib.gid || !btLink.isOpen('ib')) return;
+      if (ibHbAt && Date.now() - ibHbAt > 25000) { btLink.drop('ib'); return; }
+      btLink.send('ib', '{"t":"hb"}');
+    } catch (e) { }
+  }, 10000);
+  document.addEventListener('visibilitychange', function () { try { if (!document.hidden && ib.gid && $('ib-game') && !$('ib-game').hidden) { ibHbAt = 0; btLink.send('ib', '{"t":"hb"}'); ibRefresh(); } } catch (e) { } });
+  async function ibRefresh() {
+    if (!ib.gid) return;
+    let r = await ibApi('GET', 'status');
+    if (r.s === 404) { let gone = ib.gid; ibPrune(gone); ibLeave(); return; }
+    if (r.s === 401) { ibMsg('This device does not hold a seat in this game.'); return; }
+    if (r.s !== 200) return;
+    ibSetSt(r.j);
+    Object.keys(ib.shown).forEach(function (n) { let s = r.j.seats.find(function (x) { return String(x.n) === n; }); if (!s || !s.flip || s.day !== ib.shown[n].day) delete ib.shown[n]; });
+    ibpRender(); ibUpgradeShown();
+  }
+  // Once you have finished, cards you flipped for a time only can show the words found.
+  async function ibUpgradeShown() {
+    let st = ib.st; if (!st || st.me.status === 'playing' || ib.upgrading) return;
+    let ns = Object.keys(ib.shown).filter(function (n) { let s = ib.shown[n]; return s && s.words === undefined; });
+    if (!ns.length) return; ib.upgrading = true;
+    try { for (const n of ns) { let it = st.seats.find(function (x) { return String(x.n) === n; }); if (!it || !it.reveal) continue; let r = await ibApi('POST', 'reveal', { target: +n, tz: IB_TZ() }); if (r.s === 200 && ib.shown[n]) ib.shown[n] = r.j; } } finally { ib.upgrading = false; }
+    ibpRender();
+  }
+  async function ibNewDay() { let r = await ibApi('POST', 'newday', { tz: IB_TZ() }); if (r.s === 200) { ib.ch = null; ibSetSt(r.j); ib.ptom = null; ibpRender(); } else ibRefresh(); }
+
+  // ---- the clock (the server holds t0; this only displays it) ----
+  function ibElapsed(me) { if (!me || !me.t0 || !ib.st) return 0; return Math.max(0, (ib.st.now - me.t0 + (Date.now() - (ib.stAt || Date.now()))) / 1000); }
+  function ibClkText() {
+    let me = ib.st && ib.st.me; if (!me) return '';
+    if (me.status === 'won') return ibFmt(me.score);
+    if (me.status !== 'playing' || me.canNewDay) return '';
+    return me.t0 ? ibFmt(ibElapsed(me)) : '';
+  }
+  setInterval(function () { let c = $('ib-clk'); if (c && ib.st) { let t = ibClkText(); if (c.textContent !== t) c.textContent = t; } }, 500);
+
+  // ---- the board: an SVG of letter tiles (a cell is 10 units); empty cells are blank. Words are traced by dragging over neighbouring tiles (up, down, left, right). ----
+  const IB_TINT = ['#a8434f', '#4a0f18', '#c47a84', '#6e1a26', '#b95f6b', '#5a1520', '#9a3c49', '#7f3340'];
+  function ibSvg(P, words, own) {   // words: cell lists to show as found (each a tint)
+    let n = P.n, u = 10, of = {}, h = '<svg class="ib-svg" ' + (own ? 'id="ib-svg" ' : '') + 'viewBox="0 0 ' + n * u + ' ' + n * u + '" data-n="' + n + '">';
+    (words || []).forEach(function (w, k) { (w.cells || w).forEach(function (c) { of[c] = k; }); });
+    for (let c = 0; c < n * n; c++) {
+      let ch = P.grid[c]; if (!ch || ch === '.') continue;
+      let x = c % n * u, y = Math.floor(c / n) * u, f = of[c] !== undefined;
+      h += '<g class="ib-t' + (f ? ' f' : '') + '" data-c="' + c + '"><rect x="' + (x + .5) + '" y="' + (y + .5) + '" width="9" height="9" rx="1.8"' + (f ? ' style="fill:' + IB_TINT[of[c] % IB_TINT.length] + '"' : '') + '/><text x="' + (x + 5) + '" y="' + (y + 5.3) + '">' + ibEsc(ch.toUpperCase()) + '</text></g>';
+    }
+    return h + '</svg>';
+  }
+  function ibSpell(P, cells) { return cells.map(function (c) { return P.grid[c] || ''; }).join(''); }
+  // The slots for the hidden words, longest first; the words found fill the slots of their length.
+  function ibSlotsHtml(P, words) {
+    let lens = P.lens.slice(), used = {}, h = '';
+    let pool = (words || []).map(function (w) { return { len: (w.cells || w).length, t: ibSpell(P, w.cells || w) }; });
+    lens.forEach(function (L) {
+      let k = pool.findIndex(function (x, i) { return x.len === L && !used[i]; });
+      if (k >= 0) { used[k] = 1; h += '<span class="ib-sl on">' + ibEsc(pool[k].t.toUpperCase()) + '</span>'; }
+      else h += '<span class="ib-sl">' + new Array(L + 1).join('_') + '</span>';
+    });
+    return '<div class="ib-slots">' + h + '</div>';
+  }
+  function ibCh() { if (!ib.ch) ib.ch = { cells: [], drag: false, last: null }; return ib.ch; }
+  function ibPaint() {
+    let svg = $('ib-svg'), z = ib.ch, cs = z ? z.cells : [];
+    if (svg) svg.querySelectorAll('.ib-t').forEach(function (g) { g.classList.toggle('sel', cs.indexOf(+g.getAttribute('data-c')) >= 0); });
+    let cur = $('ib-cur'), P = ib.st && ib.st.me && ib.st.me.puz; if (cur && P) { let t = ibSpell(P, cs).toUpperCase(); if (cur.textContent !== t) cur.textContent = t; }
+  }
+  function ibCanDraw() { let me = ib.st && ib.st.me; return !!(me && me.puz && me.status === 'playing' && !me.canNewDay && me.t0 > 0 && !ib.pdown && ib.pv === 'face' && ib.pt == null); }
+  function ibStep(cell) {
+    let P = ib.st.me.puz, n = P.n, z = ibCh(), cs = z.cells;
+    if (!P.grid[cell] || P.grid[cell] === '.') return false;
+    if (cs.length >= 2 && cell === cs[cs.length - 2]) { cs.pop(); return true; }   // back over the last tile undoes it
+    if (cs.indexOf(cell) >= 0 || cs.length >= 11) return false;
+    let head = cs[cs.length - 1], dr = Math.abs(Math.floor(head / n) - Math.floor(cell / n)), dc = Math.abs(head % n - cell % n);
+    if (dr + dc !== 1) return false;
+    cs.push(cell); return true;
+  }
+  function ibCellAt(svg, x, y) {   // the middle of a tile only, so that a finger passing a corner does not pick up the next tile
+    let r = svg.getBoundingClientRect(), n = +svg.getAttribute('data-n'), fx = (x - r.left) / r.width * n, fy = (y - r.top) / r.height * n;
+    if (fx < 0 || fy < 0 || fx >= n || fy >= n) return -1;
+    let c = Math.floor(fx), q = Math.floor(fy), lx = fx - c, ly = fy - q;
+    if (lx < .14 || lx > .86 || ly < .14 || ly > .86) return -1;
+    return q * n + c;
+  }
+  function ibDown(e) {
+    let svg = e.target.closest && e.target.closest('#ib-svg'); if (!svg || !ibCanDraw()) return;
+    e.preventDefault(); try { svg.setPointerCapture(e.pointerId); } catch (x) { }
+    let z = ibCh(), P = ib.st.me.puz, cell = ibCellAt(svg, e.clientX, e.clientY); z.cells = []; z.drag = true; z.last = { x: e.clientX, y: e.clientY };
+    if (cell >= 0 && P.grid[cell] !== '.') z.cells = [cell];
+    ibPaint();
+  }
+  function ibMove(e) {
+    let svg = e.target.closest && e.target.closest('#ib-svg'), z = ib.ch; if (!z || !z.drag || !svg || !ibCanDraw()) return;
+    e.preventDefault();
+    let r = svg.getBoundingClientRect(), step = r.width / +svg.getAttribute('data-n') / 5, dx = e.clientX - z.last.x, dy = e.clientY - z.last.y, len = Math.hypot(dx, dy), m = Math.max(1, Math.ceil(len / step)), ch = false;
+    for (let i = 1; i <= m; i++) {
+      let cell = ibCellAt(svg, z.last.x + dx * i / m, z.last.y + dy * i / m); if (cell < 0) continue;
+      if (!z.cells.length) { z.cells = [cell]; ch = true; } else if (cell !== z.cells[z.cells.length - 1] && ibStep(cell)) ch = true;
+    }
+    z.last = { x: e.clientX, y: e.clientY };
+    if (ch) ibPaint();
+  }
+  function ibCancel() { let z = ib.ch; if (z) { z.drag = false; z.cells = []; } ibPaint(); }
+  async function ibUp() {
+    let z = ib.ch; if (!z || !z.drag) return; z.drag = false;
+    let cells = z.cells.slice(); z.cells = []; ibPaint();
+    if (cells.length < 3 || !ibCanDraw()) return;
+    let me = ib.st.me, key = cells.slice().sort(function (a, b) { return a - b; }).join(',');
+    if ((me.found || []).some(function (f) { return f.cells.slice().sort(function (a, b) { return a - b; }).join(',') === key; })) { ibMsg('Already found'); return; }
+    if (z.sending) return; z.sending = true;
+    let r = await ibApi('POST', 'word', { cells: cells, tz: IB_TZ() });
+    z.sending = false;
+    if (r.s === 200 && r.j && r.j.me) { ibSetSt(r.j); if (r.j.hit) ibMsg(r.j.me.status === 'won' ? 'Solved!' : 'Found one'); else ibMsg('Not one of today’s words'); ibpRender(); return; }
+    ibMsg('That could not be sent; try the word again'); ibRefresh();
+  }
+  // The clock starts when the grid is first shown face-up.
+  async function ibMaybeStart() {
+    let me = ib.st && ib.st.me;
+    if (!me || me.status !== 'playing' || me.canNewDay || me.t0 || ib.starting || ib.pdown || ib.pv !== 'face' || ib.pt != null) return;
+    ib.starting = true;
+    try { let r = await ibApi('POST', 'start', { tz: IB_TZ() }); if (r.s === 200) { ibSetSt(r.j); ibpRender(); } } finally { ib.starting = false; }
+  }
+
+  // ---- Bear Bot Tom: his time for your puzzle today (the worker models an average human time; it is fixed for you and the day) ----
+  function ibTomStore() { try { return JSON.parse(localStorage.getItem('bt_ib_tom') || '{}') || {}; } catch (e) { return {}; } }
+  function ibTomSync() {
+    let st = ib.st; if (!st) return; let key = ib.gid + ':' + st.me.day; if (ib.tomKey === key) return;
+    ib.tomKey = key; let v = ibTomStore()[key]; ib.tomScore = (typeof v === 'number') ? v : null;
+  }
+  function ibTomUsed(j) {
+    let st = ib.st; if (!st || !j || typeof j.score !== 'number') return;
+    let key = ib.gid + ':' + st.me.day; ib.tomKey = key; ib.tomScore = j.score;
+    try { let m = ibTomStore(), o = {}; Object.keys(m).forEach(function (k) { if (k.split(':').pop() === st.me.day) o[k] = m[k]; }); o[key] = j.score; localStorage.setItem('bt_ib_tom', JSON.stringify(o)); } catch (e) { }
+  }
+
+  // ---- My Stats (kept on this device, per name) ----
+  function ibStatsKey(name) { return 'bt_ib_stats_' + String(name || '').toLowerCase(); }
+  function ibStatsLoad(name) { try { let a = JSON.parse(localStorage.getItem(ibStatsKey(name)) || '[]'); return Array.isArray(a) ? a : []; } catch (e) { return []; } }
+  function ibStatsRecord(me) {
+    if (!me || !me.day || me.status === 'playing') return;
+    let sc = me.status === 'won' ? String(me.score) : (me.t0 ? 'incomplete' : 'no-show'), a = ibStatsLoad(me.name), k = a.findIndex(function (x) { return x.d === me.day; });
+    if (k >= 0) { if (a[k].s === sc) return; a[k] = { d: me.day, s: sc }; } else a.push({ d: me.day, s: sc });
+    a.sort(function (x, y) { return x.d < y.d ? 1 : x.d > y.d ? -1 : 0; });
+    try { localStorage.setItem(ibStatsKey(me.name), JSON.stringify(a.slice(0, 400))); } catch (e) { }
+  }
+  function ibStatsHtml(me, st) {
+    let rec = ibStatsLoad(me.name).slice().sort(function (a, b) { return a.d < b.d ? -1 : a.d > b.d ? 1 : 0; }), wins = rec.filter(function (r) { return /^\d+$/.test(r.s); });
+    let secs = wins.map(function (r) { return +r.s; }), best = secs.length ? Math.min.apply(null, secs) : null, avg = secs.length ? secs.reduce(function (a, b) { return a + b; }, 0) / secs.length : null;
+    let dn = function (d) { let p = d.split('-'); return Math.round(Date.UTC(+p[0], +p[1] - 1, +p[2]) / 86400000); }, cur = 0, run = 0, prev = null;
+    wins.forEach(function (r) { let x = dn(r.d); run = prev !== null && x === prev + 1 ? run + 1 : 1; prev = x; });
+    if (wins.length) { let lastDay = dn(wins[wins.length - 1].d), today = st.today ? dn(st.today) : lastDay; cur = today - lastDay <= 1 ? run : 0; }
+    let recent = wins.slice(-7), top = Math.max.apply(null, secs.concat([1]));
+    return btStatsHtml({ cells: [[wins.length, 'Solved'], [best == null ? '-' : ibFmt(best), 'Best'], [avg == null ? '-' : ibFmt(avg), 'Average'], [cur, 'Streak']], head: 'RECENT TIMES',
+      bars: recent.map(function (r, i) { let p = r.d.split('-'); return { k: (+p[1]) + '/' + (+p[2]), w: Math.max(14, Math.round(+r.s / top * 100)), text: ibFmt(+r.s), hi: i === recent.length - 1 }; }) });
+  }
+
+  // ---- the card ----
+  function ibpFlip(down) { ib.pdown = !!down; let c = $('ibp-card'); if (c) c.classList.toggle('down', ib.pdown); if (!down) setTimeout(ibMaybeStart, 0); }
+  function ibpLabel(it) { return it.lapsed ? (it.noshow ? '∞' : 'dnf') : (it.score != null ? ibFmt(it.score) : ''); }
+  function ibpOthers(st) {
+    let seats = st.seats, ord = st.order.map(function (nm) { return seats.find(function (s) { return s.name === nm; }); }).filter(Boolean);
+    seats.forEach(function (s) { if (ord.indexOf(s) < 0) ord.push(s); });
+    return ord.filter(function (s) { return s.n !== st.me.n; }).slice(0, 5);
+  }
+  function ibpBackHtml(st) {
+    let prev = function (day) { return !!(day && st.today && day < st.today); };
+    let sc = function (lb, day) { return lb === '' ? '' : '<b class="ibp-sc">' + ibEsc(lb) + (prev(day) ? '<sup>*</sup>' : '') + '</b>'; };
+    let pill = function (name, lb, day) { return '<div class="ibp-nb"><span class="ibp-n">' + ibEsc(name) + '</span>' + sc(lb, day) + '</div>'; };
+    let gonePill = function (it) { return '<div class="ibp-nb"><span class="ibp-n">' + ibEsc(it.name + '   player seceded') + '</span>' + (st.me.gone ? '' : '<button type="button" class="ibp-x" data-x="' + it.n + '" aria-label="Remove player"></button>') + '</div>'; };
+    let un = ibpUnread(st);
+    let h = '<div class="ibp-top"><a href="#" data-a="newgroup">new group</a><a href="#" data-a="chat">chat' + (un ? '<sup class="ibp-un">' + un + '</sup>' : '') + '</a><a href="#" data-a="groups">my groups</a></div><div class="ibp-rows">';
+    let own = st.seats.find(function (s) { return s.n === st.me.n; });
+    h += '<div class="ibp-row" data-a="card">' + pill('my card', own ? ibpLabel(own) : '', own ? own.day : '') + '</div>';
+    let o = ibpOthers(st);
+    for (let k = 0; k < 5; k++) {
+      let it = o[k];
+      if (!it) { h += '<div class="ibp-row"></div>'; continue; }
+      h += '<div class="ibp-row" data-n="' + it.n + '">' + (it.gone ? gonePill(it) : pill(it.name, ibpLabel(it), it.day)) + '</div>';
+    }
+    h += '<div class="ibp-row" data-a="tom">' + pill('Bear Bot Tom', ib.tomScore != null ? ibFmt(ib.tomScore) : '', st.me.day) + '</div>';
+    h += '<div class="ibp-row" data-a="stats">' + pill('My Stats', '') + '</div>';
+    return h + btBackBarHtml() + '</div>';
+  }
+  function ibpFaceHtml(st) {
+    let me = st.me, title = ibEsc(st.title || ''), top = function (left) { return '<div class="ibp-ft"><span>' + ibEsc(left) + '</span><a href="#" data-a="back">' + title + '</a></div>'; };
+    let wrapOf = function (inner) { return '<div class="ib-wrap">' + inner + '</div>'; }, P = me.puz;
+    if (ib.pv === 'groups') return top('') + btGroupsHtml('ib');
+    let t = ib.pt;
+    if (t === 'chat') return top('Convo-Ursidae') + '<div class="ibp-cv" id="ibp-cvlog"></div><div class="ibp-cvf"><input id="ibp-cvin" maxlength="300" autocomplete="off" enterkeyhint="send" placeholder="say something" aria-label="Message"><a href="#" data-a="cvsend">send</a></div>';
+    if (t === 'stats') return top('My Stats') + '<div class="ibp-sb">' + ibStatsHtml(me, st) + '</div>';
+    if (t === 'tom' && ib.ptom) return top('Bear Bot Tom') + wrapOf('<div class="ib-nb">' + ibFmt(ib.ptom.score) + '</div>') + '<div class="ibp-slim"><span>' + ibEsc(me.day || '') + '</span><span>solved in ' + ibFmt(ib.ptom.score) + '</span></div>';
+    let it = typeof t === 'number' ? st.seats.find(function (x) { return x.n === t; }) : null, shown = it ? ib.shown[it.n] : null;
+    if (it && shown) {
+      let same = shown.day === me.day, time = it.score != null && same ? it.score : shown.time, ws = Array.isArray(shown.words) ? shown.words : [];
+      let body = same && P && ws.length ? ibSvg(P, ws, false) : '<div class="ib-nb">' + (time != null ? ibFmt(time) : '') + '</div>';
+      return top(it.name) + wrapOf(body) + (same && P && ws.length ? ibSlotsHtml(P, ws) : '') + '<div class="ibp-slim"><span>' + ibEsc(shown.day || '') + '</span><span>' + (time != null ? 'solved in ' + ibFmt(time) : 'not solved') + '</span></div>';
+    }
+    return top(me.name) + wrapOf(P ? ibSvg(P, me.found || [], true) : '<div class="ib-nb">&hellip;</div>') + '<div class="ib-cur" id="ib-cur"></div>' + (P ? ibSlotsHtml(P, me.found || []) : '') + '<div class="ibp-slim"><span>' + ibEsc(me.day || '') + (me.canNewDay ? ' &nbsp;<a href="#" data-a="newpuz">new puzzle</a>' : '') + '</span><span class="ib-clk" id="ib-clk"></span></div>';
+  }
+  function ibpRender() {
+    let st = ib.st; if (!st || !$('ibp')) return;
+    let me = st.me;
+    ibStatsRecord(me); ibTomSync();
+    if (ib.pday !== me.day) { ib.pday = me.day; ib.ptom = null; ib.ch = null; if (ib.pt === 'tom') ib.pt = null; }
+    if (typeof ib.pt === 'number' && !ib.shown[ib.pt]) ib.pt = null;
+    let b = ibpBackHtml(st), f = ibpFaceHtml(st);
+    if (b !== ib.phB) { ib.phB = b; $('ibp-back').innerHTML = b; }
+    if (ib.pv !== 'groups' && ib.pt === 'chat') {   // the shell is built once; messages are filled in without touching the box being typed in
+      if (!$('ibp-cvin')) { ib.phF = f; $('ibp-face').innerHTML = f; ib.phCv = ''; }
+      let ch = st.chat || [], lastAt = ch.length ? ch[ch.length - 1].at : 0, sig = ib.gid + ':' + ch.length + ':' + lastAt;
+      ib.chatSeenAt = lastAt; if (!ib.pdown) { ibpSeenSet(ib.gid, lastAt); let b2 = ibpBackHtml(st); if (b2 !== ib.phB) { ib.phB = b2; $('ibp-back').innerHTML = b2; } }
+      if (sig !== ib.phCv) {
+        ib.phCv = sig; let log = $('ibp-cvlog'); log.innerHTML = '';
+        if (!ch.length) { let p = document.createElement('p'); p.className = 'dim'; p.textContent = 'No messages yet.'; log.appendChild(p); }
+        ch.forEach(function (m) { let p = document.createElement('p'), b = document.createElement('b'); if (m.n === me.n) p.className = 'me'; b.textContent = m.name + ': '; p.appendChild(b); btLinkify(p, btEmoji(m.text)); log.appendChild(p); });
+        log.scrollTop = log.scrollHeight;
+      }
+    } else if (f !== ib.phF) { ib.phF = f; $('ibp-face').innerHTML = f; }
+    $('ibp-card').classList.toggle('down', ib.pdown);
+    ibpLayout(); ibPaint();
+    let c = $('ib-clk'); if (c) c.textContent = ibClkText();
+    if (!ib.pdown) ibMaybeStart();
+  }
+  function ibpLayout() {
+    let c = $('ibp-card'); if (!c || !ib.st) return;
+    $('ibp').style.setProperty('--ibcw', c.clientWidth + 'px'); $('ibp').style.setProperty('--btcw', c.clientWidth + 'px');
+    Array.prototype.forEach.call($('ibp-back').querySelectorAll('.ibp-nb'), function (nb) {
+      let sp = nb.querySelector('.ibp-n'), sc = nb.querySelector('.ibp-sc'), xb = nb.querySelector('.ibp-x'), fs = 22, W = nb.clientWidth, r = nb.offsetHeight / 2;
+      let room = xb ? W - 2 * 46 : (sc ? 2 * (W / 2 - r - sc.offsetWidth - 6) : W - 20);   // the name is centered; with a score it must stop short of the score
+      sp.style.fontSize = fs + 'px';
+      while (fs > 9 && sp.offsetWidth > room) { fs--; sp.style.fontSize = fs + 'px'; }
+    });
+  }
+  // Chat: how many messages from others have come since this group's chat was last on screen (remembered per group on this device).
+  function ibpSeenGet(gid) { try { let v = JSON.parse(localStorage.getItem('bt_ib_seen') || '{}')[gid]; return typeof v === 'number' ? v : null; } catch (e) { return null; } }
+  function ibpSeenSet(gid, at) { try { let m = JSON.parse(localStorage.getItem('bt_ib_seen') || '{}') || {}; if (m[gid] === at) return; m[gid] = at; localStorage.setItem('bt_ib_seen', JSON.stringify(m)); } catch (e) { } }
+  function ibpUnread(st) {
+    let ch = st.chat || [], last = ch.length ? ch[ch.length - 1].at : 0, seen = ibpSeenGet(ib.gid);
+    if (seen === null) { ibpSeenSet(ib.gid, last); return 0; }   // a group opened for the first time starts with nothing unread
+    return ch.filter(function (m) { return m.at > seen && m.name !== st.me.name; }).length;
+  }
+  // A player who has left shows "player seceded"; any player may be removed from the card by the "x" (the worker decides who may).
+  async function ibDropAsk(it) {
+    if (!confirm('Remove ' + it.name + ' from this group?')) return;
+    let r = await ibApi('POST', 'drop', { target: it.n }); if (r.s === 200 && r.j && r.j.me) { ibSetSt(r.j); ibpRender(); } else ibRefresh();
+  }
+  async function ibpClick(e) {
+    let dx = e.target.closest('[data-x]'); if (dx) { e.preventDefault(); e.stopPropagation(); let n = +dx.getAttribute('data-x'), it = ib.st && ib.st.seats.find(function (x) { return x.n === n; }); if (it) ibDropAsk(it); return; }
+    if (btGroupsClick(e, 'ib')) return;
+    let a = e.target.closest('[data-a]'), r = e.target.closest('[data-n]');
+    if (a) {
+      e.preventDefault(); let act = a.getAttribute('data-a');
+      if (act === 'card') { ib.pv = 'face'; ib.pt = null; ibpRender(); ibpFlip(false); }
+      else if (act === 'back') ibpFlip(true);
+      else if (act === 'groups') { ib.pv = 'groups'; ib.pt = null; ib.pgh = {}; ibpRender(); ibpFlip(false); btGroupsLoad('ib'); }
+      else if (act === 'newgroup') btNewGroup('ib');
+      else if (act === 'foyer') btFoyer();
+      else if (act === 'chat') { ib.pv = 'face'; ib.pt = 'chat'; ibpFlip(false); ibpRender(); }
+      else if (act === 'cvsend') ibpSendChat();
+      else if (act === 'newpuz') ibNewDay();
+      else if (act === 'stats') { ib.pv = 'face'; ib.pt = 'stats'; ibpRender(); ibpFlip(false); }
+      else if (act === 'tom') {
+        let r2 = await ibApi('POST', 'tom', {});
+        if (r2.s !== 200 || !r2.j || typeof r2.j.score !== 'number') { ibMsg('Bear Bot Tom could not play'); return; }
+        ib.ptom = r2.j; ibTomUsed(r2.j); ib.pv = 'face'; ib.pt = 'tom'; ibpRender(); ibpFlip(false);
+      }
+      return;
+    }
+    if (r) {
+      let st = ib.st; if (!st) return; let n = +r.getAttribute('data-n'), it = st.seats.find(function (x) { return x.n === n; }); if (!it) return;
+      if (!ib.shown[n]) {
+        if (!it.flip) { ibMsg(it.done ? "You can't flip a player who has moved on to a newer day" : 'That player has not finished yet'); return; }
+        let r3 = await ibApi('POST', it.reveal ? 'reveal' : 'flip', { target: n, tz: IB_TZ() });
+        if (r3.s !== 200) { ibRefresh(); return; }
+        ib.shown[n] = r3.j;
+      }
+      ib.pv = 'face'; ib.pt = n; ibpRender(); ibpFlip(false);
+    }
+  }
+  async function ibpSendChat() {
+    let i = $('ibp-cvin'); if (!i) return; let tx = i.value.trim(); if (!tx) return; i.value = '';
+    let r = await ibApi('POST', 'chat', { text: tx });
+    if (r.s === 200 && r.j && r.j.me) { ibSetSt(r.j); ibpRender(); return; }
+    i.value = tx; ibMsg('That message could not be sent');
+  }
+  // Opening the app on a phone goes to the ineBear8 group used last.
+  async function ibLaunch() {
+    let ids = Object.keys(ibKeys()), last = null; try { last = localStorage.getItem('bt_ib_last'); } catch (e) { }
+    let hid = hiddenGames(); ids = ids.filter(function (g) { return !hid[g]; });
+    let gid = ids.indexOf(last) >= 0 ? last : ids[ids.length - 1]; if (!gid) return false;
+    let mine = ibMine(gid); if (!mine) return false;
+    hideEntryPage(); await ibUse(gid, mine.n, mine.token); return true;
+  }
+  btRegister({
+    id: 'ib', label: 'ineBear8', kind: 'inebear8', q: 'ib', nodlg: 'ib-nodlg', bg: 'ib-bg', st: ib,
+    boot: ibBoot, close: ibClose, pushSync: ibPushSync, afterRegister: ibAfterRegister,
+    api: ibApi, tz: IB_TZ, vouch: ibVouch, keys: ibKeys, prune: ibPrune, use: ibUse, enter: ibEnter, render: function () { ibpRender(); }, flip: ibpFlip, leaveMark: ibLeaveMark, leaveUnmark: ibLeaveUnmark, launch: ibLaunch,
+    allowed: function () { if (IB_PHONE) return true; try { message('ineBear8 is played on a phone.'); } catch (e) { } return false; },
+    created: function (j, owner) { ib.gid = j.gid; ib.token = j.token; ib.seat = 0; ibSaveKey(ib.gid, ib.token, 0, owner); ibSetTabSeat(ib.gid, 0, ib.token); },
+    mine: function (gid) { return ibMine(gid); },
+    shown: function () { let g = $('ib-game'); return !!(g && !g.hidden && ib.gid); }
+  });
+  // ================= END ineBear8 MODULE =================
 
 
   (async () => {

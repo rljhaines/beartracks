@@ -7,8 +7,8 @@ self.addEventListener('activate', function (e) { e.waitUntil(self.clients.claim(
 self.addEventListener('push', function (e) {
   var d = {};
   try { d = e.data ? e.data.json() : {}; } catch (x) { try { d = { b: e.data.text() }; } catch (y) {} }
-  var title = d.t || 'BearTracks', body = d.b || '', gid = d.g || '', kind = d.k === 'bm' ? 'bm' : '';
-  var tag = d.e ? 'ev-' + d.e : (gid ? (kind ? 'bm-' : 'gw-') + gid : 'bt'); // a finished card sent from two of your groups carries the same tag, so it shows once
+  var title = d.t || 'BearTracks', body = d.b || '', gid = d.g || '', kind = d.k === 'bm' || d.k === 'ib' ? d.k : '';
+  var tag = d.e ? 'ev-' + d.e : (gid ? (kind ? kind + '-' : 'gw-') + gid : 'bt'); // a finished card sent from two of your groups carries the same tag, so it shows once
   e.waitUntil((async function () {
     var wins = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
     var seen = wins.some(function (c) { return c.visibilityState === 'visible'; });
@@ -26,7 +26,7 @@ self.addEventListener('push', function (e) {
 self.addEventListener('notificationclick', function (e) {
   e.notification.close();
   var gid = (e.notification.data && e.notification.data.g) || '', kind = (e.notification.data && e.notification.data.k) || '';
-  var url = self.registration.scope + (gid ? (kind ? '?kind=bearmaze&push=1&bm=' : '?kind=groupwords&push=1&gw=') + encodeURIComponent(gid) : '');
+  var url = self.registration.scope + (gid ? (kind === 'ib' ? '?kind=inebear8&push=1&ib=' : kind ? '?kind=bearmaze&push=1&bm=' : '?kind=groupwords&push=1&gw=') + encodeURIComponent(gid) : '');
   e.waitUntil((async function () {
     var wins = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
     for (var i = 0; i < wins.length; i++) {
