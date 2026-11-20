@@ -925,7 +925,6 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
 .bm-front { background: #2f9e4f; color: #f6f0e4; display: flex; flex-direction: column; align-items: stretch; padding: 4px 8px 6px; font-size: 15px; }
 .bm-front a { color: #ffe9a8; }
 .bm-back { transform: rotateY(180deg); background: #2f9e4f var(--bm-art) center / cover no-repeat; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; }
-.bm-back::before { content: ""; position: absolute; inset: calc(var(--bmcw) * .05); border: 2px solid #f1f7e4; border-radius: calc(var(--bmcw) * .03); opacity: .9; pointer-events: none; }
 /* Only the side of the card that is showing takes taps. */
 .bmp-card.down .bmp-face, .bmp-card:not(.down) .bmp-back { pointer-events: none; }
 .bmp-ft { display: flex; justify-content: space-between; align-items: center; min-height: 44px; gap: 10px; font-style: italic; font-size: 15px; flex: none; }
@@ -1052,6 +1051,8 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
 .btg-gh { justify-content: space-between; padding: 0 6px; font-size: 18px; opacity: .8; }
 .btg-gh a { color: inherit; text-decoration: underline; min-height: 44px; display: flex; align-items: center; padding: 0 6px; }
 .bt-bar { position: absolute; left: 0; right: 0; bottom: calc(var(--btcw) * .05 - 18px); height: 44px; z-index: 2; display: flex; align-items: center; justify-content: center; color: #f6f0e4; font-style: italic; font-size: 15px; text-shadow: 0 1px 3px rgba(0,0,0,.75); }
+#bmp-back .bmp-top { transform: translateY(var(--bm-ty1, 0px)); }
+#bmp-back .bt-bar { transform: translateY(var(--bm-ty2, 0px)); }   /* set in bmpLayout: the links sit in the pale-green strips along the top and bottom edges of the maze */
 #bmp-back .bmp-top a, #bmp-back .bt-bar a { color: #ff4a3d; font-weight: 400; text-shadow: none; }   /* the links on the back of a bearMaze card are red */
 #ibp-back .ibp-top a, #ibp-back .bt-bar a { color: #ffffff; font-weight: 400; text-shadow: none; }   /* the links on the back of an ineBear8 card are white on maroon */
 #bt-play { display: none; }
@@ -6975,9 +6976,22 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     let c = $('bm-clk'); if (c) c.textContent = bmClkText();
     if (!bm.pdown) bmMaybeStart();
   }
+  // The maze art is a 90 x 140 picture covering the card. Its top and bottom strips of pale floor (between the outer wall and the first inner wall) are centred at y = 5 and y = 135; the header links and the Foyer link are centred in them.
+  function bmpBands() {
+    let back = $('bmp-back'); if (!back) return;
+    back.style.setProperty('--bm-ty1', '0px'); back.style.setProperty('--bm-ty2', '0px');
+    let W = back.clientWidth, H = back.clientHeight; if (!W || !H) return;
+    let k = Math.max(W / 90, H / 140), oy = (H - 140 * k) / 2, br = back.getBoundingClientRect(), t = back.clientTop || 0;
+    [['.bmp-top a', '--bm-ty1', oy + 5 * k], ['.bt-bar a', '--bm-ty2', oy + 135 * k]].forEach(function (q) {
+      let a = back.querySelector(q[0]); if (!a) return;
+      let r = a.getBoundingClientRect(), c = (r.top + r.bottom) / 2 - br.top - t;
+      back.style.setProperty(q[1], Math.round((q[2] - c) * 10) / 10 + 'px');
+    });
+  }
   function bmpLayout() {
     let c = $('bmp-card'); if (!c || !bm.st) return;
     $('bmp').style.setProperty('--bmcw', c.clientWidth + 'px'); $('bmp').style.setProperty('--btcw', c.clientWidth + 'px');
+    bmpBands();
     Array.prototype.forEach.call($('bmp-back').querySelectorAll('.bmp-nb'), function (nb) {
       let sp = nb.querySelector('.bmp-n'), sc = nb.querySelector('.bmp-sc'), xb = nb.querySelector('.bmp-x'), fs = 22, W = nb.clientWidth, r = nb.offsetHeight / 2;
       let room = xb ? W - 2 * 46 : (sc ? 2 * (W / 2 - r - sc.offsetWidth - 6) : W - 20);   // the name is centered; with a score it must stop short of the score
