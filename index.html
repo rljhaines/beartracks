@@ -6864,13 +6864,15 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     if (r.s === 422) { z.path = []; bmSave(); bmPaint(); bmMsg('That path is not a solution'); } else bmMsg('That could not be sent; lift and touch the maze to try again');
     bmRefresh();
   }
-  // One step of the trail; true when the trail changed. Touching the trail rewinds it to that cell (the start cell restarts it).
-  function bmStep(cell) {
+  // One step of the trail; true when the trail changed. A fresh touch on the trail rewinds it to that cell (the start cell restarts it);
+  // a moving finger (move = true) can only take back the cell just before the head, one at a time, so sliding over older trail - or across
+  // a wall into a cell that lies next to it - never rewinds anything.
+  function bmStep(cell, move) {
     let P = bm.st.me.maze, n = P.n, N = n * n, z = bmState(), p = z.path, head = p[p.length - 1];
     if (bmComplete()) return false;   // a finished trail is final: nothing the finger does afterwards can rewind it
     if (cell === head) return false;
     let at = p.indexOf(cell);
-    if (at >= 0) { p.length = at + 1; return true; }
+    if (at >= 0) { if (move && at !== p.length - 2) return false; p.length = at + 1; return true; }
     let dr = Math.abs(Math.floor(head / n) - Math.floor(cell / n)), dc = Math.abs(head % n - cell % n);
     if (dr + dc !== 1) return false;
     let lo = Math.min(head, cell), hi = Math.max(head, cell);
@@ -6883,6 +6885,16 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     let r = svg.getBoundingClientRect(), n = +svg.getAttribute('data-n');
     let c = Math.floor((x - r.left) / r.width * n), q = Math.floor((y - r.top) / r.height * n);
     return c < 0 || q < 0 || c >= n || q >= n ? -1 : q * n + c;
+  }
+  // A moving finger only counts as being in a cell once it is well inside it (not within BM_EDGE of a cell edge, as a fraction of the cell),
+  // so grazing a corner or riding along a line between cells selects nothing.
+  const BM_EDGE = 0.18;
+  function bmCellIn(svg, x, y) {
+    let r = svg.getBoundingClientRect(), n = +svg.getAttribute('data-n');
+    let fx = (x - r.left) / r.width * n, fy = (y - r.top) / r.height * n, c = Math.floor(fx), q = Math.floor(fy);
+    if (c < 0 || q < 0 || c >= n || q >= n) return -1;
+    fx -= c; fy -= q;
+    return fx < BM_EDGE || fx > 1 - BM_EDGE || fy < BM_EDGE || fy > 1 - BM_EDGE ? -1 : q * n + c;
   }
   function bmDown(e) {
     let svg = e.target.closest && e.target.closest('#bm-svg'); if (!svg || !bmCanDraw()) return;
@@ -6897,7 +6909,7 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     let svg = e.target.closest && e.target.closest('#bm-svg'), z = bm.mz; if (!z || !z.drag || !svg || !bmCanDraw()) return;
     e.preventDefault();
     let r = svg.getBoundingClientRect(), step = r.width / +svg.getAttribute('data-n') / 4, dx = e.clientX - z.last.x, dy = e.clientY - z.last.y, len = Math.hypot(dx, dy), m = Math.max(1, Math.ceil(len / step)), ch = false;
-    for (let i = 1; i <= m; i++) { let cell = bmCellAt(svg, z.last.x + dx * i / m, z.last.y + dy * i / m); if (cell >= 0 && z.path.length && bmStep(cell)) ch = true; }
+    for (let i = 1; i <= m; i++) { let cell = bmCellIn(svg, z.last.x + dx * i / m, z.last.y + dy * i / m); if (cell >= 0 && z.path.length && bmStep(cell, true)) ch = true; }
     z.last = { x: e.clientX, y: e.clientY };
     if (ch) { bmPaint(); if (bmComplete()) bmFinish(); }
   }
