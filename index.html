@@ -5633,6 +5633,26 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
         : '<div class="btg-gr"><a href="#" data-g="' + i + '"' + (g.gid === S.gid ? ' class="cur"' : '') + '>' + btEsc(g.title) + '</a><button type="button" class="btg-gx" data-gx="' + i + '" aria-label="Remove group"></button></div>';
     }).join('') : '<p class="dim">&hellip;</p>') + '</div>';
   }
+  // The name pills on the back of a phone card (player names, Bear Bot Tom, "player seceded"): one class for every game, so they are built and fitted alike.
+  // A game gives its prefix ('gwp', 'bmp', 'ibp'), its escape function and the status. Text starts at 22px and shrinks only as far as it must: a name beside a
+  // score keeps the room between the left of the pill and the score (shifting left of centre if it needs to) before it is made smaller.
+  class BtPills {
+    constructor(prefix, esc, st) { this.p = prefix; this.esc = esc; this.st = st; }
+    late(day) { return !!(day && this.st.today && day < this.st.today); }
+    score(lb, day) { return lb === '' ? '' : '<b class="' + this.p + '-sc">' + this.esc(lb) + (this.late(day) ? '<sup>*</sup>' : '') + '</b>'; }
+    pill(name, lb, day, html) { return '<div class="' + this.p + '-nb"><span class="' + this.p + '-n">' + (html || this.esc(name)) + '</span>' + this.score(lb, day) + '</div>'; }
+    gone(it) { return '<div class="' + this.p + '-nb"><span class="' + this.p + '-n">' + this.esc(it.name + '   player seceded') + '</span>' + (this.st.me.gone ? '' : '<button type="button" class="' + this.p + '-x" data-x="' + it.n + '" aria-label="Remove player"></button>') + '</div>'; }
+    static fit(root, p) {
+      Array.prototype.forEach.call(root.querySelectorAll('.' + p + '-nb'), function (nb) {
+        let sp = nb.querySelector('.' + p + '-n'), sc = nb.querySelector('.' + p + '-sc'), xb = nb.querySelector('.' + p + '-x'), fs = 22, W = nb.clientWidth, r = nb.offsetHeight / 2;
+        let sym = xb ? W - 2 * 46 : (sc ? 2 * (W / 2 - r - sc.offsetWidth - 6) : W - 20);   // room with the name centred
+        let right = sc ? W - r - sc.offsetWidth - 8 : W - 10, room = sc && !xb ? Math.max(sym, right - 14) : sym;   // room when it may move left of centre
+        sp.style.transform = ''; sp.style.fontSize = fs + 'px';
+        while (fs > 9 && sp.offsetWidth > room) { fs--; sp.style.fontSize = fs + 'px'; }
+        if (sc && !xb && sp.offsetWidth > sym) { let sh = W / 2 + sp.offsetWidth / 2 - right; if (sh > 0) sp.style.transform = 'translateX(' + (-sh) + 'px)'; }
+      });
+    }
+  }
   function btGroupsClick(e, id) {   // true when the tap was on the groups list
     let G = btGame[id], S = G.st, gx = e.target.closest('[data-gx]'), gu = e.target.closest('[data-gu]'), g = e.target.closest('[data-g]');
     if (!gx && !gu && !g) return false;
@@ -6411,10 +6431,9 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     return ord.filter(function (s) { return s.n !== st.me.n; }).slice(0, 5);
   }
   function gwpBackHtml(st) {
-    let prev = function (day) { return !!(day && st.today && day < st.today); };
-    let sc = function (lb, day) { return lb === '' ? '' : '<b class="gwp-sc">' + gwpEsc(lb) + (prev(day) ? '<sup>*</sup>' : '') + '</b>'; };
-    let pill = function (name, lb, day, html) { return '<div class="gwp-nb"><span class="gwp-n">' + (html || gwpEsc(name)) + '</span>' + sc(lb, day) + '</div>'; };
-    let gonePill = function (it) { return '<div class="gwp-nb"><span class="gwp-n">' + gwpEsc(it.name + '   player seceded') + '</span>' + (st.me.gone ? '' : '<button type="button" class="gwp-x" data-x="' + it.n + '" aria-label="Remove player"></button>') + '</div>'; };
+    const bp = new BtPills('gwp', gwpEsc, st);
+    let pill = function (name, lb, day, html) { return bp.pill(name, lb, day, html); };
+    let gonePill = function (it) { return bp.gone(it); };
     let h = '<div class="gwp-top"><a href="#" data-a="newgroup">new group</a><a href="#" data-a="chat">chat' + (gwpUnread(st) ? '<sup class="gwp-un">' + gwpUnread(st) + '</sup>' : '') + '</a><a href="#" data-a="groups">my groups</a></div><div class="gwp-rows">';
     let own = st.seats.find(function (s) { return s.n === st.me.n; });
     h += '<div class="gwp-row" data-a="card">' + pill('my card', own ? gwpLabel(own) : '', own ? own.day : '') + '</div>';
@@ -6489,12 +6508,7 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     let w = c.clientWidth; $('gwp').style.setProperty('--gwcw', w + 'px'); $('gwp').style.setProperty('--btcw', w + 'px');
     let g = $('gwp-face').querySelector('.gwp-gw');
     if (g) { let gap = 5, W = g.clientWidth, H = g.clientHeight, t = Math.floor(Math.min((W - 4 * gap) / 5, (H - 5 * gap) / 6, 66)); if (t > 10) g.style.setProperty('--t', t + 'px'); }
-    Array.prototype.forEach.call($('gwp-back').querySelectorAll('.gwp-nb'), function (nb) {
-      let sp = nb.querySelector('.gwp-n'), sc = nb.querySelector('.gwp-sc'), xb = nb.querySelector('.gwp-x'), fs = 22, W = nb.clientWidth, r = nb.offsetHeight / 2;
-      let room = xb ? W - 2 * 46 : (sc ? 2 * (W / 2 - r - sc.offsetWidth - 6) : W - 20);   // the name is centered; with a score it must stop short of the score
-      sp.style.fontSize = fs + 'px';
-      while (fs > 9 && sp.offsetWidth > room) { fs--; sp.style.fontSize = fs + 'px'; }
-    });
+    BtPills.fit($('gwp-back'), 'gwp');
   }
   // Phone chat: how many messages from others have come since this group's chat was last on screen (remembered per group on this device).
   function gwpSeenGet(gid) { try { let v = JSON.parse(localStorage.getItem('bt_gw_seen') || '{}')[gid]; return typeof v === 'number' ? v : null; } catch (e) { return null; } }
@@ -6967,10 +6981,9 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     return ord.filter(function (s) { return s.n !== st.me.n; }).slice(0, 5);
   }
   function bmpBackHtml(st) {
-    let prev = function (day) { return !!(day && st.today && day < st.today); };
-    let sc = function (lb, day) { return lb === '' ? '' : '<b class="bmp-sc">' + bmEsc(lb) + (prev(day) ? '<sup>*</sup>' : '') + '</b>'; };
-    let pill = function (name, lb, day) { return '<div class="bmp-nb"><span class="bmp-n">' + bmEsc(name) + '</span>' + sc(lb, day) + '</div>'; };
-    let gonePill = function (it) { return '<div class="bmp-nb"><span class="bmp-n">' + bmEsc(it.name + '   player seceded') + '</span>' + (st.me.gone ? '' : '<button type="button" class="bmp-x" data-x="' + it.n + '" aria-label="Remove player"></button>') + '</div>'; };
+    const bp = new BtPills('bmp', bmEsc, st);
+    let pill = function (name, lb, day, html) { return bp.pill(name, lb, day, html); };
+    let gonePill = function (it) { return bp.gone(it); };
     let un = bmpUnread(st);
     let h = '<div class="bmp-top"><a href="#" data-a="newgroup">new group</a><a href="#" data-a="chat">chat' + (un ? '<sup class="bmp-un">' + un + '</sup>' : '') + '</a><a href="#" data-a="groups">my groups</a></div><div class="bmp-rows">';
     let own = st.seats.find(function (s) { return s.n === st.me.n; });
@@ -7040,12 +7053,7 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     let c = $('bmp-card'); if (!c || !bm.st) return;
     $('bmp').style.setProperty('--bmcw', c.clientWidth + 'px'); $('bmp').style.setProperty('--btcw', c.clientWidth + 'px');
     bmpBands();
-    Array.prototype.forEach.call($('bmp-back').querySelectorAll('.bmp-nb'), function (nb) {
-      let sp = nb.querySelector('.bmp-n'), sc = nb.querySelector('.bmp-sc'), xb = nb.querySelector('.bmp-x'), fs = 22, W = nb.clientWidth, r = nb.offsetHeight / 2;
-      let room = xb ? W - 2 * 46 : (sc ? 2 * (W / 2 - r - sc.offsetWidth - 6) : W - 20);   // the name is centered; with a score it must stop short of the score
-      sp.style.fontSize = fs + 'px';
-      while (fs > 9 && sp.offsetWidth > room) { fs--; sp.style.fontSize = fs + 'px'; }
-    });
+    BtPills.fit($('bmp-back'), 'bmp');
   }
   // Chat: how many messages from others have come since this group's chat was last on screen (remembered per group on this device).
   function bmpSeenGet(gid) { try { let v = JSON.parse(localStorage.getItem('bt_bm_seen') || '{}')[gid]; return typeof v === 'number' ? v : null; } catch (e) { return null; } }
@@ -7486,10 +7494,9 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     return ord.filter(function (s) { return s.n !== st.me.n; }).slice(0, 5);
   }
   function ibpBackHtml(st) {
-    let prev = function (day) { return !!(day && st.today && day < st.today); };
-    let sc = function (lb, day) { return lb === '' ? '' : '<b class="ibp-sc">' + ibEsc(lb) + (prev(day) ? '<sup>*</sup>' : '') + '</b>'; };
-    let pill = function (name, lb, day) { return '<div class="ibp-nb"><span class="ibp-n">' + ibEsc(name) + '</span>' + sc(lb, day) + '</div>'; };
-    let gonePill = function (it) { return '<div class="ibp-nb"><span class="ibp-n">' + ibEsc(it.name + '   player seceded') + '</span>' + (st.me.gone ? '' : '<button type="button" class="ibp-x" data-x="' + it.n + '" aria-label="Remove player"></button>') + '</div>'; };
+    const bp = new BtPills('ibp', ibEsc, st);
+    let pill = function (name, lb, day, html) { return bp.pill(name, lb, day, html); };
+    let gonePill = function (it) { return bp.gone(it); };
     let un = ibpUnread(st);
     let h = '<div class="ibp-top"><a href="#" data-a="newgroup">new group</a><a href="#" data-a="chat">chat' + (un ? '<sup class="ibp-un">' + un + '</sup>' : '') + '</a><a href="#" data-a="groups">my groups</a></div><div class="ibp-rows">';
     let own = st.seats.find(function (s) { return s.n === st.me.n; });
@@ -7547,12 +7554,7 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
   function ibpLayout() {
     let c = $('ibp-card'); if (!c || !ib.st) return;
     $('ibp').style.setProperty('--ibcw', c.clientWidth + 'px'); $('ibp').style.setProperty('--btcw', c.clientWidth + 'px');
-    Array.prototype.forEach.call($('ibp-back').querySelectorAll('.ibp-nb'), function (nb) {
-      let sp = nb.querySelector('.ibp-n'), sc = nb.querySelector('.ibp-sc'), xb = nb.querySelector('.ibp-x'), fs = 22, W = nb.clientWidth, r = nb.offsetHeight / 2;
-      let room = xb ? W - 2 * 46 : (sc ? 2 * (W / 2 - r - sc.offsetWidth - 6) : W - 20);   // the name is centered; with a score it must stop short of the score
-      sp.style.fontSize = fs + 'px';
-      while (fs > 9 && sp.offsetWidth > room) { fs--; sp.style.fontSize = fs + 'px'; }
-    });
+    BtPills.fit($('ibp-back'), 'ibp');
   }
   // Chat: how many messages from others have come since this group's chat was last on screen (remembered per group on this device).
   function ibpSeenGet(gid) { try { let v = JSON.parse(localStorage.getItem('bt_ib_seen') || '{}')[gid]; return typeof v === 'number' ? v : null; } catch (e) { return null; } }
