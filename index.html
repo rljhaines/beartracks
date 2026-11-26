@@ -1011,7 +1011,7 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
 .ib-t rect { fill: #96303f; }
 .ib-tb { fill: none; stroke: #000000; stroke-width: 5.6; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
 .ib-t { color: #ffffff; }
-.ib-t text { fill: #ffffff; font: 400 5.6px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-anchor: middle; dominant-baseline: central; pointer-events: none; }   /* the letters of Wordage's tiles: the same font, weight and lower case, at the same share of the tile */
+.ib-t text { fill: #ffffff; font: 400 5.6px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-anchor: middle; pointer-events: none; }   /* the letters of Wordage's tiles: the same font, weight and lower case, at the same share of the tile */
 .ib-nb { font-size: 3.2em; font-weight: 700; text-align: center; }
 .ib-cur { flex: none; min-height: 28px; display: flex; align-items: center; justify-content: center; color: #ffffff; font-weight: 700; font-size: 19px; letter-spacing: .18em; }
 .ib-slots { flex: none; display: flex; flex-wrap: wrap; justify-content: center; align-content: flex-start; gap: 6px; min-height: 66px; padding: 2px 0 6px; }
@@ -7372,7 +7372,8 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
     let n = P.n, h = '', k = .032;   // the paw is drawn in a 100-unit box; k scales it to about 3 board units
     for (let i = 1; i < cells.length; i++) {
       let a = cells[i - 1], b = cells[i], mx = ((a % n) + (b % n)) / 2 * 10 + 5, my = (Math.floor(a / n) + Math.floor(b / n)) / 2 * 10 + 5;
-      h += '<g class="ib-pg" transform="translate(' + (mx - 50 * k).toFixed(3) + ' ' + (my - 46 * k).toFixed(3) + ') scale(' + k + ')" fill="' + IB_PAWS[(i - 1) % 2] + '" stroke="#fff" stroke-width="6" stroke-linejoin="round">' +
+      let ang = Math.round(Math.atan2((b % n) - (a % n), Math.floor(a / n) - Math.floor(b / n)) * 180 / Math.PI);   // the middle toe points on to the next letter
+      h += '<g class="ib-pg" transform="translate(' + mx.toFixed(3) + ' ' + my.toFixed(3) + ') rotate(' + ang + ') scale(' + k + ') translate(-50 -46)" fill="' + IB_PAWS[(i - 1) % 2] + '" stroke="#fff" stroke-width="6" stroke-linejoin="round">' +
         '<path d="M 20 56 C 20 46 35 42 50 42 C 65 42 80 46 80 56 C 84 70 78 86 50 92 C 22 86 16 70 20 56 Z"/><circle cx="23" cy="28" r="14"/><circle cx="50" cy="15" r="16"/><circle cx="77" cy="28" r="14"/></g>';
     }
     return h;
@@ -7380,7 +7381,9 @@ html.bt-tab #gw-game #gFoyer { top: 8px; left: 8px; width: 44px; height: 44px; p
   // A letter as Wordage draws it: lower case in the page's font, with the l given its curls (tileFace) so it is never taken for an i or an I.
   function ibLetter(ch, x, y) {
     if (ch.toUpperCase() === 'L') return '<svg x="' + (x + 5 - .64).toFixed(2) + '" y="' + (y + 5 - 2.24).toFixed(2) + '" width="1.28" height="4.48" viewBox="19 3 24 84" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"><path d="M31 14V76"/><path d="M31 76Q31 82 38 82"/><path d="M31 14Q31 8 24 8"/></svg>';
-    return '<text x="' + (x + 5) + '" y="' + (y + 5.3) + '">' + ibEsc(ch.toLowerCase()) + '</text>';
+    // each letter is set so that the middle of its own ink (x-height letters, letters with an ascender, letters with a descender) sits on the middle of the tile and of the tube
+    let c = ch.toLowerCase(), mid = 'bdfhikt'.indexOf(c) >= 0 ? .37 : 'gpqy'.indexOf(c) >= 0 ? .16 : c === 'j' ? .265 : .265;
+    return '<text x="' + (x + 5) + '" y="' + (y + 5 + mid * 5.6).toFixed(2) + '">' + ibEsc(c) + '</text>';
   }
   function ibSvg(P, words, own) {   // words: cell lists (in word order) to show as found
     let n = P.n, u = 10, h = '<svg class="ib-svg" ' + (own ? 'id="ib-svg" ' : '') + 'viewBox="0 0 ' + n * u + ' ' + n * u + '" data-n="' + n + '">', tiles = '', letters = '';
